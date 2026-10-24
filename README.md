@@ -4,9 +4,7 @@ A desktop D&D character sheet (Electron + React). Opens as its own window, saves
 
 ## Work on it (live reload)
 
-```
-npm run app:dev
-```
+Double-click **`Launch Sheet.bat`** (or run `python launch.py`, or `npm run app:dev`).
 
 Opens the real app window; edits to `src/` appear when you save. Close the window to stop it.
 
