@@ -43,7 +43,6 @@ export function LeftDock() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const open = useUI((s) => s.dockOpen)
-  const pinned = useUI((s) => s.dockPinned)
   const set = useUI((s) => s.set)
   const shown = open
 
@@ -52,12 +51,6 @@ export function LeftDock() {
     const next = !open
     try { localStorage.setItem('dock-open', next ? '1' : '0') } catch { /* private mode */ }
     set({ dockOpen: next })
-  }
-  // "beside the page" pushes the page over instead of sitting on top of it
-  const togglePin = () => {
-    const next = !pinned
-    try { localStorage.setItem('dock-pinned', next ? '1' : '0') } catch { /* private mode */ }
-    set({ dockPinned: next })
   }
   const [expanded, setExpanded] = useState<string>('')
   const fx = activeEffects(c)
@@ -86,7 +79,7 @@ export function LeftDock() {
         onClick={toggleOpen}>
         <span>{shown ? '‹' : '›'} Abilities · Saves · Skills</span>
       </button>
-      <aside className={`dock ${shown ? 'open' : ''} ${pinned ? 'pinned' : ''}`}>
+      <aside className={`dock ${shown ? 'open' : ''}`}>
         <div className="prof-row">
           <div className="pill" title="Proficiency bonus is worked out from your level. Override it in Settings.">
             <div className="num">{signed(pb)}</div><div className="t">Proficiency<br />Bonus</div>
@@ -161,9 +154,6 @@ export function LeftDock() {
             <b style={{ fontFamily: 'var(--font-head)' }}>{passivePerception(c, fx)}</b>
           </div>
           <span className="caps">Passive Wisdom (Perception)</span>
-        </div>
-        <div className="row" style={{ marginTop: 10 }}>
-          <button className={`btn sm ${pinned ? 'primary' : ''}`} onClick={togglePin} title="Push the page over instead of covering it">📌 {pinned ? 'Beside the page' : 'Over the page'}</button>
         </div>
         <div className="muted small" style={{ marginTop: 8 }}>
           Click a row to see what's affecting it. Click a circle to cycle proficiency / expertise. A <span style={{ color: 'var(--accent)' }}>●</span> means a feature or item is changing that roll.

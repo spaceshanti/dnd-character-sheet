@@ -99,7 +99,7 @@ const SHORTCUTS: { group: string; items: [string, string][] }[] = [
   {
     group: 'Mouse',
     items: [
-      ['Click the left edge strip', 'Open / close abilities, saves & skills (stays open until you close it)'],
+      ['Click the left edge strip', 'Open / close abilities, saves & skills (stays open and pushes the page over)'],
       ['Click AC / Speed / Initiative', 'Edit the base value and add-on bonuses'],
       ['Click max HP ( / 25 )', 'Edit max HP and its bonuses'],
       ['Click a skill or save', 'Show what is affecting it'],

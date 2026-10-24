@@ -33,6 +33,7 @@ export function CharacterPage() {
         </Frame>
       </div>
 
+      <div className="story-right">
       {/* middle: personality */}
       <div className="col" style={{ gap: 12 }}>
         {text('trait1', 'Personality Traits', 8, 'How do they carry themselves? Habits, likes, quirks…')}
@@ -74,6 +75,7 @@ export function CharacterPage() {
             if (t != null) patch((d) => { d.extraNotes.push({ id: uid(), title: t, text: '' }) })
           }}>＋ Add another box</button>
         </div>
+      </div>
       </div>
     </div>
   )

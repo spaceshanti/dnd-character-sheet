@@ -174,7 +174,6 @@ export type Drawer =
 interface UIState {
   page: PageId
   dockOpen: boolean
-  dockPinned: boolean
   inventoryOpen: boolean
   inventorySelected: string
   rosterOpen: boolean
@@ -187,12 +186,8 @@ function readOpen() {
   try { return localStorage.getItem('dock-open') === '1' } catch { return false }
 }
 
-function readPinned() {
-  try { return localStorage.getItem('dock-pinned') === '1' } catch { return false }
-}
-
 export const useUI = create<UIState>((set) => ({
-  page: 'overview', dockOpen: readOpen(), dockPinned: readPinned(), inventoryOpen: false, inventorySelected: '', rosterOpen: false, drawer: null,
+  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', rosterOpen: false, drawer: null,
   go: (page) => set({ page }),
   set: (p) => set(p),
 }))
