@@ -502,7 +502,7 @@ svg.ico { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14e
 .char-new .plus { font-size: 40px; line-height: 1; }
 
 /* ---------- inventory item details ---------- */
-.gear-row { grid-template-columns: 22px 46px minmax(0, 1fr) 54px 22px 22px; cursor: pointer; }
+.gear-row { grid-template-columns: 22px minmax(0, 1fr) 46px 54px 22px 22px; cursor: pointer; }
 .gear-row.worn input { font-weight: 600; }
 .gear-row .grip { width: 22px; height: 22px; border-radius: 5px; background: var(--slot); color: var(--slot-ink); border: 1px solid var(--slot-border); }
 .gear-row .grip .gico { color: inherit; font-size: 14px; }

@@ -143,11 +143,10 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
             onDrop={(e) => { e.preventDefault(); setOver(''); const id = e.dataTransfer.getData('text/item'); if (id) equip(id, '') }}
           >
             <div className="gear-list">
-              <div className="gear-row head"><span /><span style={{ textAlign: 'center' }}>Qty</span><span>Item</span><span style={{ textAlign: 'right' }}>lb ea.</span><span /><span /></div>
+              <div className="gear-row head"><span /><span>Item</span><span style={{ textAlign: 'center' }}>Qty</span><span style={{ textAlign: 'right' }}>lb ea.</span><span /><span /></div>
               {list.map((it) => (
                 <div key={it.id} className={`gear-row ${it.id === sel ? 'sel' : ''} ${it.slot ? 'worn' : ''}`} onClick={() => set({ inventorySelected: it.id })}>
                   <span className={`grip ${rarityClass(it)}`} title="Drag to an equipment slot" {...drag(it)}><Icon name={itemIcon(it)} className="gico" /></span>
-                  <Num min={0} className="qty-in" value={it.qty} onChange={(n) => up(it.id, (x) => { x.qty = n })} />
                   <span className="row" style={{ gap: 6, minWidth: 0 }}>
                     <input value={it.name} placeholder="item" onChange={(e) => up(it.id, (x) => { x.name = e.target.value })} />
                     {it.weapon && <span className="itag" title="Weapon: listed under Weapons & Attacks">ATK</span>}
@@ -156,6 +155,7 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
                     {it.attunement && <span title={it.attuned ? 'Attuned' : 'Needs attunement'}>{it.attuned ? '✦' : '✧'}</span>}
                     {it.slot && <span className="itag worn-tag">{slotName(it.slot)}</span>}
                   </span>
+                  <Num min={0} className="qty-in" value={it.qty} onChange={(n) => up(it.id, (x) => { x.qty = n })} />
                   <Num min={0} className="lb-in" value={it.weight} onChange={(n) => up(it.id, (x) => { x.weight = n })} />
                   <button className="btn sm ghost" title="Details" onClick={(e) => { e.stopPropagation(); set({ inventorySelected: it.id }) }}>›</button>
                   <button className="btn sm ghost" title="Remove"
