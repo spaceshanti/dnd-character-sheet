@@ -2,22 +2,27 @@
 
 A desktop D&D character sheet (Electron + React). Opens as its own window, saves to a local file, works offline.
 
+## Install
+
+Run `release/Character-Sheet-Setup-<version>.exe` (built with `npm run dist`). It installs for your user only
+(no admin needed), adds Start menu and desktop shortcuts, and can be removed from Windows' Installed apps.
+Your characters are stored separately, so reinstalling or updating never touches them.
+
 ## Work on it (live reload)
 
 Double-click **`Launch Sheet.bat`** (or run `python launch.py`, or `npm run app:dev`).
 
 Opens the real app window; edits to `src/` appear when you save. Close the window to stop it.
 
-## Run it normally
+## Build
 
 ```
-npm install      # first time only
-npm run start    # builds, then opens the app window
+npm install          # first time only
+npm run dist         # installer  -> release/Character-Sheet-Setup-<version>.exe
+npm run dist:dir     # unpacked app -> release/win-unpacked/Character Sheet.exe
 ```
 
-`npm run dev` runs it in a browser tab for development (saves to browser storage instead, and wikidot fetching is unavailable).
-
-Packaging into a standalone `.exe` is set up (`npm run dist`) but intentionally not done yet. It needs Windows Developer Mode for the single-file version.
+Bump `version` in `package.json` before building an update; installing it over the old one keeps your data.
 
 ## Where your data is
 

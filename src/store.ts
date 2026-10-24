@@ -137,7 +137,8 @@ export const useStore = create<State>((set, get) => ({
 /* debounce-save everything whenever it changes (after the first load) */
 let timer: ReturnType<typeof setTimeout> | undefined
 useStore.subscribe((s, prev) => {
-  if (!s.loaded) return
+  // nothing to save for the load itself, only for changes after it (keeps the .bak a real previous version)
+  if (!s.loaded || !prev.loaded) return
   if (s.chars === prev.chars && s.order === prev.order && s.activeId === prev.activeId && s.theme === prev.theme && s.skin === prev.skin) return
   clearTimeout(timer)
   timer = setTimeout(async () => {

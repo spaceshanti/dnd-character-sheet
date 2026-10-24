@@ -2,8 +2,9 @@
   "name": "dnd-sheet",
   "productName": "Character Sheet",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Desktop D&D character sheet",
+  "author": "Santiago",
   "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
@@ -12,7 +13,8 @@
     "build": "tsc --noEmit && vite build",
     "start": "vite build && electron .",
     "launch": "electron .",
-    "dist": "vite build && electron-builder --win portable"
+    "dist": "tsc --noEmit && vite build && electron-builder --win nsis",
+    "dist:dir": "vite build && electron-builder --win dir"
   },
   "build": {
     "appId": "local.dnd.charsheet",
@@ -23,13 +25,25 @@
       "package.json"
     ],
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "win": {
-      "target": "portable"
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Character Sheet",
+      "artifactName": "Character-Sheet-Setup-${version}.${ext}",
+      "deleteAppDataOnUninstall": false
     }
   },
-  "dependencies": {
+  "devDependencies": {
     "@fontsource-variable/exo-2": "^5.3.0",
     "@fontsource-variable/josefin-sans": "^5.3.0",
     "@fontsource-variable/jost": "^5.3.0",
@@ -38,19 +52,17 @@
     "@fontsource/cormorant-garamond": "^5.3.0",
     "@fontsource/rajdhani": "^5.3.0",
     "@fontsource/share-tech-mono": "^5.3.0",
-    "immer": "^10.1.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "zustand": "^4.5.5"
-  },
-  "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "electron": "^33.4.11",
     "electron-builder": "^25.1.8",
+    "immer": "^10.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "typescript": "^5.5.4",
-    "vite": "^5.4.2"
+    "vite": "^5.4.2",
+    "zustand": "^4.5.5"
   }
 }
