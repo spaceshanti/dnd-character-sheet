@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ACTION_TYPES } from '../constants'
-import { newFeature } from '../blank'
+import { isConsumed, newFeature } from '../blank'
 import { findLib, applyLib } from '../spellLib'
 import { useChar, useStore, useUI } from '../store'
 import { Area, Drawer, EffectsEditor, Select, Switch, useToast, Toast } from './ui'
@@ -61,7 +61,7 @@ export function SpellDrawer({ id }: { id: string }) {
       if (r.school) x.school = r.school[0].toUpperCase() + r.school.slice(1)
       if (r.castingTime) x.castingTime = r.castingTime
       if (r.range) x.range = r.range
-      if (r.components) x.components = r.components
+      if (r.components) { x.components = r.components; x.materialConsumed = isConsumed(r.components) }
       if (r.duration) x.duration = r.duration
       x.concentration = !!r.concentration
       x.ritual = !!r.ritual
@@ -97,6 +97,7 @@ export function SpellDrawer({ id }: { id: string }) {
             {sp.school && <span className="tag alt">{sp.school}</span>}
             {sp.concentration && <span className="tag alt">Concentration</span>}
             {sp.ritual && <span className="tag alt">Ritual</span>}
+            {sp.materialConsumed && <span className="tag alt">Material consumed</span>}
             {sp.alwaysPrepared ? <span className="chip accent">Always prepared</span> : sp.prepared && <span className="chip accent">Prepared</span>}
           </div>
           <div className="kv">
@@ -178,10 +179,12 @@ export function SpellDrawer({ id }: { id: string }) {
             <input className="box-input" placeholder="Range" value={sp.range} onChange={(e) => up((x) => { x.range = e.target.value })} />
             <input className="box-input" placeholder="Duration" value={sp.duration} onChange={(e) => up((x) => { x.duration = e.target.value })} />
           </div>
-          <input className="box-input" placeholder="Components (V, S, M (a pinch of salt))" value={sp.components} onChange={(e) => up((x) => { x.components = e.target.value })} />
+          <input className="box-input" placeholder="Components (V, S, M (a pinch of salt))" value={sp.components}
+            onChange={(e) => up((x) => { x.components = e.target.value; if (isConsumed(e.target.value)) x.materialConsumed = true })} />
           <div className="row" style={{ flexWrap: 'wrap', gap: 16 }}>
             <label className="row small"><Switch on={sp.concentration} onChange={(b) => up((x) => { x.concentration = b })} /> Concentration</label>
             <label className="row small"><Switch on={sp.ritual} onChange={(b) => up((x) => { x.ritual = b })} /> Ritual</label>
+            <label className="row small"><Switch on={sp.materialConsumed} onChange={(b) => up((x) => { x.materialConsumed = b })} /> Material consumed</label>
             <label className="row small"><Switch on={sp.prepared} onChange={(b) => up((x) => { x.prepared = b })} /> Prepared</label>
             <label className="row small"><Switch on={sp.alwaysPrepared} onChange={(b) => up((x) => { x.alwaysPrepared = b })} /> Always prepared</label>
           </div>

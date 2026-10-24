@@ -1,10 +1,13 @@
 import { useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ALIGNMENTS, CONDITIONS } from '../constants'
 import { activeEffects, netAdvantage, signed, statInfo, type StatKey } from '../calc'
 import { uid } from '../blank'
-import { useChar, useStore, useUI, type PageId } from '../store'
+import { imageToDataUrl, useChar, useStore, useUI, type PageId } from '../store'
 import { Field, Num, Pips, Popover } from './ui'
 import { StatEditor } from './StatEditor'
+
+const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']
 
 const TABS: { id: PageId; name: string }[] = [
   { id: 'overview', name: 'Overview' },
@@ -41,54 +44,77 @@ export function TopBar() {
     patch((d) => { for (const r of d.resources) if (r.recharge === 'short') r.used = 0 })
   }
 
+  const lineStyle = { fontWeight: 600 }
   return (
     <header className="topbar">
-      <div className="banner">
-        <button className="portrait-btn" title="Characters & party" onClick={() => set({ rosterOpen: true })}
-          style={c.portrait ? { backgroundImage: `url("${c.portrait}")` } : undefined}>
-          {!c.portrait && '👤'}
-        </button>
-        <div className="name-banner">
-          <input value={c.name} placeholder="Character name" onChange={(e) => patch((d) => { d.name = e.target.value })} />
-          <label>Character Name</label>
-        </div>
-        <div className="details">
-          <Field label="Class" value={c.className} onChange={(v) => patch((d) => { d.className = v })} />
-          <Field label="Subclass" value={c.subclass} onChange={(v) => patch((d) => { d.subclass = v })} />
-          <Field label="Species / Race" value={c.species} onChange={(v) => patch((d) => { d.species = v })} />
-          <Field label="Background" value={c.background} onChange={(v) => patch((d) => { d.background = v })} />
-          <div className="field">
-            <div className="row" style={{ gap: 4 }}>
-              <Num min={1} max={20} width={44} className="line-input" style={{ fontWeight: 600, fontSize: 15 }} value={c.level} onChange={(n) => patch((d) => { d.level = n })} />
-              <input className="line-input" list="aligns" style={{ fontWeight: 600, fontSize: 15 }} value={c.alignment} placeholder="Alignment" onChange={(e) => patch((d) => { d.alignment = e.target.value })} />
-            </div>
-            <label>Level · Alignment</label>
+      <Portrait />
+      <div className="top-main">
+        <div className="banner">
+          <div className="name-banner">
+            <input value={c.name} placeholder="Character name" onChange={(e) => patch((d) => { d.name = e.target.value })} />
+            <label>Character Name</label>
           </div>
-          <div className="field">
-            <div className="row" style={{ gap: 4 }}>
-              <input className="line-input" style={{ fontWeight: 600, fontSize: 15 }} value={c.player} placeholder="Player" onChange={(e) => patch((d) => { d.player = e.target.value })} />
-              <input className="line-input" style={{ fontWeight: 600, fontSize: 15, width: 90 }} value={c.xp} placeholder="XP" onChange={(e) => patch((d) => { d.xp = e.target.value })} />
+          <div className="details">
+            <Field label="Class" value={c.className} onChange={(v) => patch((d) => { d.className = v })} />
+            <Field label="Subclass" value={c.subclass} onChange={(v) => patch((d) => { d.subclass = v })} />
+            <Field label="Species / Race" value={c.species} onChange={(v) => patch((d) => { d.species = v })} />
+            <div className="field">
+              <div className="row" style={{ gap: 4 }}>
+                <Num min={1} max={20} width={34} className="line-input" style={lineStyle} value={c.level} onChange={(n) => patch((d) => { d.level = n })} />
+                <input className="line-input" style={lineStyle} value={c.xp} placeholder="XP" onChange={(e) => patch((d) => { d.xp = e.target.value })} />
+              </div>
+              <label>Level · Experience</label>
             </div>
-            <label>Player · Experience</label>
+            <Field label="Background" value={c.background} onChange={(v) => patch((d) => { d.background = v })} />
+            <div className="field">
+              <input list="aligns" value={c.alignment} onChange={(e) => patch((d) => { d.alignment = e.target.value })} />
+              <label>Alignment</label>
+            </div>
+            <Field label="Player" value={c.player} onChange={(v) => patch((d) => { d.player = v })} />
+            <datalist id="aligns">{ALIGNMENTS.filter(Boolean).map((a) => <option key={a} value={a} />)}</datalist>
           </div>
-          <datalist id="aligns">{ALIGNMENTS.filter(Boolean).map((a) => <option key={a} value={a} />)}</datalist>
         </div>
+        <Vitals />
       </div>
-
-      <Vitals />
 
       <nav className="nav">
         {TABS.map((t) => (
           <button key={t.id} className={`tab ${page === t.id ? 'active' : ''}`} onClick={() => go(t.id)}>{t.name}</button>
         ))}
         <span className="spacer" />
-        <button className="btn sm" onClick={() => set({ inventoryOpen: true })}>🎒 Inventory</button>
         <button className="btn sm ghost" onClick={shortRest} title="Short rest">☾ Short rest</button>
         <button className="btn sm ghost" onClick={longRest} title="Long rest">☀ Long rest</button>
         <button className="btn sm ghost" onClick={() => set({ rosterOpen: true })}>👥 Characters</button>
         <button className="btn sm ghost" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Light / dark">◐</button>
       </nav>
     </header>
+  )
+}
+
+/** The character's image, always in the top-left corner. Click to view large; ✎ or drop a file to replace. */
+function Portrait() {
+  const c = useChar()
+  const patch = useStore((s) => s.patch)
+  const file = useRef<HTMLInputElement>(null)
+  const [big, setBig] = useState(false)
+  const replace = async (f?: File | null) => {
+    if (f && f.type.startsWith('image/')) {
+      const src = await imageToDataUrl(f)
+      patch((d) => { d.portrait = src })
+    }
+  }
+  return (
+    <div className="top-portrait"
+      style={c.portrait ? { backgroundImage: `url("${c.portrait}")` } : undefined}
+      title={c.portrait ? 'Click to enlarge · drop an image to replace' : 'Click to add an image'}
+      onClick={() => (c.portrait ? setBig(true) : file.current?.click())}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => { e.preventDefault(); replace(e.dataTransfer.files?.[0]) }}>
+      {!c.portrait && <span>＋<br />Image</span>}
+      {c.portrait && <button className="btn icon sm edit" title="Change image" onClick={(e) => { e.stopPropagation(); file.current?.click() }}>✎</button>}
+      <input ref={file} type="file" accept="image/*" hidden onChange={(e) => { replace(e.target.files?.[0]); e.target.value = '' }} />
+      {big && createPortal(<div className="lightbox" onClick={() => setBig(false)}><img src={c.portrait} /></div>, document.body)}
+    </div>
   )
 }
 
@@ -145,12 +171,20 @@ function Vitals() {
       </div>
       <div className="vbox" ref={(el) => (refs.current.speed = el)} onClick={() => setEdit(edit === 'speed' ? null : 'speed')}>
         <div className="l">Speed</div>
-        <div className="v">{spd.total}<span style={{ fontSize: 13 }}>ft</span></div>
+        <div className="v">{spd.total}<span style={{ fontSize: 11 }}>ft</span></div>
         <div className="sub">{addsText(spd)}</div>
+      </div>
+      <div className="vbox" style={{ cursor: 'default' }}>
+        <div className="l">Size</div>
+        <select className="size-select" value={c.size} onChange={(e) => patch((d) => { d.size = e.target.value })}>
+          {SIZES.includes(c.size) ? null : <option value={c.size}>{c.size}</option>}
+          {SIZES.map((x) => <option key={x}>{x}</option>)}
+        </select>
+        <div className="sub" />
       </div>
 
       <div className="vbox hp-box">
-        <div style={{ minWidth: 130 }}>
+        <div style={{ minWidth: 104 }}>
           <div className="l" style={{ textAlign: 'left' }}>Hit Points</div>
           <div className="big">
             <Num min={0} className="" value={c.hp.current} onChange={(n) => patch((d) => { d.hp.current = n })} />
@@ -163,7 +197,7 @@ function Vitals() {
         <div className="col" style={{ gap: 3, alignItems: 'stretch' }}>
           <div className="row" style={{ gap: 3 }}>
             <button className="btn sm" style={{ color: 'var(--dis)' }} onClick={() => apply(-1)} title="Take damage (uses temp HP first)">Dmg</button>
-            <input className="box-input" style={{ width: 52, textAlign: 'center' }} placeholder="±" value={amt}
+            <input className="box-input" style={{ width: 44, textAlign: 'center' }} placeholder="±" value={amt}
               onChange={(e) => setAmt(e.target.value.replace(/\D/g, ''))}
               onKeyDown={(e) => e.key === 'Enter' && apply(e.shiftKey ? 1 : -1)} />
             <button className="btn sm" style={{ color: 'var(--good)' }} onClick={() => apply(1)} title="Heal">Heal</button>
@@ -177,7 +211,7 @@ function Vitals() {
 
       <div className="vbox" ref={(el) => (refs.current.hd = el)} onClick={() => setHdOpen(!hdOpen)} title="Hit dice">
         <div className="l">Hit Dice</div>
-        <div className="v" style={{ fontSize: c.hitDice.length > 1 ? 18 : 24 }}>
+        <div className="v" style={{ fontSize: c.hitDice.length > 1 ? 14 : undefined }}>
           {c.hitDice.length === 0 ? '—' : c.hitDice.map((h) => `${h.total - h.spent}d${h.die}`).join(' + ')}
         </div>
         <div className="sub">{c.hitDice.length ? `${totalHd} left` : 'set up'}</div>
@@ -202,6 +236,11 @@ function Vitals() {
           {c.conditions.map((x) => <span key={x} className="chip accent">{x}</span>)}
         </div>
       </div>
+
+      <button className="inv-btn" onClick={() => useUI.getState().set({ inventoryOpen: true })} title="Open inventory (Ctrl+I)">
+        <span className="ico">🎒</span>
+        <span className="l">Inventory</span>
+      </button>
 
       {edit && <StatEditor statKey={edit} anchor={refs.current[edit]} onClose={() => setEdit(null)} />}
       {hdOpen && <HitDiceEditor anchor={refs.current.hd} onClose={() => setHdOpen(false)} />}

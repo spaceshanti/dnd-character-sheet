@@ -3,8 +3,8 @@ import { imageToDataUrl } from '../store'
 
 /** Click-to-upload image slot. Stores a downscaled data URL. */
 export function ImageBox({
-  src, onChange, ratio = '3 / 4', placeholder = 'Click to add art', contain = false,
-}: { src: string; onChange: (s: string) => void; ratio?: string; placeholder?: string; contain?: boolean }) {
+  src, onChange, ratio = '3 / 4', placeholder = 'Click to add art', contain = false, maxHeight,
+}: { src: string; onChange: (s: string) => void; ratio?: string; placeholder?: string; contain?: boolean; maxHeight?: number }) {
   const ref = useRef<HTMLInputElement>(null)
   return (
     <div style={{ position: 'relative' }}>
@@ -12,7 +12,7 @@ export function ImageBox({
         onClick={() => ref.current?.click()}
         title="Click to replace"
         style={{
-          aspectRatio: ratio, cursor: 'pointer', border: '1px solid var(--line)', background: src ? `#fff center/${contain ? 'contain' : 'cover'} no-repeat url("${src}")` : 'var(--panel2)',
+          aspectRatio: ratio, maxHeight, cursor: 'pointer', border: '1px solid var(--line)', background: src ? `#fff center/${contain ? 'contain' : 'cover'} no-repeat url("${src}")` : 'var(--panel2)',
           display: 'grid', placeItems: 'center', color: 'var(--muted)', fontSize: 13, textAlign: 'center', padding: 6,
         }}
         onDragOver={(e) => e.preventDefault()}

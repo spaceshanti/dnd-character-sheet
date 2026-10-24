@@ -1,5 +1,5 @@
 import raw from './data/spells.json'
-import { newSpell } from './blank'
+import { isConsumed, newSpell } from './blank'
 import type { Spell } from './types'
 
 export interface LibSpell {
@@ -51,6 +51,12 @@ export function fromLib(l: LibSpell): Spell {
 export function applyLib(sp: Spell, l: LibSpell): Spell {
   return {
     ...sp, name: l.n, level: l.l, school: l.s, castingTime: l.ct, range: l.r, components: l.c, duration: l.d,
-    concentration: l.co, ritual: l.ri, description: l.t,
+    concentration: l.co, ritual: l.ri, materialConsumed: isConsumed(l.c), description: l.t,
   }
+}
+
+/** Best library match for a typed name: 2024 text first, then 2014. */
+export function bestLib(name: string): LibSpell | undefined {
+  const m = findLib(name)
+  return m.find((x) => x.e === '2024') ?? m[0]
 }

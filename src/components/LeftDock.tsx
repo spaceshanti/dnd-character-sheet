@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ABILITIES, SKILLS } from '../constants'
 import {
   ability, activeEffects, inactiveEffects, netAdvantage, passivePerception, profBonus, save, signed, skill, type RollInfo,
@@ -43,7 +43,32 @@ export function LeftDock() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const open = useUI((s) => s.dockOpen)
+  const pinned = useUI((s) => s.dockPinned)
   const set = useUI((s) => s.set)
+  const dockRef = useRef<HTMLElement>(null)
+  const edgeRef = useRef<HTMLButtonElement>(null)
+  const shown = open || pinned
+
+  // quick-access mode: click anywhere else (or Esc) to tuck it away again
+  useEffect(() => {
+    if (!open || pinned) return
+    const down = (e: MouseEvent) => {
+      const t = e.target as Node
+      if (dockRef.current?.contains(t) || edgeRef.current?.contains(t)) return
+      if ((t as HTMLElement).closest?.('.popover, .drawer, .backdrop')) return
+      set({ dockOpen: false })
+    }
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && set({ dockOpen: false })
+    document.addEventListener('mousedown', down)
+    document.addEventListener('keydown', key)
+    return () => { document.removeEventListener('mousedown', down); document.removeEventListener('keydown', key) }
+  }, [open, pinned, set])
+
+  const togglePin = () => {
+    const next = !pinned
+    try { localStorage.setItem('dock-pinned', next ? '1' : '0') } catch { /* private mode */ }
+    set({ dockPinned: next, dockOpen: next })
+  }
   const [expanded, setExpanded] = useState<string>('')
   const fx = activeEffects(c)
   const off = inactiveEffects(c)
@@ -66,7 +91,12 @@ export function LeftDock() {
 
   return (
     <>
-      <aside className={`dock ${open ? '' : 'closed'}`}>
+      <button ref={edgeRef} className={`dock-edge ${shown ? 'on' : ''}`}
+        title={shown ? 'Hide abilities & skills' : 'Show abilities & skills'}
+        onClick={() => (pinned ? togglePin() : set({ dockOpen: !open }))}>
+        <span>{shown ? '‹' : '›'} Abilities · Saves · Skills</span>
+      </button>
+      <aside ref={dockRef} className={`dock ${shown ? 'open' : ''} ${pinned ? 'pinned' : ''}`}>
         <div className="prof-row">
           <div className="pill" title="Proficiency bonus is worked out from your level. Override it in Settings.">
             <div className="num">{signed(pb)}</div><div className="t">Proficiency<br />Bonus</div>
@@ -142,14 +172,13 @@ export function LeftDock() {
           </div>
           <span className="caps">Passive Wisdom (Perception)</span>
         </div>
+        <div className="row" style={{ marginTop: 10 }}>
+          <button className={`btn sm ${pinned ? 'primary' : ''}`} onClick={togglePin} title="Keep this panel open beside the page">📌 {pinned ? 'Pinned' : 'Pin open'}</button>
+        </div>
         <div className="muted small" style={{ marginTop: 8 }}>
           Click a row to see what's affecting it. Click a circle to cycle proficiency / expertise. A <span style={{ color: 'var(--accent)' }}>●</span> means a feature or item is changing that roll.
         </div>
       </aside>
-      <button className="dock-toggle" style={{ left: open ? 334 : 0, transition: 'left .2s' }} title={open ? 'Hide abilities' : 'Show abilities'}
-        onClick={() => set({ dockOpen: !open })}>
-        {open ? '‹' : '›'}
-      </button>
     </>
   )
 }

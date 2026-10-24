@@ -29,10 +29,6 @@ export function SettingsPage() {
             <span className="grow">Carrying capacity = STR score ×</span>
             <Num min={1} className="box-input" width={54} value={c.carryMultiplier} onChange={(n) => patch((d) => { d.carryMultiplier = n })} />
           </div>
-          <div className="row">
-            <span className="grow">Size</span>
-            <input className="box-input" style={{ width: 120 }} value={c.size} onChange={(e) => patch((d) => { d.size = e.target.value })} />
-          </div>
         </div>
       </Frame>
 

@@ -13,7 +13,7 @@ export function newMod(): Mod {
 export function newSpell(level = 1, name = ''): Spell {
   return {
     id: uid(), name, level, prepared: false, alwaysPrepared: false, school: '', castingTime: '1 action',
-    range: '', components: '', duration: '', concentration: false, ritual: false, description: '', url: '',
+    range: '', components: '', duration: '', concentration: false, ritual: false, materialConsumed: false, description: '', url: '',
     notes: '', effects: [], active: false,
   }
 }
@@ -86,5 +86,17 @@ export function normalize(raw: Partial<Character>): Character {
   c.proficiencies = { ...b.proficiencies, ...raw.proficiencies }
   c.story = { ...b.story, ...raw.story }
   c.slots = { ...b.slots, ...raw.slots }
+  // the three personality boxes became one
+  if (c.story.trait2 || c.story.trait3) {
+    c.story.trait1 = [c.story.trait1, c.story.trait2, c.story.trait3].filter((t) => t.trim()).join('\n\n')
+    c.story.trait2 = ''
+    c.story.trait3 = ''
+  }
+  c.spells = c.spells.map((s) => ({ ...s, materialConsumed: s.materialConsumed ?? isConsumed(s.components) }))
   return c
+}
+
+/** Material components that are used up or have a gold cost. */
+export function isConsumed(components: string): boolean {
+  return /consume|worth at least|\d+\s*\+?\s*gp/i.test(components || '')
 }

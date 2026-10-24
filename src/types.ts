@@ -51,6 +51,8 @@ export interface Spell {
   duration: string
   concentration: boolean
   ritual: boolean
+  /** material component is consumed (or has a cost) */
+  materialConsumed: boolean
   description: string
   url: string
   notes: string
@@ -180,7 +182,9 @@ export interface Character {
   proficiencies: { weapons: string; armor: string; tools: string; languages: string }
   story: {
     backstory: string
+    /** personality traits (one box) */
     trait1: string
+    /** legacy — merged into trait1 on load */
     trait2: string
     trait3: string
     ideals: string

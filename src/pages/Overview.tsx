@@ -4,7 +4,6 @@ import { attackInfo, itemIsActive, signed } from '../calc'
 import { newAttack, newResource } from '../blank'
 import { useChar, useStore, useUI } from '../store'
 import { Area, Frame, Num, Pips, Select, Switch } from '../components/ui'
-import { ImageBox } from '../components/ImageBox'
 import type { Attack, Effect, Recharge } from '../types'
 
 const effectText = (e: Effect) =>
@@ -17,9 +16,6 @@ export function Overview() {
   return (
     <div className="grid" style={{ gridTemplateColumns: '230px minmax(0,1.5fr) minmax(0,1fr)', alignItems: 'start' }}>
       <div className="col">
-        <Frame title="Character Art" tight>
-          <ImageBox src={c.portrait} onChange={(s) => patch((d) => { d.portrait = s })} contain placeholder="Click or drop an image" />
-        </Frame>
         <Frame title="Proficiencies & Languages" tight>
           {(['weapons', 'armor', 'tools', 'languages'] as const).map((k) => (
             <div key={k} style={{ marginBottom: 6 }}>
