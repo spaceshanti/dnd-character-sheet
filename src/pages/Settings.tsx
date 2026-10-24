@@ -49,6 +49,10 @@ export function SettingsPage() {
         </div>
       </Frame>
 
+      <Frame title="Shortcuts">
+        <ShortcutList />
+      </Frame>
+
       <Frame title="How linking works">
         <div className="prose" style={{ fontSize: 13.5 }}>
           {`Features, items and spells can each be linked to the things they change — a skill, a saving throw, AC, speed, initiative, an ability score and more.
@@ -60,6 +64,67 @@ export function SettingsPage() {
 • AC, Speed, Initiative and Max HP also have their own add-on list: click them in the top bar.`}
         </div>
       </Frame>
+    </div>
+  )
+}
+
+const SHORTCUTS: { group: string; items: [string, string][] }[] = [
+  {
+    group: 'Keyboard',
+    items: [
+      ['Ctrl + I', 'Open / close the inventory (when not typing in a box)'],
+      ['Esc', 'Close the open window, side panel, popup or the abilities panel'],
+      ['Enter', 'In the HP box: apply damage'],
+      ['Shift + Enter', 'In the HP box: heal instead'],
+      ['Enter', 'On an empty spell line: add the spell and start the next one'],
+      ['Enter', 'In a number box: confirm the value'],
+      ['Enter', 'In the conditions popup: add a custom condition'],
+    ],
+  },
+  {
+    group: 'Mouse',
+    items: [
+      ['Click left edge strip', 'Open / close abilities, saves & skills'],
+      ['Click AC / Speed / Initiative', 'Edit the base value and add-on bonuses'],
+      ['Click max HP ( / 25 )', 'Edit max HP and its bonuses'],
+      ['Click a skill or save', 'Show what is affecting it'],
+      ['Click a proficiency circle', 'Cycle none → proficient → expertise'],
+      ['Click an ability modifier', 'Show how the score is built'],
+      ['Click a pip', 'Filled = available. Click to spend, click an empty one to regain'],
+      ['Click top-left image', 'View it full size (✎ to replace)'],
+      ['Click a spell circle', 'Prepare / unprepare'],
+    ],
+  },
+  {
+    group: 'Drag & drop',
+    items: [
+      ['Item → equipment slot', 'Equip it (swaps out whatever was there)'],
+      ['Equipped item → backpack', 'Unequip it'],
+      ['Image file → top-left image', 'Replace the portrait'],
+      ['Image files → Gallery page', 'Add them to the gallery'],
+      ['Image file → any image box', 'Set that image (appearance, emblem)'],
+    ],
+  },
+]
+
+function ShortcutList() {
+  return (
+    <div className="col" style={{ gap: 10 }}>
+      {SHORTCUTS.map((g) => (
+        <div key={g.group}>
+          <div className="field-lbl" style={{ marginBottom: 3 }}>{g.group}</div>
+          <table className="t">
+            <tbody>
+              {g.items.map(([k, v], i) => (
+                <tr key={i}>
+                  <td style={{ width: '42%' }}><kbd className="kbd">{k}</kbd></td>
+                  <td>{v}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ))}
     </div>
   )
 }
