@@ -93,7 +93,7 @@ export function TopBar() {
         <span className="spacer" />
         <button className="btn sm ghost" onClick={shortRest} title="Short rest">☾ Short rest</button>
         <button className="btn sm ghost" onClick={longRest} title="Long rest">☀ Long rest</button>
-        <button className="btn sm ghost" onClick={() => set({ rosterOpen: true })}>👥 Characters</button>
+        <button className="btn sm ghost" onClick={() => set({ charListOpen: true })}>👥 Characters</button>
         <button className="btn sm ghost" onClick={() => set({ themeOpen: true })} title="UI style (Ctrl + T)">◐</button>
       </nav>
     </header>

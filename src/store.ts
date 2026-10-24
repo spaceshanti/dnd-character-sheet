@@ -67,17 +67,15 @@ export const useStore = create<State>((set, get) => ({
     try {
       const raw = await readStore()
       if (raw) data = JSON.parse(raw)
-    } catch { /* corrupt → start fresh (a .bak exists beside the file) */ }
+    } catch { /* unreadable: the desktop app already falls back to the .bak copy */ }
     const chars: Record<string, Character> = {}
-    for (const [id, c] of Object.entries(data?.chars ?? {})) chars[id] = normalize(c)
-    let order = (data?.order ?? []).filter((id) => chars[id])
-    for (const id of Object.keys(chars)) if (!order.includes(id)) order.push(id)
-    if (!order.length) {
-      const c = blankCharacter('New Character')
-      chars[c.id] = c
-      order = [c.id]
+    for (const [id, c] of Object.entries(data?.chars ?? {})) {
+      try { if (c && typeof c === 'object') chars[id] = normalize({ ...c, id }) } catch { /* skip a broken character */ }
     }
-    const activeId = data?.activeId && chars[data.activeId] ? data.activeId : order[0]
+    const order = (data?.order ?? []).filter((id) => chars[id])
+    for (const id of Object.keys(chars)) if (!order.includes(id)) order.push(id)
+    // no character, or the last one opened is gone → the character list is shown instead
+    const activeId = data?.activeId && chars[data.activeId] ? data.activeId : ''
     const skin = (SKINS.find((k) => k.id === data?.skin)?.id ?? 'standard') as SkinId
     set({ chars, order, activeId, theme: data?.theme === 'dark' ? 'dark' : 'light', skin, loaded: true })
   },
@@ -111,13 +109,8 @@ export const useStore = create<State>((set, get) => ({
     set((s) => {
       const chars = { ...s.chars }
       delete chars[id]
-      let order = s.order.filter((x) => x !== id)
-      if (!order.length) {
-        const c = blankCharacter()
-        chars[c.id] = c
-        order = [c.id]
-      }
-      return { chars, order, activeId: s.activeId === id ? order[0] : s.activeId }
+      const order = s.order.filter((x) => x !== id)
+      return { chars, order, activeId: s.activeId === id ? '' : s.activeId }
     })
   },
 
@@ -176,7 +169,8 @@ interface UIState {
   dockOpen: boolean
   inventoryOpen: boolean
   inventorySelected: string
-  rosterOpen: boolean
+  /** the character list screen, opened from inside a character */
+  charListOpen: boolean
   themeOpen: boolean
   drawer: Drawer
   go: (p: PageId) => void
@@ -189,7 +183,7 @@ function readOpen() {
 }
 
 export const useUI = create<UIState>((set) => ({
-  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', rosterOpen: false, themeOpen: false, drawer: null,
+  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', charListOpen: false, themeOpen: false, drawer: null,
   go: (page) => set({ page }),
   toggleDock: () => set((s) => {
     try { localStorage.setItem('dock-open', s.dockOpen ? '0' : '1') } catch { /* private mode */ }

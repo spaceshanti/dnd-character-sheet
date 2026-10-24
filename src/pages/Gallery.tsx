@@ -23,7 +23,7 @@ export function GalleryPage() {
       onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files) }}>
       <div className="row">
         <button className="btn primary" onClick={() => file.current?.click()}>＋ Add art</button>
-        <button className="btn" onClick={() => set({ rosterOpen: true })}>👥 Party gallery</button>
+        <button className="btn" onClick={() => set({ charListOpen: true })}>👥 All characters</button>
         <span className="muted small">You can also drop image files anywhere on this page.</span>
         <input ref={file} type="file" accept="image/*" multiple hidden onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = '' }} />
       </div>

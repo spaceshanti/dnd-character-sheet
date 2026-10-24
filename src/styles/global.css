@@ -477,3 +477,26 @@ svg.ico { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14e
 .gear-add { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 6px; align-items: center; min-height: 28px; border-bottom: 1px dashed var(--line); padding: 0 2px; }
 .gear-add input { padding: 3px; }
 .inv-drop { outline: 2px dashed var(--accent); outline-offset: 4px; border-radius: 6px; }
+
+/* ---------- character list (start screen) ---------- */
+.charlist { height: 100%; overflow-y: auto; padding: 22px 32px 40px; }
+.charlist-head { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid var(--ink); }
+.charlist-head h1 { font-size: 26px; letter-spacing: 0.08em; }
+.charlist-empty { text-align: center; padding: 18px 0 8px; }
+.charlist-empty h2 { font-size: 18px; margin-bottom: 4px; }
+.charlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; align-items: start; }
+.char-card > .frame-in { display: flex; flex-direction: column; gap: 2px; }
+.char-card.current { outline: 2px solid var(--accent); outline-offset: 3px; }
+.char-portrait {
+  aspect-ratio: 1; width: 100%; border: 1px solid var(--line); background: var(--panel2) center / cover no-repeat; padding: 0;
+  display: grid; place-items: center; margin-bottom: 8px; cursor: pointer;
+}
+.char-portrait span { font-family: var(--font-head); font-size: 54px; color: var(--muted); }
+.char-portrait:hover { filter: brightness(1.06); }
+.char-name { font-family: var(--font-head); font-weight: 700; font-size: 16px; }
+.char-new {
+  align-self: stretch; min-height: 220px; border: 2px dashed var(--line); background: transparent; color: var(--ink2); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px; border-radius: 10px;
+}
+.char-new:hover { border-color: var(--accent); color: var(--ink); background: var(--accent-soft); }
+.char-new .plus { font-size: 40px; line-height: 1; }

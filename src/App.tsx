@@ -3,7 +3,7 @@ import { useStore, useUI } from './store'
 import { TopBar } from './components/TopBar'
 import { LeftDock } from './components/LeftDock'
 import { Inventory } from './components/Inventory'
-import { Roster } from './components/Roster'
+import { CharacterList } from './pages/CharacterList'
 import { DrawerHost } from './components/Drawers'
 import { ThemeMenu } from './components/SkinPicker'
 import { Overview } from './pages/Overview'
@@ -21,6 +21,8 @@ export default function App() {
   const skin = useStore((s) => s.skin)
   const activeId = useStore((s) => s.activeId)
   const page = useUI((s) => s.page)
+  const listOpen = useUI((s) => s.charListOpen)
+  const hasChar = useStore((s) => !!s.chars[s.activeId])
 
   useEffect(() => { load() }, [load])
   useEffect(() => { document.documentElement.dataset.theme = theme }, [theme])
@@ -54,6 +56,12 @@ export default function App() {
   }, [])
 
   if (!loaded) return null
+  if (!hasChar || listOpen) return (
+    <>
+      <CharacterList />
+      <ThemeMenu />
+    </>
+  )
   return (
     <div className="app" key={activeId}>
       <TopBar />
@@ -70,7 +78,6 @@ export default function App() {
         </main>
       </div>
       <Inventory />
-      <Roster />
       <ThemeMenu />
       <DrawerHost />
     </div>

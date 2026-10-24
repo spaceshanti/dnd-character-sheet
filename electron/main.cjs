@@ -31,18 +31,29 @@ function createWindow() {
 
 /* ---------- storage: a single JSON file in the user data folder ---------- */
 ipcMain.handle('store:load', () => {
-  try {
-    return fs.readFileSync(dataFile(), 'utf8')
-  } catch {
-    return null
+  const f = dataFile()
+  if (!fs.existsSync(f)) return null
+  for (const p of [f, f + '.bak']) {
+    try {
+      const txt = fs.readFileSync(p, 'utf8')
+      JSON.parse(txt)
+      return txt
+    } catch { /* try the next one */ }
   }
+  return null
 })
 ipcMain.handle('store:save', (_e, json) => {
   const f = dataFile()
   fs.mkdirSync(path.dirname(f), { recursive: true })
   const tmp = f + '.tmp'
   fs.writeFileSync(tmp, json, 'utf8')
-  if (fs.existsSync(f)) fs.copyFileSync(f, f + '.bak')
+  if (fs.existsSync(f)) {
+    // only rotate a readable file into .bak; keep an unreadable one aside instead of losing the good backup
+    let readable = true
+    try { JSON.parse(fs.readFileSync(f, 'utf8')) } catch { readable = false }
+    if (readable) fs.copyFileSync(f, f + '.bak')
+    else fs.copyFileSync(f, f.replace(/\.json$/, `.unreadable-${Date.now()}.json`))
+  }
   fs.renameSync(tmp, f)
   return true
 })
