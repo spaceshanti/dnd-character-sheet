@@ -1,0 +1,90 @@
+import { SKILLS } from './constants'
+import type { Attack, Character, Effect, Feature, Item, Mod, Resource, Spell } from './types'
+
+export const uid = () =>
+  (globalThis.crypto && 'randomUUID' in globalThis.crypto ? globalThis.crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36))
+
+export function newEffect(): Effect {
+  return { id: uid(), target: 'skill:all', type: 'advantage' }
+}
+export function newMod(): Mod {
+  return { id: uid(), name: '', value: 0, on: true }
+}
+export function newSpell(level = 1, name = ''): Spell {
+  return {
+    id: uid(), name, level, prepared: false, alwaysPrepared: false, school: '', castingTime: '1 action',
+    range: '', components: '', duration: '', concentration: false, ritual: false, description: '', url: '',
+    notes: '', effects: [], active: false,
+  }
+}
+export function newFeature(category: Feature['category'] = 'class'): Feature {
+  return { id: uid(), name: '', category, source: '', description: '', actionType: 'none', effects: [], active: true }
+}
+export function newItem(): Item {
+  return {
+    id: uid(), name: '', icon: '📦', category: 'Misc', qty: 1, weight: 0, value: '', rarity: 'common',
+    description: '', slot: '', attunement: false, attuned: false, actionType: 'none', effects: [],
+  }
+}
+export function newAttack(): Attack {
+  return {
+    id: uid(), name: '', ability: 'str', proficient: true, magicBonus: 0, damage: '1d6', damageType: '',
+    addMod: true, range: '', notes: '',
+  }
+}
+export function newResource(): Resource {
+  return { id: uid(), name: '', max: 2, used: 0, recharge: 'long' }
+}
+
+export function blankCharacter(name = 'New Character'): Character {
+  const skillProf = Object.fromEntries(SKILLS.map((s) => [s.key, 0])) as Character['skillProf']
+  const slots: Character['slots'] = {}
+  for (let i = 1; i <= 9; i++) slots[i] = { total: 0, used: 0 }
+  return {
+    id: uid(), name, className: '', subclass: '', level: 1, species: '', background: '', alignment: '',
+    player: '', xp: '', portrait: '', emblem: '',
+    appearance: { age: '', height: '', weight: '', eyes: '', skin: '', hair: '' },
+    abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+    saveProf: { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 },
+    skillProf, halfProfAll: false, profOverride: null,
+    hp: { current: 10, temp: 0 },
+    hpMax: { base: 10, mods: [] },
+    hitDice: [],
+    deathSaves: { successes: 0, failures: 0 },
+    inspiration: false,
+    ac: { base: 10, mods: [], mode: 'unarmored' },
+    speed: { base: 30, mods: [] },
+    initiative: { base: 0, mods: [] },
+    size: 'Medium', conditions: [],
+    spellAbility: '', slots, spells: [],
+    features: [], items: [], attacks: [], resources: [],
+    coins: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 }, carryMultiplier: 15,
+    proficiencies: { weapons: '', armor: '', tools: '', languages: '' },
+    story: {
+      backstory: '', trait1: '', trait2: '', trait3: '', ideals: '', bonds: '', flaws: '', allies: '',
+      alliesTitle: 'Allies & Organizations', roleplay: '', expression: '',
+    },
+    extraNotes: [], battleState: '', gallery: [], updatedAt: Date.now(),
+  }
+}
+
+/** Fill any fields missing from an older / hand-edited save so the UI never sees undefined. */
+export function normalize(raw: Partial<Character>): Character {
+  const b = blankCharacter()
+  const c = { ...b, ...raw } as Character
+  c.appearance = { ...b.appearance, ...raw.appearance }
+  c.abilities = { ...b.abilities, ...raw.abilities }
+  c.saveProf = { ...b.saveProf, ...raw.saveProf }
+  c.skillProf = { ...b.skillProf, ...raw.skillProf }
+  c.hp = { ...b.hp, ...raw.hp }
+  c.hpMax = { ...b.hpMax, ...raw.hpMax }
+  c.ac = { ...b.ac, ...raw.ac }
+  c.speed = { ...b.speed, ...raw.speed }
+  c.initiative = { ...b.initiative, ...raw.initiative }
+  c.deathSaves = { ...b.deathSaves, ...raw.deathSaves }
+  c.coins = { ...b.coins, ...raw.coins }
+  c.proficiencies = { ...b.proficiencies, ...raw.proficiencies }
+  c.story = { ...b.story, ...raw.story }
+  c.slots = { ...b.slots, ...raw.slots }
+  return c
+}
