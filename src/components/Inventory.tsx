@@ -1,13 +1,15 @@
-import { useState } from 'react'
-import { ACTION_TYPES, ITEM_CATEGORIES, RARITIES, SLOT_IDS } from '../constants'
-import { carryCapacity, totalWeight } from '../calc'
+import { useState, type ReactNode } from 'react'
+import { ABILITIES, ACTION_TYPES, ITEM_CATEGORIES, RARITIES, SLOT_IDS } from '../constants'
+import { attackInfo, carryCapacity, itemAttacks, signed, totalWeight } from '../calc'
 import { newItem } from '../blank'
+import { lookupArmor, lookupWeapon } from '../data/gear'
 import { useChar, useStore, useUI } from '../store'
 import { Area, EffectsEditor, Modal, Num, Select, Switch } from './ui'
-import { guessIcon, Icon, ICONS, itemIcon } from './Icon'
-import type { Item } from '../types'
+import { Icon, ICONS, itemIcon } from './Icon'
+import type { ArmorStats, Item, WeaponStats } from '../types'
 
-const rarityClass = (i: Item) => (i.magic ? `r-${i.rarity.replace(' ', '-')}` : 'r-common')
+const rarityClass = (i: Item) => `r-${i.rarity.replace(' ', '-')}`
+const slotName = (id: string) => SLOT_IDS.find((s) => s.id === id)?.name ?? ''
 const slotOptions = [{ id: '', name: 'Not equipped' }, ...SLOT_IDS.map((s) => ({ id: s.id, name: s.name + (s.id.startsWith('ring') ? ` (${s.id.slice(-1)})` : '') }))]
 
 export function Inventory() {
@@ -17,7 +19,7 @@ export function Inventory() {
   return <InventoryInner onClose={() => set({ inventoryOpen: false })} />
 }
 
-/** "16 rations" / "rations x16" → { qty: 16, name: 'rations' } */
+/** "16 rations" / "rations x16" / "Torches (9)" → { qty, name } */
 function parseGear(text: string): { qty: number; name: string } {
   const t = text.trim()
   let m = t.match(/^(\d+)\s*[x×]?\s+(.+)$/i)
@@ -25,6 +27,14 @@ function parseGear(text: string): { qty: number; name: string } {
   m = t.match(/^(.+?)\s*(?:[x×]\s*(\d+)|\((\d+)\))$/i)
   if (m) return { qty: +(m[2] ?? m[3]), name: m[1] }
   return { qty: 1, name: t }
+}
+
+/** A new item from a typed line, pre-filled with standard weapon / armor stats when the name matches. */
+function itemFromText(text: string): Item {
+  const { qty, name } = parseGear(text)
+  const weapon = lookupWeapon(name)
+  const armor = weapon ? null : lookupArmor(name)
+  return { ...newItem(), name, qty, weapon, armor, category: weapon ? 'Weapon' : armor ? 'Armor' : 'Misc' }
 }
 
 function InventoryInner({ onClose }: { onClose: () => void }) {
@@ -41,10 +51,7 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
   const ratio = w / Math.max(1, cap)
   const attuned = c.items.filter((i) => i.attunement && i.attuned).length
   const selected = c.items.find((i) => i.id === sel)
-  const match = (i: Item) => !q || i.name.toLowerCase().includes(q.toLowerCase())
-  const magic = c.items.filter((i) => i.magic && !i.slot && match(i))
-  const gear = c.items.filter((i) => !i.magic && !i.slot && match(i))
-  const cells = Math.max(12, Math.ceil((magic.length + 1) / 6) * 6)
+  const list = c.items.filter((i) => !q || i.name.toLowerCase().includes(q.toLowerCase()))
 
   const equip = (itemId: string, slot: string) =>
     patch((d) => {
@@ -58,27 +65,16 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
     })
   const up = (id: string, fn: (i: Item) => void) => patch((d) => { const x = d.items.find((y) => y.id === id); if (x) fn(x) })
 
-  const addGear = () => {
+  const add = () => {
     if (!draft.trim()) return
-    const { qty, name } = parseGear(draft)
-    const it = { ...newItem(false), name, qty }
+    const it = itemFromText(draft)
     patch((d) => { d.items.push(it) })
     setDraft('')
-  }
-  const addMagic = () => {
-    const it = newItem(true)
-    patch((d) => { d.items.push(it) })
-    set({ inventorySelected: it.id })
   }
 
   const drag = (i: Item) => ({
     draggable: true,
     onDragStart: (e: React.DragEvent) => { e.dataTransfer.setData('text/item', i.id); e.dataTransfer.effectAllowed = 'move' },
-  })
-  const unequipDrop = (zone: string) => ({
-    onDragOver: (e: React.DragEvent) => { e.preventDefault(); setOver(zone) },
-    onDragLeave: () => setOver(''),
-    onDrop: (e: React.DragEvent) => { e.preventDefault(); setOver(''); const id = e.dataTransfer.getData('text/item'); if (id) equip(id, '') },
   })
 
   return (
@@ -129,54 +125,44 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
               )
             })}
           </div>
-          <div className="muted small" style={{ marginTop: 8 }}>Drag any item here to equip it. Equipped magic items apply their linked bonuses.</div>
+          <div className="muted small" style={{ marginTop: 8 }}>Drag items here from the list to equip them. Worn armor and shields count toward AC.</div>
         </div>
 
-        {/* backpack */}
+        {/* the list: every item, added by typing a line */}
         <div className="col" style={{ minWidth: 0, gap: 12 }}>
-          <div className={over === 'magic' ? 'inv-drop' : ''} {...unequipDrop('magic')}>
-            <div className="inv-sec-head">
-              <span className="field-lbl">Magic items</span>
-              <button className="btn primary sm" onClick={addMagic}>＋ Magic item</button>
-            </div>
-            <div className="magic-grid">
-              {Array.from({ length: cells }, (_, n) => {
-                const it = magic[n]
-                return it ? (
-                  <div key={it.id} className={`tile ${rarityClass(it)} ${it.id === sel ? 'sel' : ''}`} title={it.name}
-                    onClick={() => set({ inventorySelected: it.id })} {...drag(it)}>
-                    <Icon name={itemIcon(it)} />
-                    {it.qty > 1 && <span className="qty">{it.qty}</span>}
-                    {it.attunement && <span className="att">{it.attuned ? '✦' : '✧'}</span>}
-                    <span className="cap">{it.name || 'Unnamed'}</span>
-                  </div>
-                ) : <div key={'e' + n} className="tile empty-slot" />
-              })}
-            </div>
-          </div>
-
-          <div className={over === 'gear' ? 'inv-drop' : ''} {...unequipDrop('gear')}>
-            <div className="inv-sec-head"><span className="field-lbl">Equipment & gear</span></div>
+          <div
+            className={over === 'list' ? 'inv-drop' : ''}
+            onDragOver={(e) => { e.preventDefault(); setOver('list') }}
+            onDragLeave={() => setOver('')}
+            onDrop={(e) => { e.preventDefault(); setOver(''); const id = e.dataTransfer.getData('text/item'); if (id) equip(id, '') }}
+          >
             <div className="gear-list">
               <div className="gear-row head"><span /><span style={{ textAlign: 'center' }}>Qty</span><span>Item</span><span style={{ textAlign: 'right' }}>lb ea.</span><span /><span /></div>
-              {gear.map((it) => (
-                <div key={it.id} className={`gear-row ${it.id === sel ? 'sel' : ''}`} onClick={() => set({ inventorySelected: it.id })}>
-                  <span className="grip" title="Drag to equip" {...drag(it)}><Icon name={itemIcon(it)} className="gico" /></span>
+              {list.map((it) => (
+                <div key={it.id} className={`gear-row ${it.id === sel ? 'sel' : ''} ${it.slot ? 'worn' : ''}`} onClick={() => set({ inventorySelected: it.id })}>
+                  <span className={`grip ${rarityClass(it)}`} title="Drag to an equipment slot" {...drag(it)}><Icon name={itemIcon(it)} className="gico" /></span>
                   <Num min={0} className="qty-in" value={it.qty} onChange={(n) => up(it.id, (x) => { x.qty = n })} />
-                  <input value={it.name} placeholder="item" onChange={(e) => up(it.id, (x) => { x.name = e.target.value })} />
+                  <span className="row" style={{ gap: 6, minWidth: 0 }}>
+                    <input value={it.name} placeholder="item" onChange={(e) => up(it.id, (x) => { x.name = e.target.value })} />
+                    {it.weapon && <span className="itag" title="Weapon: listed under Weapons & Attacks">ATK</span>}
+                    {it.armor && <span className="itag" title={it.armor.kind === 'shield' ? 'Shield' : 'Armor'}>{it.armor.kind === 'shield' ? `+${it.armor.ac + it.armor.bonus}` : it.armor.ac + it.armor.bonus} AC</span>}
+                    {it.rarity !== 'common' && <span className={`rdot ${rarityClass(it)}`} title={it.rarity} />}
+                    {it.attunement && <span title={it.attuned ? 'Attuned' : 'Needs attunement'}>{it.attuned ? '✦' : '✧'}</span>}
+                    {it.slot && <span className="itag worn-tag">{slotName(it.slot)}</span>}
+                  </span>
                   <Num min={0} className="lb-in" value={it.weight} onChange={(n) => up(it.id, (x) => { x.weight = n })} />
-                  <button className="btn sm ghost" title="Turn into a magic item (rarity, attunement, effects…)"
-                    onClick={(e) => { e.stopPropagation(); up(it.id, (x) => { x.magic = true; if (x.icon === 'box') x.icon = guessIcon(x.name) }); set({ inventorySelected: it.id }) }}>✦</button>
+                  <button className="btn sm ghost" title="Details" onClick={(e) => { e.stopPropagation(); set({ inventorySelected: it.id }) }}>›</button>
                   <button className="btn sm ghost" title="Remove"
-                    onClick={(e) => { e.stopPropagation(); patch((d) => { d.items = d.items.filter((y) => y.id !== it.id) }) }}>✕</button>
+                    onClick={(e) => { e.stopPropagation(); if (sel === it.id) set({ inventorySelected: '' }); patch((d) => { d.items = d.items.filter((y) => y.id !== it.id) }) }}>✕</button>
                 </div>
               ))}
               <div className="gear-add">
                 <span className="muted">＋</span>
-                <input value={draft} placeholder="Add gear and press Enter, e.g. “16 rations” or “Torch x9”"
-                  onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addGear()} />
+                <input value={draft} placeholder="Type an item and press Enter, e.g. “Longsword”, “Chain Mail”, “16 rations”"
+                  onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} />
               </div>
             </div>
+            <div className="muted small" style={{ marginTop: 6 }}>Standard weapons and armor fill in their stats automatically. Click a line to add more detail.</div>
           </div>
 
           <div className="row" style={{ flexWrap: 'wrap' }}>
@@ -190,112 +176,144 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {/* detail */}
+        {/* details */}
         <div>
-          {selected
-            ? selected.magic ? <MagicEditor key={selected.id} item={selected} /> : <GearEditor key={selected.id} item={selected} />
-            : <div className="empty">Click a magic item (or any equipped item) to see its details. Everyday gear is edited right in the list.</div>}
+          {selected ? <ItemEditor key={selected.id} item={selected} />
+            : <div className="empty">Click an item to expand it: weapon stats, armor, magic properties, notes.</div>}
         </div>
       </div>
     </Modal>
   )
 }
 
-function useItem(item: Item) {
+function Section({ title, open, children, right }: { title: string; open: boolean; children: ReactNode; right?: ReactNode }) {
+  return (
+    <details className="item-sec" open={open}>
+      <summary><span className="grow">{title}</span>{right}</summary>
+      <div className="col" style={{ gap: 8, paddingTop: 6 }}>{children}</div>
+    </details>
+  )
+}
+
+const DEFAULT_WEAPON: WeaponStats = { damage: '1d6', damageType: '', ability: 'str', proficient: true, magicBonus: 0, range: '', properties: '' }
+const DEFAULT_ARMOR: ArmorStats = { kind: 'light', ac: 11, bonus: 0 }
+
+/** One editor for every item; the extra sections are folded away until you need them. */
+function ItemEditor({ item }: { item: Item }) {
+  const c = useChar()
   const patch = useStore((s) => s.patch)
   const set = useUI((s) => s.set)
+  const [picking, setPicking] = useState(false)
   const up = (fn: (i: Item) => void) => patch((d) => { const x = d.items.find((y) => y.id === item.id); if (x) fn(x) })
+  const upW = (fn: (w: WeaponStats) => void) => up((x) => { if (x.weapon) fn(x.weapon) })
+  const upA = (fn: (a: ArmorStats) => void) => up((x) => { if (x.armor) fn(x.armor) })
   const setSlot = (v: string) => patch((d) => {
     if (v) { const o = d.items.find((i) => i.slot === v && i.id !== item.id); if (o) o.slot = '' }
     const x = d.items.find((y) => y.id === item.id)
     if (x) x.slot = v
   })
-  const remove = () => {
-    if (!window.confirm(`Delete ${item.name || 'this item'}?`)) return
-    set({ inventorySelected: '' })
-    patch((d) => { d.items = d.items.filter((y) => y.id !== item.id) })
-  }
-  return { up, setSlot, remove }
-}
+  const atk = item.weapon ? itemAttacks(c).find((a) => a.itemId === item.id) : undefined
+  const atkInfo = atk ? attackInfo(c, atk) : null
+  const armorSlot = item.armor?.kind === 'shield' ? 'off' : 'body'
+  const armorCounts = item.armor && (item.armor.kind === 'shield' ? item.slot === 'off' || item.slot === 'main' : item.slot === 'body')
+  const magicish = item.rarity !== 'common' || item.attunement || item.effects.length > 0 || item.actionType !== 'none'
 
-/** Everyday gear: name, amount, weight, a note, where it's worn. */
-function GearEditor({ item }: { item: Item }) {
-  const { up, setSlot, remove } = useItem(item)
   return (
     <div className="col" style={{ gap: 8 }}>
       <div className="row">
-        <span className={`icon-pick-btn ${rarityClass(item)}`}><Icon name={itemIcon(item)} /></span>
+        <button className={`icon-pick-btn ${rarityClass(item)}`} title="Change icon" onClick={() => setPicking(!picking)}><Icon name={itemIcon(item)} /></button>
         <input className="box-input grow" placeholder="Item name" value={item.name} onChange={(e) => up((x) => { x.name = e.target.value })} />
-      </div>
-      <div className="row">
-        <span className="field-lbl">Qty</span>
-        <Num min={0} className="box-input" width={54} style={{ textAlign: 'center' }} value={item.qty} onChange={(n) => up((x) => { x.qty = n })} />
-        <span className="field-lbl" style={{ marginLeft: 6 }}>Lb ea.</span>
-        <Num min={0} className="box-input" width={54} value={item.weight} onChange={(n) => up((x) => { x.weight = n })} />
-      </div>
-      <div className="row"><span className="field-lbl">Worn in</span><Select value={item.slot} onChange={setSlot} options={slotOptions} /></div>
-      <Area className="box-input" minRows={3} placeholder="Notes (optional)" value={item.description} onChange={(v) => up((x) => { x.description = v })} />
-      <button className="btn" onClick={() => up((x) => { x.magic = true; if (x.icon === 'box') x.icon = guessIcon(x.name) })}>✦ Turn into a magic item</button>
-      <button className="btn danger" onClick={remove}>Delete</button>
-    </div>
-  )
-}
-
-/** Magic items: the full detail. */
-function MagicEditor({ item }: { item: Item }) {
-  const { up, setSlot, remove } = useItem(item)
-  const [picking, setPicking] = useState(false)
-  return (
-    <div className="col" style={{ gap: 8 }}>
-      <div className="row">
-        <button className={`icon-pick-btn ${rarityClass(item)}`} title="Change icon" onClick={() => setPicking(!picking)}><Icon name={item.icon} /></button>
-        <input className="box-input grow" placeholder="Item name" autoFocus={!item.name} value={item.name} onChange={(e) => up((x) => { x.name = e.target.value })} />
       </div>
       {picking && (
         <div className="icon-grid">
           {Object.entries(ICONS).map(([key, ic]) => (
-            <button key={key} className={item.icon === key ? 'on' : ''} title={ic.name} onClick={() => { up((x) => { x.icon = key }); setPicking(false) }}>
+            <button key={key} className={itemIcon(item) === key ? 'on' : ''} title={ic.name} onClick={() => { up((x) => { x.icon = key }); setPicking(false) }}>
               <Icon name={key} />
             </button>
           ))}
         </div>
       )}
-      <div className="row">
-        <Select value={item.category} onChange={(v) => up((x) => { x.category = v; const cat = ITEM_CATEGORIES.find((k) => k.name === v); if (cat) x.icon = cat.icon })}
-          options={ITEM_CATEGORIES.map((k) => ({ id: k.name, name: k.name }))} />
-        <Select value={item.rarity} onChange={(v) => up((x) => { x.rarity = v })} options={RARITIES.map((r) => ({ id: r, name: r }))} />
-      </div>
-      <div className="row">
+      <div className="row" style={{ flexWrap: 'wrap' }}>
         <span className="field-lbl">Qty</span>
         <button className="btn icon sm" onClick={() => up((x) => { x.qty = Math.max(0, x.qty - 1) })}>−</button>
-        <Num min={0} className="box-input" width={54} style={{ textAlign: 'center' }} value={item.qty} onChange={(n) => up((x) => { x.qty = n })} />
+        <Num min={0} className="box-input" width={50} style={{ textAlign: 'center' }} value={item.qty} onChange={(n) => up((x) => { x.qty = n })} />
         <button className="btn icon sm" onClick={() => up((x) => { x.qty += 1 })}>＋</button>
-        <span className="field-lbl" style={{ marginLeft: 6 }}>Lb ea.</span>
-        <Num min={0} className="box-input" width={54} value={item.weight} onChange={(n) => up((x) => { x.weight = n })} />
-      </div>
-      <div className="row">
-        <span className="field-lbl">Value</span>
-        <input className="box-input grow" placeholder="e.g. 50 gp" value={item.value} onChange={(e) => up((x) => { x.value = e.target.value })} />
+        <span className="field-lbl" style={{ marginLeft: 4 }}>Lb ea.</span>
+        <Num min={0} className="box-input" width={50} value={item.weight} onChange={(n) => up((x) => { x.weight = n })} />
       </div>
       <div className="row"><span className="field-lbl">Worn in</span><Select value={item.slot} onChange={setSlot} options={slotOptions} /></div>
-      <div className="row" style={{ flexWrap: 'wrap', gap: 14 }}>
-        <label className="row small"><Switch on={item.attunement} onChange={(b) => up((x) => { x.attunement = b; if (!b) x.attuned = false })} /> Requires attunement</label>
-        {item.attunement && <label className="row small"><Switch on={item.attuned} onChange={(b) => up((x) => { x.attuned = b })} /> Attuned</label>}
-      </div>
-      <Area className="box-input" minRows={4} placeholder="Description / properties" value={item.description} onChange={(v) => up((x) => { x.description = v })} />
-      <div className="row">
-        <span className="field-lbl">Usable as</span>
-        <Select value={item.actionType} onChange={(v) => up((x) => { x.actionType = v })} options={ACTION_TYPES} />
-      </div>
-      <div>
-        <div className="field-lbl" style={{ marginBottom: 4 }}>What it changes (applies while equipped{item.attunement ? ' & attuned' : ''})</div>
+
+      <Section title="Weapon" open={!!item.weapon}
+        right={<Switch on={!!item.weapon} title="Can attack with this" onChange={(b) => up((x) => { x.weapon = b ? (lookupWeapon(x.name) ?? { ...DEFAULT_WEAPON }) : null; if (b && x.category === 'Misc') x.category = 'Weapon' })} />}>
+        {!item.weapon ? <div className="muted small">Switch on to list this under Weapons & Attacks.</div> : (
+          <>
+            {atkInfo && <div className="atk-line"><b>{signed(atkInfo.bonus)}</b> to hit · <b>{atkInfo.damage}</b> {item.weapon.damageType}</div>}
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              <input className="box-input" style={{ width: 70 }} placeholder="1d8" value={item.weapon.damage} onChange={(e) => upW((w) => { w.damage = e.target.value })} />
+              <input className="box-input" style={{ width: 100 }} placeholder="piercing" value={item.weapon.damageType} onChange={(e) => upW((w) => { w.damageType = e.target.value })} />
+              <input className="box-input" style={{ width: 80 }} placeholder="range" value={item.weapon.range} onChange={(e) => upW((w) => { w.range = e.target.value })} />
+            </div>
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              <Select value={item.weapon.ability} onChange={(v) => upW((w) => { w.ability = v })}
+                options={[...ABILITIES.map((a) => ({ id: a.key as WeaponStats['ability'], name: a.short })), { id: 'finesse' as const, name: 'Finesse (STR/DEX)' }]} />
+              <label className="row small"><Switch on={item.weapon.proficient} onChange={(b) => upW((w) => { w.proficient = b })} /> Proficient</label>
+              <span className="small">Magic +</span><Num className="box-input" width={40} value={item.weapon.magicBonus} onChange={(n) => upW((w) => { w.magicBonus = n })} />
+            </div>
+            <input className="box-input" placeholder="properties (Finesse, Light, Thrown…)" value={item.weapon.properties} onChange={(e) => upW((w) => { w.properties = e.target.value })} />
+          </>
+        )}
+      </Section>
+
+      <Section title="Armor / shield" open={!!item.armor}
+        right={<Switch on={!!item.armor} title="Counts toward AC when worn" onChange={(b) => up((x) => { x.armor = b ? (lookupArmor(x.name) ?? { ...DEFAULT_ARMOR }) : null; if (b && x.category === 'Misc') x.category = 'Armor' })} />}>
+        {!item.armor ? <div className="muted small">Switch on for armor or a shield.</div> : (
+          <>
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              <Select value={item.armor.kind} onChange={(v) => upA((a) => { a.kind = v; if (v === 'shield' && a.ac > 5) a.ac = 2 })}
+                options={[{ id: 'light', name: 'Light (+ DEX)' }, { id: 'medium', name: 'Medium (+ DEX, max 2)' }, { id: 'heavy', name: 'Heavy (no DEX)' }, { id: 'shield', name: 'Shield' }]} />
+              <span className="small">{item.armor.kind === 'shield' ? 'AC +' : 'Base AC'}</span>
+              <Num min={0} className="box-input" width={44} value={item.armor.ac} onChange={(n) => upA((a) => { a.ac = n })} />
+              <span className="small">Magic +</span><Num className="box-input" width={40} value={item.armor.bonus} onChange={(n) => upA((a) => { a.bonus = n })} />
+            </div>
+            {armorCounts
+              ? <div className="small" style={{ color: 'var(--good)' }}>✓ Counting toward your AC.</div>
+              : <div className="row small"><span className="muted">Not counted until worn in {item.armor.kind === 'shield' ? 'a hand' : 'Armor / Body'}.</span>
+                <button className="btn sm" onClick={() => setSlot(armorSlot)}>Equip</button></div>}
+          </>
+        )}
+      </Section>
+
+      <Section title="Magic & effects" open={magicish}>
+        <div className="row">
+          <Select value={item.category} onChange={(v) => up((x) => { x.category = v; const cat = ITEM_CATEGORIES.find((k) => k.name === v); if (cat && x.icon === 'box') x.icon = cat.icon })}
+            options={ITEM_CATEGORIES.map((k) => ({ id: k.name, name: k.name }))} />
+          <Select value={item.rarity} onChange={(v) => up((x) => { x.rarity = v })} options={RARITIES.map((r) => ({ id: r, name: r }))} />
+        </div>
+        <div className="row" style={{ flexWrap: 'wrap', gap: 14 }}>
+          <label className="row small"><Switch on={item.attunement} onChange={(b) => up((x) => { x.attunement = b; if (!b) x.attuned = false })} /> Requires attunement</label>
+          {item.attunement && <label className="row small"><Switch on={item.attuned} onChange={(b) => up((x) => { x.attuned = b })} /> Attuned</label>}
+        </div>
+        <div className="row">
+          <span className="field-lbl">Usable as</span>
+          <Select value={item.actionType} onChange={(v) => up((x) => { x.actionType = v })} options={ACTION_TYPES} />
+        </div>
+        <div className="field-lbl">What it changes (while equipped{item.attunement ? ' & attuned' : ''})</div>
         <EffectsEditor effects={item.effects} onChange={(e) => up((x) => { x.effects = e })} />
-      </div>
-      <button className="btn" onClick={() => {
-        if ((item.effects.length || item.attunement) && !window.confirm('Make this everyday gear? Its linked effects and attunement will be removed.')) return
-        up((x) => { x.magic = false; x.effects = []; x.attunement = false; x.attuned = false; x.rarity = 'common'; x.actionType = 'none' })
-      }}>Make everyday gear</button>
-      <button className="btn danger" onClick={remove}>Delete item</button>
+      </Section>
+
+      <Section title="Notes" open={!!item.description || !!item.value}>
+        <div className="row">
+          <span className="field-lbl">Value</span>
+          <input className="box-input grow" placeholder="e.g. 50 gp" value={item.value} onChange={(e) => up((x) => { x.value = e.target.value })} />
+        </div>
+        <Area className="box-input" minRows={3} placeholder="Description / properties" value={item.description} onChange={(v) => up((x) => { x.description = v })} />
+      </Section>
+
+      <button className="btn danger" onClick={() => {
+        if (!window.confirm(`Delete ${item.name || 'this item'}?`)) return
+        set({ inventorySelected: '' })
+        patch((d) => { d.items = d.items.filter((y) => y.id !== item.id) })
+      }}>Delete item</button>
     </div>
   )
 }

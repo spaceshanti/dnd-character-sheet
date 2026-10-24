@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { attackInfo, signed, spellActionType } from '../calc'
+import { attackInfo, itemAttacks, signed, spellActionType } from '../calc'
 import { useChar, useUI } from '../store'
 import { Frame } from '../components/ui'
 import type { ActionType } from '../types'
@@ -33,6 +33,10 @@ export function ActionsPage() {
     rows[k].push(r)
   }
 
+  for (const a of itemAttacks(c)) {
+    const i = attackInfo(c, a)
+    rows.action.push({ key: a.id, kind: 'Weapon', name: a.name, right: `${signed(i.bonus)} · ${i.damage} ${a.damageType}`, onClick: () => set({ inventoryOpen: true, inventorySelected: a.itemId }) })
+  }
   for (const a of c.attacks) {
     const i = attackInfo(c, a)
     rows.action.push({ key: a.id, kind: 'Attack', name: a.name || 'Attack', right: `${signed(i.bonus)} · ${i.damage} ${a.damageType}`, onClick: () => go('overview') })

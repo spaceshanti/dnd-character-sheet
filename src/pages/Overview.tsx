@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react'
 import { ABILITIES, targetName } from '../constants'
-import { attackInfo, itemIsActive, signed } from '../calc'
+import { attackInfo, itemAttacks, itemIsActive, signed } from '../calc'
 import { newAttack, newResource } from '../blank'
 import { useChar, useStore, useUI } from '../store'
 import { Area, Frame, Num, Pips, Select, Switch } from '../components/ui'
@@ -72,13 +72,26 @@ function AttacksPanel() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const [open, setOpen] = useState('')
+  const set = useUI((s) => s.set)
+  const fromItems = itemAttacks(c)
   const up = (id: string, fn: (a: Attack) => void) => patch((d) => { const x = d.attacks.find((y) => y.id === id); if (x) fn(x) })
   return (
     <Frame title="Weapons & Attacks" tools={<button className="btn sm" onClick={() => { const a = newAttack(); patch((d) => { d.attacks.push(a) }); setOpen(a.id) }}>＋ Add</button>}>
-      {c.attacks.length === 0 ? <div className="empty">No attacks yet. Add a weapon and its bonus is worked out for you.</div> : (
+      {c.attacks.length === 0 && fromItems.length === 0 ? <div className="empty">No attacks yet. Add a weapon to your inventory (or here) and its bonus is worked out for you.</div> : (
         <table className="t">
           <thead><tr><th>Name</th><th style={{ width: 62 }}>Atk</th><th>Damage</th><th style={{ width: 28 }} /></tr></thead>
           <tbody>
+            {fromItems.map((a) => {
+              const info = attackInfo(c, a)
+              return (
+                <tr key={a.id} className="hov" title="From your inventory: click to edit" onClick={() => set({ inventoryOpen: true, inventorySelected: a.itemId })}>
+                  <td><span className="row" style={{ gap: 6 }}><Icon name="sword" className="list-ico" />{a.name}{a.equipped && <span className="itag">in hand</span>}</span></td>
+                  <td style={{ fontWeight: 700, fontSize: 16 }}>{signed(info.bonus)}{info.adv.length > 0 && info.dis.length === 0 && <span className="adv a" style={{ marginLeft: 3, fontSize: 10, color: 'var(--adv)' }}>ADV</span>}</td>
+                  <td>{info.damage} <span className="muted">{a.damageType}</span>{a.range && <span className="muted small"> · {a.range}</span>}</td>
+                  <td><Icon name="pack" className="list-ico" /></td>
+                </tr>
+              )
+            })}
             {c.attacks.map((a) => {
               const info = attackInfo(c, a)
               return (

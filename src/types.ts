@@ -75,11 +75,30 @@ export interface Feature {
 
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary' | 'artifact'
 
+export interface WeaponStats {
+  damage: string
+  damageType: string
+  /** 'finesse' uses the better of STR / DEX */
+  ability: AbilityKey | 'finesse'
+  proficient: boolean
+  magicBonus: number
+  range: string
+  properties: string
+}
+
+export interface ArmorStats {
+  kind: 'light' | 'medium' | 'heavy' | 'shield'
+  /** base AC for armor, or the bonus for a shield */
+  ac: number
+  /** magic bonus (+1 armor etc.) */
+  bonus: number
+}
+
 export interface Item {
   id: string
   name: string
-  /** false = everyday gear (just name / amount / weight); true = magic item with the full detail */
-  magic: boolean
+  /** legacy flag from the gear / magic split; no longer used */
+  magic?: boolean
   icon: string
   category: string
   qty: number
@@ -93,6 +112,10 @@ export interface Item {
   attuned: boolean
   actionType: ActionType
   effects: Effect[]
+  /** set when the item can be used to attack: it then shows up under Weapons & Attacks */
+  weapon: WeaponStats | null
+  /** set for armor and shields: counts toward AC while equipped */
+  armor: ArmorStats | null
 }
 
 export interface Attack {

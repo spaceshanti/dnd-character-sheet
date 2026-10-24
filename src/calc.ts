@@ -168,7 +168,16 @@ export function statInfo(c: Character, key: StatKey, effects = activeEffects(c))
   let baseLabel = 'Base'
   let baseValue = stat.base
   const adds: StatInfo['adds'] = []
-  if (key === 'ac' && c.ac.mode === 'unarmored') {
+  // armor counts only when worn on the body, shields only in a hand
+  const worn = key === 'ac' ? c.items.filter((i) => i.armor && (i.armor.kind === 'shield' ? i.slot === 'off' || i.slot === 'main' : i.slot === 'body')) : []
+  const bodyArmor = worn.find((i) => i.armor!.kind !== 'shield')
+  if (key === 'ac' && bodyArmor) {
+    const a = bodyArmor.armor!
+    const dex = ability(c, 'dex', effects).mod
+    const fromDex = a.kind === 'light' ? dex : a.kind === 'medium' ? Math.min(dex, 2) : 0
+    baseLabel = `${bodyArmor.name || 'Armor'} (${a.kind}${a.kind === 'heavy' ? '' : a.kind === 'medium' ? ', DEX max 2' : ' + DEX'})`
+    baseValue = a.ac + fromDex + (a.bonus || 0)
+  } else if (key === 'ac' && c.ac.mode === 'unarmored') {
     baseLabel = '10 + DEX'
     baseValue = 10 + ability(c, 'dex', effects).mod
   } else if (key === 'initiative') {
@@ -177,6 +186,7 @@ export function statInfo(c: Character, key: StatKey, effects = activeEffects(c))
     if (stat.base) adds.push({ label: 'Misc', value: stat.base })
   } else if (key === 'speed') baseLabel = 'Walking speed'
   else if (key === 'hpMax') baseLabel = 'Hit point maximum'
+  for (const sh of worn.filter((i) => i.armor!.kind === 'shield')) adds.push({ label: sh.name || 'Shield', value: sh.armor!.ac + (sh.armor!.bonus || 0), fromEffect: true })
   for (const m of stat.mods) if (m.on) adds.push({ label: m.name || 'Modifier', value: m.value })
   const col = collect(effects, [key])
   for (const b of col.bonuses) adds.push({ ...b, fromEffect: true })
@@ -235,4 +245,15 @@ export function spellActionType(castingTime: string): 'action' | 'bonus' | 'reac
   if (/^\s*1\s*action/.test(t)) return 'action'
   if (!t.trim()) return 'action'
   return 'special'
+}
+
+/** Inventory items with weapon stats, shaped like attacks so they share the same maths. */
+export function itemAttacks(c: Character): (Attack & { itemId: string; equipped: boolean })[] {
+  return c.items.filter((i) => i.weapon && i.qty > 0).map((i) => {
+    const w = i.weapon!
+    return {
+      id: 'item:' + i.id, itemId: i.id, equipped: !!i.slot, name: i.name || 'Weapon', ability: w.ability, proficient: w.proficient,
+      magicBonus: w.magicBonus, damage: w.damage, damageType: w.damageType, addMod: true, range: w.range, notes: w.properties,
+    }
+  })
 }

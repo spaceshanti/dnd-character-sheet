@@ -21,10 +21,11 @@ export function newSpell(level = 1, name = ''): Spell {
 export function newFeature(category: Feature['category'] = 'class'): Feature {
   return { id: uid(), name: '', category, source: '', description: '', actionType: 'none', effects: [], active: true }
 }
-export function newItem(magic = false): Item {
+export function newItem(): Item {
   return {
-    id: uid(), name: '', magic, icon: magic ? 'sparkle' : 'box', category: 'Misc', qty: 1, weight: 0, value: '', rarity: 'common',
+    id: uid(), name: '', icon: 'box', category: 'Misc', qty: 1, weight: 0, value: '', rarity: 'common',
     description: '', slot: '', attunement: false, attuned: false, actionType: 'none', effects: [],
+    weapon: null, armor: null,
   }
 }
 export function newAttack(): Attack {
@@ -97,7 +98,8 @@ export function normalize(raw: Partial<Character>): Character {
   c.items = c.items.map((i) => ({
     ...i,
     icon: EMOJI_TO_ICON[i.icon] ?? i.icon,
-    magic: i.magic ?? (i.rarity !== 'common' || i.effects.length > 0 || i.attunement),
+    weapon: i.weapon ?? null,
+    armor: i.armor ?? null,
   }))
   // the Appearance box used to show the top-left portrait; start it off with the same picture
   if (raw.appearanceImage === undefined) c.appearanceImage = c.portrait

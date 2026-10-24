@@ -90,8 +90,8 @@ export function guessIcon(name: string): string {
   return GUESSES.find(([re]) => re.test(name))?.[1] ?? 'box'
 }
 
-/** The icon to show for an item: magic items keep their chosen icon, everyday gear is guessed from its name. */
-export function itemIcon(i: Pick<Item, 'magic' | 'icon' | 'name'>): string {
-  if (i.magic || (i.icon && i.icon !== 'box')) return i.icon
+/** The icon to show for an item: a chosen icon wins, otherwise it's guessed from the name. */
+export function itemIcon(i: Pick<Item, 'icon' | 'name'>): string {
+  if (i.icon && i.icon !== 'box') return i.icon
   return guessIcon(i.name)
 }

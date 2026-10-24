@@ -29,7 +29,10 @@ export function StatEditor({ statKey, anchor, onClose }: { statKey: StatKey; anc
         </span>
       </div>
 
-      {statKey === 'ac' && (
+      {statKey === 'ac' && info.baseLabel !== '10 + DEX' && info.baseLabel !== 'Base' && (
+        <div className="stat-line"><span className="field-lbl" style={{ width: 70 }}>Base AC</span><b>{info.baseValue}</b><span className="muted small">from {info.baseLabel}</span></div>
+      )}
+      {statKey === 'ac' && (info.baseLabel === '10 + DEX' || info.baseLabel === 'Base') && (
         <div className="stat-line">
           <span className="field-lbl" style={{ width: 70 }}>Base is</span>
           <select value={c.ac.mode} onChange={(e) => patch((d) => { d.ac.mode = e.target.value as 'manual' | 'unarmored' })}>
@@ -38,7 +41,7 @@ export function StatEditor({ statKey, anchor, onClose }: { statKey: StatKey; anc
           </select>
         </div>
       )}
-      <div className="stat-line">
+      {!(statKey === 'ac' && info.baseLabel !== '10 + DEX' && info.baseLabel !== 'Base') && <div className="stat-line">
         <span className="field-lbl" style={{ width: 70 }}>{statKey === 'ac' ? 'Base AC' : statKey === 'initiative' ? 'Misc bonus' : 'Base'}</span>
         {statKey === 'ac' && c.ac.mode === 'unarmored' ? (
           <b>{info.baseValue} <span className="muted small">(10 + DEX)</span></b>
@@ -46,7 +49,7 @@ export function StatEditor({ statKey, anchor, onClose }: { statKey: StatKey; anc
           <Num className="box-input" width={70} value={stat.base} onChange={(n) => patch((d) => { d[statKey].base = n })} />
         )}
         {statKey === 'initiative' && <span className="muted small">+ DEX {signed(info.baseValue)}</span>}
-      </div>
+      </div>}
 
       <div className="field-lbl" style={{ margin: '10px 0 4px' }}>Added on top of base</div>
       {stat.mods.length === 0 && <div className="muted small" style={{ marginBottom: 4 }}>{HINTS[statKey]}</div>}
