@@ -502,7 +502,7 @@ svg.ico { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14e
 .char-new .plus { font-size: 40px; line-height: 1; }
 
 /* ---------- inventory item details ---------- */
-.gear-row { grid-template-columns: 22px minmax(0, 1fr) 46px 54px 22px 22px; cursor: pointer; }
+.gear-row { grid-template-columns: 22px minmax(0, 1fr) 60px 54px 22px 22px; cursor: pointer; }
 .gear-row.worn input { font-weight: 600; }
 .gear-row .grip { width: 22px; height: 22px; border-radius: 5px; background: var(--slot); color: var(--slot-ink); border: 1px solid var(--slot-border); }
 .gear-row .grip .gico { color: inherit; font-size: 14px; }
@@ -565,3 +565,10 @@ svg.ico { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14e
 .fcard-head { gap: 6px; }
 .fcard-head h3 { font-size: 15px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 .fcard-head .fold { width: 24px; flex: none; }
+
+/* inventory quantity: a number box like "lb ea." with step arrows */
+.qty-step { display: flex; align-items: stretch; justify-content: flex-end; gap: 2px; }
+.gear-row .qty-step .qty-in { width: 38px; text-align: right; font-weight: 700; color: var(--ink); }
+.qty-step .arrows { display: flex; flex-direction: column; justify-content: center; }
+.qty-step .arrows button { border: none; background: none; padding: 0 2px; font-size: 7.5px; line-height: 1.15; color: var(--ink2); cursor: pointer; }
+.qty-step .arrows button:hover { color: var(--accent); }

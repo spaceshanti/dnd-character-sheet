@@ -155,7 +155,13 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
                     {it.attunement && <span title={it.attuned ? 'Attuned' : 'Needs attunement'}>{it.attuned ? '✦' : '✧'}</span>}
                     {it.slot && <span className="itag worn-tag">{slotName(it.slot)}</span>}
                   </span>
-                  <Num min={0} className="qty-in" value={it.qty} onChange={(n) => up(it.id, (x) => { x.qty = n })} />
+                  <span className="qty-step" onClick={(e) => e.stopPropagation()}>
+                    <Num min={0} className="qty-in" value={it.qty} onChange={(n) => up(it.id, (x) => { x.qty = n })} />
+                    <span className="arrows">
+                      <button type="button" title="One more" onClick={() => up(it.id, (x) => { x.qty += 1 })}>▲</button>
+                      <button type="button" title="One fewer" onClick={() => up(it.id, (x) => { x.qty = Math.max(0, x.qty - 1) })}>▼</button>
+                    </span>
+                  </span>
                   <Num min={0} className="lb-in" value={it.weight} onChange={(n) => up(it.id, (x) => { x.weight = n })} />
                   <button className="btn sm ghost" title="Details" onClick={(e) => { e.stopPropagation(); set({ inventorySelected: it.id }) }}>›</button>
                   <button className="btn sm ghost" title="Remove"
