@@ -88,7 +88,7 @@ const SHORTCUTS: { group: string; items: [string, string][] }[] = [
     group: 'Keyboard',
     items: [
       ['Ctrl + I', 'Open / close the inventory (when not typing in a box)'],
-      ['Esc', 'Close the open window, side panel, popup or the abilities panel'],
+      ['Esc', 'Close the open window, side panel or popup'],
       ['Enter', 'In the HP box: apply damage'],
       ['Shift + Enter', 'In the HP box: heal instead'],
       ['Enter', 'On an empty spell line: add the spell and start the next one'],
@@ -99,7 +99,7 @@ const SHORTCUTS: { group: string; items: [string, string][] }[] = [
   {
     group: 'Mouse',
     items: [
-      ['Click left edge strip', 'Open / close abilities, saves & skills'],
+      ['Click the left edge strip', 'Open / close abilities, saves & skills (stays open until you close it)'],
       ['Click AC / Speed / Initiative', 'Edit the base value and add-on bonuses'],
       ['Click max HP ( / 25 )', 'Edit max HP and its bonuses'],
       ['Click a skill or save', 'Show what is affecting it'],
