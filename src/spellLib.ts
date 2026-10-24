@@ -13,34 +13,83 @@ export interface LibSpell {
   co: boolean
   ri: boolean
   cl: string[]
-  e: '2014' | '2024'
+  /** '2014' | '2024' SRD, or 'UA' for spells imported from a PDF */
+  e: string
   t: string
+  /** material component flagged as specific / costly by the source */
+  m?: boolean
+  /** name-only entry from an imported class list (no description available) */
+  stub?: boolean
+  /** where an imported spell came from */
+  src?: string
 }
 
-export const LIB = raw as LibSpell[]
+/** Files written by tools/import_ua_spells.py */
+interface ExtraFile {
+  source: string
+  spells: LibSpell[]
+  classLists: Record<string, Record<string, { n: string; s: string; special: string }[]>>
+}
+
+/** Match names regardless of apostrophe style or the SRD dropping "Tasha's" etc. */
+export const nameKey = (n: string) =>
+  n.toLowerCase().replace(/[’`]/g, "'").replace(/^[a-z]+'s\s+/, '').replace(/[^a-z0-9/]+/g, ' ').trim()
+
+function buildLibrary(): LibSpell[] {
+  const lib: LibSpell[] = (raw as LibSpell[]).map((s) => ({ ...s, cl: [...s.cl] }))
+  const extras = import.meta.glob('./data/extra/*.json', { eager: true, import: 'default' }) as Record<string, ExtraFile>
+  for (const file of Object.values(extras)) {
+    for (const s of file.spells ?? []) lib.push({ ...s, e: s.e || 'UA', src: file.source })
+    for (const [cls, levels] of Object.entries(file.classLists ?? {})) {
+      for (const [lv, rows] of Object.entries(levels)) {
+        for (const row of rows) {
+          const special = row.special.toUpperCase()
+          const matches = lib.filter((s) => nameKey(s.n) === nameKey(row.n))
+          for (const s of matches) {
+            if (!s.cl.includes(cls)) s.cl.push(cls)
+            if (s.e === 'UA' && s.m == null) s.m = special.includes('M')
+          }
+          if (!matches.length) {
+            lib.push({
+              n: row.n.replace(/’/g, "'"), l: +lv, s: row.s, ct: '', r: '', c: '', d: '',
+              co: special.includes('C'), ri: special.includes('R'), m: special.includes('M'),
+              cl: [cls], e: 'UA', t: '', stub: true, src: file.source,
+            })
+          }
+        }
+      }
+    }
+  }
+  return lib
+}
+
+export const LIB = buildLibrary()
 
 export const LIB_CLASSES = Array.from(new Set(LIB.flatMap((s) => s.cl))).sort()
 export const LIB_SCHOOLS = Array.from(new Set(LIB.map((s) => s.s))).sort()
+
+const editionOk = (e: string, filter: string) =>
+  filter === 'all' || (filter === 'modern' ? e === '2024' || e === 'UA' : e === filter)
 
 export function searchLib(q: string, o: { level: number | 'all'; cls: string; school: string; edition: string }): LibSpell[] {
   const t = q.trim().toLowerCase()
   return LIB.filter(
     (s) =>
-      (!t || s.n.toLowerCase().includes(t) || s.t.toLowerCase().includes(t) && t.length > 3) &&
+      (!t || s.n.toLowerCase().includes(t) || (s.t.toLowerCase().includes(t) && t.length > 3)) &&
       (o.level === 'all' || s.l === o.level) &&
       (!o.cls || s.cl.includes(o.cls)) &&
       (!o.school || s.s === o.school) &&
-      (o.edition === 'all' || s.e === o.edition),
+      editionOk(s.e, o.edition),
   ).sort((a, b) => {
     const an = a.n.toLowerCase().startsWith(t) ? 0 : 1
     const bn = b.n.toLowerCase().startsWith(t) ? 0 : 1
-    return an - bn || a.n.localeCompare(b.n) || a.e.localeCompare(b.e)
+    return an - bn || a.l - b.l || a.n.localeCompare(b.n) || a.e.localeCompare(b.e)
   })
 }
 
 export function findLib(name: string): LibSpell[] {
-  const t = name.trim().toLowerCase()
-  return t ? LIB.filter((s) => s.n.toLowerCase() === t) : []
+  const k = nameKey(name)
+  return k ? LIB.filter((s) => nameKey(s.n) === k) : []
 }
 
 export function fromLib(l: LibSpell): Spell {
@@ -50,13 +99,13 @@ export function fromLib(l: LibSpell): Spell {
 
 export function applyLib(sp: Spell, l: LibSpell): Spell {
   return {
-    ...sp, name: l.n, level: l.l, school: l.s, castingTime: l.ct, range: l.r, components: l.c, duration: l.d,
-    concentration: l.co, ritual: l.ri, materialConsumed: isConsumed(l.c), description: l.t,
+    ...sp, name: l.n, level: l.l, school: l.s, castingTime: l.ct || sp.castingTime, range: l.r, components: l.c, duration: l.d,
+    concentration: l.co, ritual: l.ri, materialConsumed: l.m ?? isConsumed(l.c), description: l.t,
   }
 }
 
-/** Best library match for a typed name: 2024 text first, then 2014. */
+/** Best library match for a typed name: full text first (2024, then UA, then 2014), name-only entries last. */
 export function bestLib(name: string): LibSpell | undefined {
-  const m = findLib(name)
-  return m.find((x) => x.e === '2024') ?? m[0]
+  const rank = (s: LibSpell) => (s.stub ? 9 : s.e === '2024' ? 0 : s.e === 'UA' ? 1 : 2)
+  return findLib(name).sort((a, b) => rank(a) - rank(b))[0]
 }

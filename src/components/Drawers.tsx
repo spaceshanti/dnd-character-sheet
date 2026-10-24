@@ -44,7 +44,7 @@ export function SpellDrawer({ id }: { id: string }) {
 
   const up = (fn: (s: Spell) => void) => patch((d) => { const x = d.spells.find((y) => y.id === id); if (x) fn(x) })
   const close = () => set({ drawer: null })
-  const matches = findLib(sp.name)
+  const matches = findLib(sp.name).filter((m) => !m.stub)
 
   const fetchRemote = async () => {
     setFetchMsg('')
@@ -160,10 +160,10 @@ export function SpellDrawer({ id }: { id: string }) {
               <div className="row small" style={{ marginBottom: 6, flexWrap: 'wrap' }}>
                 <span>Built-in library:</span>
                 {matches.map((m) => (
-                  <button key={m.e} className="btn sm" onClick={() => {
+                  <button key={m.e + (m.src ?? '')} className="btn sm" onClick={() => {
                     if (sp.description.trim() && !window.confirm('Replace the stored description?')) return
                     up((x) => Object.assign(x, applyLib(x, m)))
-                  }}>Use {m.e} SRD text</button>
+                  }}>Use {m.e === 'UA' ? 'UA' : `${m.e} SRD`} text</button>
                 ))}
               </div>
             )}

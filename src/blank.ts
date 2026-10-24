@@ -98,5 +98,5 @@ export function normalize(raw: Partial<Character>): Character {
 
 /** Material components that are used up or have a gold cost. */
 export function isConsumed(components: string): boolean {
-  return /consume|worth at least|\d+\s*\+?\s*gp/i.test(components || '')
+  return /consume|\d[\d,]*\s*\+?\s*gp/i.test(components || '')
 }

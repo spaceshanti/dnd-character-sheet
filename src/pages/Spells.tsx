@@ -233,7 +233,7 @@ function Library() {
   const [level, setLevel] = useState<number | 'all'>('all')
   const [cls, setCls] = useState('')
   const [school, setSchool] = useState('')
-  const [edition, setEdition] = useState('2024')
+  const [edition, setEdition] = useState('modern')
   const [sel, setSel] = useState<LibSpell | null>(null)
   const [limit, setLimit] = useState(80)
   const results = useMemo(() => searchLib(q, { level, cls, school, edition }), [q, level, cls, school, edition])
@@ -262,19 +262,25 @@ function Library() {
           <option value="">Any school</option>{LIB_SCHOOLS.map((x) => <option key={x}>{x}</option>)}
         </select>
         <select value={edition} onChange={(e) => setEdition(e.target.value)}>
-          <option value="2024">2024 rules</option><option value="2014">2014 rules</option><option value="all">Both</option>
+          <option value="modern">2024 + UA</option><option value="2024">2024 SRD only</option><option value="UA">UA / imported only</option>
+          <option value="2014">2014 SRD only</option><option value="all">Everything</option>
         </select>
         <span className="muted small">{results.length} spells</span>
       </div>
       <div className="muted small" style={{ marginBottom: 8 }}>
-        This is the free SRD set, stored inside the app. For spells that aren't in it, add the spell yourself and paste the description (or use the wikidot link).
+        The free SRD set plus anything imported from your own PDFs (<code>tools/import_ua_spells.py</code>). Entries marked <i>name only</i> come from a class list
+        without their full text. Add them, then paste the description or use Fetch.
       </div>
       <table className="t">
         <thead><tr><th>Name</th><th style={{ width: 70 }}>Level</th><th>School</th><th>Time</th><th>Classes</th><th style={{ width: 52 }}>Rules</th><th style={{ width: 70 }} /></tr></thead>
         <tbody>
           {results.slice(0, limit).map((s) => (
             <tr key={s.n + s.e} className="hov" onClick={() => setSel(s)}>
-              <td><b>{s.n}</b> {s.co && <span className="badge">C</span>} {s.ri && <span className="badge">R</span>}</td>
+              <td>
+                <b style={s.stub ? { fontWeight: 600, opacity: 0.8 } : undefined}>{s.n}</b>{' '}
+                {s.co && <span className="badge">C</span>} {s.ri && <span className="badge">R</span>} {s.m && <span className="badge">M</span>}
+                {s.stub && <span className="muted small"> · name only</span>}
+              </td>
               <td>{s.l === 0 ? 'Cantrip' : s.l}</td><td>{s.s}</td><td className="small">{s.ct}</td>
               <td className="small muted">{s.cl.join(', ')}</td><td><span className="tag alt">{s.e}</span></td>
               <td onClick={(e) => e.stopPropagation()}>
@@ -287,10 +293,13 @@ function Library() {
       {results.length > limit && <div style={{ textAlign: 'center', marginTop: 10 }}><button className="btn" onClick={() => setLimit(limit + 120)}>Show more</button></div>}
       {results.length === 0 && <div className="empty">No spells match.</div>}
       {sel && (
-        <SpellPreview spell={fromLib(sel)} subtitle={`${sel.e} SRD · ${sel.cl.join(', ')}`} onClose={() => setSel(null)}
-          footer={have(sel.n)
-            ? <span className="muted">Already in your spell list.</span>
-            : <button className="btn primary" onClick={() => { const sp = add(sel); setSel(null); set({ drawer: { kind: 'spell', id: sp.id } }) }}>Add to my spells</button>} />
+        <SpellPreview spell={fromLib(sel)} subtitle={`${sel.src ?? `${sel.e} SRD`} · ${sel.cl.join(', ')}`} onClose={() => setSel(null)}
+          footer={<>
+            {sel.stub && <span className="muted small grow">This entry is from the class list only. Add it, then paste the description or Fetch it.</span>}
+            {have(sel.n)
+              ? <span className="muted">Already in your spell list.</span>
+              : <button className="btn primary" onClick={() => { const sp = add(sel); setSel(null); set({ drawer: { kind: 'spell', id: sp.id } }) }}>Add to my spells</button>}
+          </>} />
       )}
       <Toast msg={toast.msg} />
     </Frame>

@@ -27,6 +27,16 @@ Packaging into a standalone `.exe` is set up (`npm run dist`) but intentionally 
 
 - Spell descriptions can always be typed or pasted. Fetch (by name or wikidot link) and the built-in SRD library are optional helpers.
 
+## Importing spells from a UA / class PDF you own
+
+```
+python tools/import_ua_spells.py "C:\path\to\UA2025-ThePsion.pdf"
+```
+
+Reads the class spell list and any full spell write-ups from the PDF and writes `src/data/extra/<name>.json`.
+The app merges every file in that folder into the Spell Library (filter Class → Psion). Restart the app after importing.
+Spells on the list that aren't in the SRD and aren't written out in the PDF appear as "name only" entries.
+
 ## Credits
 
 Spell library data includes content from the System Reference Document 5.1 and 5.2 by Wizards of the Coast LLC,
