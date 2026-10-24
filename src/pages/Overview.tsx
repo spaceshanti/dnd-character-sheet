@@ -3,7 +3,8 @@ import { ABILITIES, RECHARGES, targetName } from '../constants'
 import { attackInfo, itemAttacks, itemIsActive, signed } from '../calc'
 import { newAttack, newResource } from '../blank'
 import { useChar, useStore, useUI } from '../store'
-import { Area, Frame, Num, Pips, Select, Switch } from '../components/ui'
+import { Frame, Num, Pips, Select, Switch } from '../components/ui'
+import { RichArea } from '../components/RichText'
 import { Icon, itemIcon } from '../components/Icon'
 import type { Attack, Effect } from '../types'
 
@@ -21,7 +22,7 @@ export function Overview() {
           {(['weapons', 'armor', 'tools', 'languages'] as const).map((k) => (
             <div key={k} style={{ marginBottom: 6 }}>
               <div className="field-lbl">{k}</div>
-              <Area className="box-input" minRows={1} value={c.proficiencies[k]} onChange={(v) => patch((d) => { d.proficiencies[k] = v })} />
+              <RichArea className="box-input" minRows={1} value={c.proficiencies[k]} onChange={(v) => patch((d) => { d.proficiencies[k] = v })} />
             </div>
           ))}
         </Frame>
@@ -31,7 +32,7 @@ export function Overview() {
         <AttacksPanel />
         <ResourcesPanel />
         <Frame title="Battle State / Scratchpad" tight>
-          <Area className="sheet-ta" minRows={4} placeholder="Anything you track mid-fight: mirror image count, concentration target, initiative order…" value={c.battleState} onChange={(v) => patch((d) => { d.battleState = v })} />
+          <RichArea className="sheet-ta" minRows={4} placeholder="Anything you track mid-fight: mirror image count, concentration target, initiative order…" value={c.battleState} onChange={(v) => patch((d) => { d.battleState = v })} />
         </Frame>
       </div>
 

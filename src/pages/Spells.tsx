@@ -6,6 +6,7 @@ import { applyLib, bestLib, fromLib, LIB, LIB_CLASSES, LIB_SCHOOLS, searchLib, t
 import { useChar, useStore, useUI } from '../store'
 import { Frame, Modal, Num, Pips, Toast, useToast } from '../components/ui'
 import type { Spell } from '../types'
+import { RichText } from '../components/RichText'
 
 type View = 'mine' | 'library' | string
 
@@ -215,7 +216,7 @@ export function SpellPreview({ spell, onClose, footer, subtitle }: { spell: Spel
           {spell.components && <><b>Components</b><span>{spell.components}</span></>}
           {spell.duration && <><b>Duration</b><span>{spell.duration}</span></>}
         </div>
-        <div className="prose">{spell.description || <span className="muted">No description stored.</span>}</div>
+        {spell.description ? <RichText className="prose" value={spell.description} /> : <div className="prose muted">No description stored.</div>}
         {footer && <div className="row" style={{ borderTop: '1px solid var(--line)', paddingTop: 10 }}>{footer}</div>}
       </div>
     </Modal>

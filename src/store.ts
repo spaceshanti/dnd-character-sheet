@@ -158,6 +158,8 @@ export const useChar = (): Character => {
 }
 
 /* ---------------- transient UI state ---------------- */
+export type ImageTarget = 'portrait' | 'appearanceImage' | 'emblem'
+
 export type PageId = 'overview' | 'character' | 'features' | 'spells' | 'actions' | 'gallery' | 'settings'
 
 export type Drawer =
@@ -174,6 +176,8 @@ interface UIState {
   charListOpen: boolean
   themeOpen: boolean
   drawer: Drawer
+  /** which image the gallery picker is choosing, if open */
+  imagePick: ImageTarget | null
   go: (p: PageId) => void
   toggleDock: () => void
   set: (p: Partial<UIState>) => void
@@ -184,7 +188,7 @@ function readOpen() {
 }
 
 export const useUI = create<UIState>((set) => ({
-  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', charListOpen: false, themeOpen: false, drawer: null,
+  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', charListOpen: false, themeOpen: false, drawer: null, imagePick: null,
   go: (page) => set({ page }),
   toggleDock: () => set((s) => {
     try { localStorage.setItem('dock-open', s.dockOpen ? '0' : '1') } catch { /* private mode */ }

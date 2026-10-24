@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type InputHTMLAttributes, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { ACTION_TYPES, EFFECT_TARGETS, EFFECT_TYPES } from '../constants'
 import { newEffect } from '../blank'
@@ -59,10 +59,37 @@ export function Num({
   )
 }
 
+/** Shrinks an input's font size until its text fits (down to `min` px), then grows back as text is removed. */
+export function useFitText(ref: RefObject<HTMLInputElement>, value: string, min = 9) {
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const fit = () => {
+      el.style.fontSize = ''
+      let size = parseFloat(getComputedStyle(el).fontSize)
+      while (el.scrollWidth > el.clientWidth + 1 && size > min) {
+        size -= 0.5
+        el.style.fontSize = `${size}px`
+      }
+    }
+    fit()
+    const ro = new ResizeObserver(fit)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [ref, value, min])
+}
+
+/** A text input whose text shrinks to fit its box instead of being cut off. */
+export function FitInput({ minSize = 9, ...props }: InputHTMLAttributes<HTMLInputElement> & { minSize?: number }) {
+  const ref = useRef<HTMLInputElement>(null)
+  useFitText(ref, String(props.value ?? ''), minSize)
+  return <input ref={ref} {...props} />
+}
+
 export function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (s: string) => void; placeholder?: string }) {
   return (
     <div className="field">
-      <input value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+      <FitInput value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
       <label>{label}</label>
     </div>
   )

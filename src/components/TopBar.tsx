@@ -1,10 +1,10 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { ALIGNMENTS, CONDITIONS } from '../constants'
 import { activeEffects, netAdvantage, signed, statInfo, type StatKey } from '../calc'
 import { uid } from '../blank'
-import { imageToDataUrl, useChar, useStore, useUI, type PageId } from '../store'
-import { Field, Num, Pips, Popover } from './ui'
+import { useChar, useStore, useUI, type PageId } from '../store'
+import { Field, FitInput, Num, Pips, Popover } from './ui'
+import { dropImagesOn, Lightbox } from './ImagePicker'
 import { StatEditor } from './StatEditor'
 import { Icon } from './Icon'
 
@@ -65,7 +65,7 @@ export function TopBar() {
       <div className="top-main" ref={mainRef}>
         <div className="banner">
           <div className="name-banner">
-            <input value={c.name} placeholder="Character name" onChange={(e) => patch((d) => { d.name = e.target.value })} />
+            <FitInput minSize={12} value={c.name} placeholder="Character name" onChange={(e) => patch((d) => { d.name = e.target.value })} />
             <label>Character Name</label>
           </div>
           <div className="details">
@@ -75,13 +75,13 @@ export function TopBar() {
             <div className="field">
               <div className="row" style={{ gap: 4 }}>
                 <Num min={1} max={20} width={34} className="line-input" style={lineStyle} value={c.level} onChange={(n) => patch((d) => { d.level = n })} />
-                <input className="line-input" style={lineStyle} value={c.xp} placeholder="XP" onChange={(e) => patch((d) => { d.xp = e.target.value })} />
+                <FitInput className="line-input" style={lineStyle} value={c.xp} placeholder="XP" onChange={(e) => patch((d) => { d.xp = e.target.value })} />
               </div>
               <label>Level · Experience</label>
             </div>
             <Field label="Background" value={c.background} onChange={(v) => patch((d) => { d.background = v })} />
             <div className="field">
-              <input list="aligns" value={c.alignment} onChange={(e) => patch((d) => { d.alignment = e.target.value })} />
+              <FitInput list="aligns" value={c.alignment} onChange={(e) => patch((d) => { d.alignment = e.target.value })} />
               <label>Alignment</label>
             </div>
             <Field label="Player" value={c.player} onChange={(v) => patch((d) => { d.player = v })} />
@@ -105,29 +105,22 @@ export function TopBar() {
   )
 }
 
-/** The character's image, always in the top-left corner. Click to view large; ✎ or drop a file to replace. */
+/** The character's image, always in the top-left corner. Click to view large; ✎ to choose from the gallery; drop to add. */
 function Portrait({ size }: { size: number }) {
   const c = useChar()
-  const patch = useStore((s) => s.patch)
-  const file = useRef<HTMLInputElement>(null)
+  const set = useUI((s) => s.set)
   const [big, setBig] = useState(false)
-  const replace = async (f?: File | null) => {
-    if (f && f.type.startsWith('image/')) {
-      const src = await imageToDataUrl(f)
-      patch((d) => { d.portrait = src })
-    }
-  }
+  const pick = () => set({ imagePick: 'portrait' })
   return (
     <div className={`top-portrait ${c.portrait ? '' : 'empty'}`}
       style={{ width: size, height: size, ...(c.portrait ? { backgroundImage: `url("${c.portrait}")` } : {}) }}
-      title={c.portrait ? 'Click to enlarge · drop an image to replace' : 'Click to add an image'}
-      onClick={() => (c.portrait ? setBig(true) : file.current?.click())}
+      title={c.portrait ? 'Click to enlarge · ✎ to change · drop an image to add it' : 'Click to choose an image'}
+      onClick={() => (c.portrait ? setBig(true) : pick())}
       onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => { e.preventDefault(); replace(e.dataTransfer.files?.[0]) }}>
+      onDrop={(e) => { e.preventDefault(); dropImagesOn('portrait', e.dataTransfer.files) }}>
       {!c.portrait && <span>＋<br />Image</span>}
-      {c.portrait && <button className="btn icon sm edit" title="Change image" onClick={(e) => { e.stopPropagation(); file.current?.click() }}>✎</button>}
-      <input ref={file} type="file" accept="image/*" hidden onChange={(e) => { replace(e.target.files?.[0]); e.target.value = '' }} />
-      {big && createPortal(<div className="lightbox" onClick={() => setBig(false)}><img src={c.portrait} /></div>, document.body)}
+      {c.portrait && <button className="btn icon sm edit" title="Change image" onClick={(e) => { e.stopPropagation(); pick() }}>✎</button>}
+      {big && <Lightbox src={c.portrait} onClose={() => setBig(false)} />}
     </div>
   )
 }

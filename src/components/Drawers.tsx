@@ -3,7 +3,8 @@ import { ACTION_TYPES } from '../constants'
 import { isConsumed, newFeature } from '../blank'
 import { findLib, applyLib } from '../spellLib'
 import { useChar, useStore, useUI } from '../store'
-import { Area, Drawer, EffectsEditor, Select, Switch, useToast, Toast } from './ui'
+import { Drawer, EffectsEditor, Select, Switch, useToast, Toast } from './ui'
+import { RichArea, RichText } from './RichText'
 import { FeatureUsage, FeatureUsageEditor } from './FeatureParts'
 import { targetName } from '../constants'
 import type { Effect, Feature, FeatureCategory, Spell } from '../types'
@@ -107,13 +108,13 @@ export function SpellDrawer({ id }: { id: string }) {
             {sp.components && <><b>Components</b><span>{sp.components}</span></>}
             {sp.duration && <><b>Duration</b><span>{sp.duration}</span></>}
           </div>
-          {sp.description ? <div className="prose">{sp.description}</div> : (
+          {sp.description ? <RichText className="prose" value={sp.description} /> : (
             <div className="empty">
               No description stored yet.<br />
               <button className="btn sm" style={{ marginTop: 8 }} onClick={() => setEditing(true)}>Paste one in</button>
             </div>
           )}
-          {sp.notes && <div><div className="field-lbl">My notes</div><div className="prose">{sp.notes}</div></div>}
+          {sp.notes && <div><div className="field-lbl">My notes</div><RichText className="prose" value={sp.notes} /></div>}
           {sp.effects.length > 0 && (
             <div className="col">
               <div className="row">
@@ -172,7 +173,7 @@ export function SpellDrawer({ id }: { id: string }) {
             <div className="muted small">Or just type / paste it below — manually stored text is always kept.</div>
           </div>
 
-          <Area className="box-input" minRows={9} placeholder="Spell description (paste it here)" value={sp.description} onChange={(v) => up((x) => { x.description = v })} />
+          <RichArea className="box-input" minRows={9} placeholder="Spell description (paste it here)" value={sp.description} onChange={(v) => up((x) => { x.description = v })} />
 
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <input className="box-input" placeholder="School" value={sp.school} onChange={(e) => up((x) => { x.school = e.target.value })} />
@@ -189,7 +190,7 @@ export function SpellDrawer({ id }: { id: string }) {
             <label className="row small"><Switch on={sp.prepared} onChange={(b) => up((x) => { x.prepared = b })} /> Prepared</label>
             <label className="row small"><Switch on={sp.alwaysPrepared} onChange={(b) => up((x) => { x.alwaysPrepared = b })} /> Always prepared</label>
           </div>
-          <Area className="box-input" minRows={2} placeholder="My notes" value={sp.notes} onChange={(v) => up((x) => { x.notes = v })} />
+          <RichArea className="box-input" minRows={2} placeholder="My notes" value={sp.notes} onChange={(v) => up((x) => { x.notes = v })} />
           <div>
             <div className="field-lbl" style={{ marginBottom: 4 }}>What this spell changes on my sheet (e.g. Mage Armor → AC +3)</div>
             <EffectsEditor effects={sp.effects} onChange={(e) => up((x) => { x.effects = e })} />
@@ -233,7 +234,7 @@ export function FeatureDrawer({ id }: { id: string }) {
             {f.actionType !== 'none' && <span className="chip accent">{ACTION_TYPES.find((a) => a.id === f.actionType)?.name}</span>}
           </div>
           <FeatureUsage f={f} onUsed={toast.show} />
-          {f.description ? <div className="prose">{f.description}</div> : <div className="empty">No description yet.</div>}
+          {f.description ? <RichText className="prose" value={f.description} /> : <div className="empty">No description yet.</div>}
           {f.effects.length > 0 && (
             <div className="col">
               <div className="row">
@@ -259,7 +260,7 @@ export function FeatureDrawer({ id }: { id: string }) {
             <Select value={f.category} onChange={(v) => up((x) => { x.category = v })} options={CATS} />
             <input className="box-input grow" placeholder="Source (class, book, item…)" value={f.source} onChange={(e) => up((x) => { x.source = e.target.value })} />
           </div>
-          <Area className="box-input" minRows={9} placeholder="Description" value={f.description} onChange={(v) => up((x) => { x.description = v })} />
+          <RichArea className="box-input" minRows={9} placeholder="Description" value={f.description} onChange={(v) => up((x) => { x.description = v })} />
           <div className="row">
             <span className="field-lbl">The feature itself is</span>
             <Select value={f.actionType} onChange={(v) => up((x) => { x.actionType = v })} options={ACTION_TYPES} />

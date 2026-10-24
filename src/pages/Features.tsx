@@ -4,6 +4,8 @@ import { useChar, useStore, useUI } from '../store'
 import { Frame, Switch } from '../components/ui'
 import { addFeature } from '../components/Drawers'
 import type { FeatureCategory } from '../types'
+import { RichText } from '../components/RichText'
+import { plainText } from '../rich'
 
 const CATS: { id: FeatureCategory | 'all'; name: string }[] = [
   { id: 'all', name: 'All' },
@@ -21,7 +23,7 @@ export function FeaturesPage() {
   const set = useUI((s) => s.set)
   const [cat, setCat] = useState<FeatureCategory | 'all'>('all')
   const [q, setQ] = useState('')
-  const list = c.features.filter((f) => (cat === 'all' || f.category === cat) && (!q || (f.name + f.description).toLowerCase().includes(q.toLowerCase())))
+  const list = c.features.filter((f) => (cat === 'all' || f.category === cat) && (!q || (f.name + plainText(f.description)).toLowerCase().includes(q.toLowerCase())))
 
   return (
     <div className="col" style={{ gap: 14 }}>
@@ -52,7 +54,9 @@ export function FeaturesPage() {
                 {f.source && <span className="tag alt">{f.source}</span>}
                 {f.actionType !== 'none' && <span className="chip accent">{ACTION_TYPES.find((a) => a.id === f.actionType)?.name}</span>}
               </div>
-              <div className="prose" style={{ display: '-webkit-box', WebkitLineClamp: 9, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: 13.5 }}>{f.description || <span className="muted">No description.</span>}</div>
+              {f.description
+                ? <RichText className="prose clamp" value={f.description} style={{ fontSize: 13.5 }} />
+                : <div className="prose muted" style={{ fontSize: 13.5 }}>No description.</div>}
               {(f.actions.length > 0 || c.resources.some((r) => r.featureId === f.id)) && (
                 <div className="row" style={{ flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
                   {c.resources.filter((r) => r.featureId === f.id).map((r) => (

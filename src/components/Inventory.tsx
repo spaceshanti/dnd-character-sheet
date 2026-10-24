@@ -4,7 +4,8 @@ import { attackInfo, carryCapacity, itemAttacks, signed, totalWeight } from '../
 import { newItem } from '../blank'
 import { lookupArmor, lookupWeapon } from '../data/gear'
 import { useChar, useStore, useUI } from '../store'
-import { Area, EffectsEditor, Modal, Num, Select, Switch } from './ui'
+import { EffectsEditor, Modal, Num, Select, Switch } from './ui'
+import { RichArea } from './RichText'
 import { Icon, ICONS, itemIcon } from './Icon'
 import type { ArmorStats, Item, WeaponStats } from '../types'
 
@@ -306,7 +307,7 @@ function ItemEditor({ item }: { item: Item }) {
           <span className="field-lbl">Value</span>
           <input className="box-input grow" placeholder="e.g. 50 gp" value={item.value} onChange={(e) => up((x) => { x.value = e.target.value })} />
         </div>
-        <Area className="box-input" minRows={3} placeholder="Description / properties" value={item.description} onChange={(v) => up((x) => { x.description = v })} />
+        <RichArea className="box-input" minRows={3} placeholder="Description / properties" value={item.description} onChange={(v) => up((x) => { x.description = v })} />
       </Section>
 
       <button className="btn danger" onClick={() => {

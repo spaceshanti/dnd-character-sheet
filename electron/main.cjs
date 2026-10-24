@@ -21,6 +21,19 @@ function createWindow() {
   })
   Menu.setApplicationMenu(null)
   win.once('ready-to-show', () => win.show())
+  // right-click: spelling suggestions, add to dictionary, cut / copy / paste
+  win.webContents.on('context-menu', (_e, params) => {
+    const items = []
+    for (const s of params.dictionarySuggestions.slice(0, 6)) items.push({ label: s, click: () => win.webContents.replaceMisspelling(s) })
+    if (params.misspelledWord) {
+      if (!params.dictionarySuggestions.length) items.push({ label: 'No suggestions', enabled: false })
+      items.push({ label: 'Add to dictionary', click: () => win.webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord) })
+      items.push({ type: 'separator' })
+    }
+    if (params.isEditable) items.push({ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { type: 'separator' }, { role: 'selectAll' })
+    else if (params.selectionText) items.push({ role: 'copy' })
+    if (items.length) Menu.buildFromTemplate(items).popup({ window: win })
+  })
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/.test(url)) shell.openExternal(url)
     return { action: 'deny' }

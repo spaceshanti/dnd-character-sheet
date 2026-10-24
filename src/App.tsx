@@ -6,6 +6,7 @@ import { Inventory } from './components/Inventory'
 import { CharacterList } from './pages/CharacterList'
 import { DrawerHost } from './components/Drawers'
 import { ThemeMenu } from './components/SkinPicker'
+import { ImagePicker } from './components/ImagePicker'
 import { Overview } from './pages/Overview'
 import { CharacterPage } from './pages/Character'
 import { FeaturesPage } from './pages/Features'
@@ -79,6 +80,7 @@ export default function App() {
       </div>
       <Inventory />
       <ThemeMenu />
+      <ImagePicker />
       <DrawerHost />
     </div>
   )

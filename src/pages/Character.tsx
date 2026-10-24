@@ -1,6 +1,7 @@
 import { uid } from '../blank'
 import { useChar, useStore } from '../store'
-import { Area, Frame } from '../components/ui'
+import { Field, Frame } from '../components/ui'
+import { RichArea } from '../components/RichText'
 import { ImageBox } from '../components/ImageBox'
 
 export function CharacterPage() {
@@ -9,7 +10,7 @@ export function CharacterPage() {
   const st = c.story
   const text = (key: keyof typeof st, title: string, rows = 4, ph = '') => (
     <Frame title={title} tight>
-      <Area className="sheet-ta" minRows={rows} placeholder={ph} value={st[key]} onChange={(v) => patch((d) => { d.story[key] = v })} />
+      <RichArea className="sheet-ta" minRows={rows} placeholder={ph} value={st[key]} onChange={(v) => patch((d) => { d.story[key] = v })} />
     </Frame>
   )
 
@@ -18,18 +19,15 @@ export function CharacterPage() {
       {/* left: who they are */}
       <div className="col" style={{ gap: 12 }}>
         <Frame title="Appearance" tight>
-          <ImageBox src={c.appearanceImage} onChange={(s) => patch((d) => { d.appearanceImage = s })} contain maxHeight={c.appearanceImage ? 420 : 160} placeholder="Click or drop a full-body / appearance image" />
+          <ImageBox target="appearanceImage" contain maxHeight={c.appearanceImage ? 420 : 160} placeholder="Click to choose a full-body / appearance image" />
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 8 }}>
             {(['age', 'height', 'weight', 'eyes', 'skin', 'hair'] as const).map((k) => (
-              <div className="field" key={k}>
-                <input value={c.appearance[k]} onChange={(e) => patch((d) => { d.appearance[k] = e.target.value })} />
-                <label>{k}</label>
-              </div>
+              <Field key={k} label={k} value={c.appearance[k]} onChange={(v) => patch((d) => { d.appearance[k] = v })} />
             ))}
           </div>
         </Frame>
         <Frame title="Character Backstory" tight>
-          <Area className="sheet-ta free" minRows={14} placeholder="Where do they come from? What drives them?" value={st.backstory} onChange={(v) => patch((d) => { d.story.backstory = v })} />
+          <RichArea className="sheet-ta free" minRows={14} placeholder="Where do they come from? What drives them?" value={st.backstory} onChange={(v) => patch((d) => { d.story.backstory = v })} />
         </Frame>
       </div>
 
@@ -50,9 +48,9 @@ export function CharacterPage() {
         >
           <div className="row" style={{ alignItems: 'flex-start', gap: 10 }}>
             <div style={{ width: 96, flex: 'none' }}>
-              <ImageBox src={c.emblem} onChange={(s) => patch((d) => { d.emblem = s })} ratio="1 / 1" contain placeholder="Emblem" />
+              <ImageBox target="emblem" ratio="1 / 1" contain placeholder="Emblem" />
             </div>
-            <Area className="sheet-ta free" minRows={5} value={st.allies} placeholder="Factions, patrons, family, rivals…" onChange={(v) => patch((d) => { d.story.allies = v })} />
+            <RichArea className="sheet-ta free" minRows={5} value={st.allies} placeholder="Factions, patrons, family, rivals…" onChange={(v) => patch((d) => { d.story.allies = v })} />
           </div>
         </Frame>
 
@@ -66,7 +64,7 @@ export function CharacterPage() {
               <button className="btn sm ghost" onClick={() => { if (window.confirm('Delete this box?')) patch((d) => { d.extraNotes = d.extraNotes.filter((y) => y.id !== n.id) }) }}>✕</button>
             </>
           }>
-            <Area className="sheet-ta free" minRows={4} value={n.text} onChange={(v) => patch((d) => { const x = d.extraNotes.find((y) => y.id === n.id); if (x) x.text = v })} />
+            <RichArea className="sheet-ta free" minRows={4} value={n.text} onChange={(v) => patch((d) => { const x = d.extraNotes.find((y) => y.id === n.id); if (x) x.text = v })} />
           </Frame>
         ))}
         <div>
