@@ -1,4 +1,5 @@
 import { SKILLS } from './constants'
+import { EMOJI_TO_ICON } from './components/Icon'
 import type { Attack, Character, Effect, Feature, Item, Mod, Resource, Spell } from './types'
 
 export const uid = () =>
@@ -20,9 +21,9 @@ export function newSpell(level = 1, name = ''): Spell {
 export function newFeature(category: Feature['category'] = 'class'): Feature {
   return { id: uid(), name: '', category, source: '', description: '', actionType: 'none', effects: [], active: true }
 }
-export function newItem(): Item {
+export function newItem(magic = false): Item {
   return {
-    id: uid(), name: '', icon: '📦', category: 'Misc', qty: 1, weight: 0, value: '', rarity: 'common',
+    id: uid(), name: '', magic, icon: magic ? 'sparkle' : 'box', category: 'Misc', qty: 1, weight: 0, value: '', rarity: 'common',
     description: '', slot: '', attunement: false, attuned: false, actionType: 'none', effects: [],
   }
 }
@@ -42,7 +43,7 @@ export function blankCharacter(name = 'New Character'): Character {
   for (let i = 1; i <= 9; i++) slots[i] = { total: 0, used: 0 }
   return {
     id: uid(), name, className: '', subclass: '', level: 1, species: '', background: '', alignment: '',
-    player: '', xp: '', portrait: '', emblem: '',
+    player: '', xp: '', portrait: '', appearanceImage: '', emblem: '',
     appearance: { age: '', height: '', weight: '', eyes: '', skin: '', hair: '' },
     abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
     saveProf: { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 },
@@ -93,6 +94,13 @@ export function normalize(raw: Partial<Character>): Character {
     c.story.trait3 = ''
   }
   c.spells = c.spells.map((s) => ({ ...s, materialConsumed: s.materialConsumed ?? isConsumed(s.components) }))
+  c.items = c.items.map((i) => ({
+    ...i,
+    icon: EMOJI_TO_ICON[i.icon] ?? i.icon,
+    magic: i.magic ?? (i.rarity !== 'common' || i.effects.length > 0 || i.attunement),
+  }))
+  // the Appearance box used to show the top-left portrait; start it off with the same picture
+  if (raw.appearanceImage === undefined) c.appearanceImage = c.portrait
   return c
 }
 

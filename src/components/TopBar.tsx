@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ALIGNMENTS, CONDITIONS } from '../constants'
 import { activeEffects, netAdvantage, signed, statInfo, type StatKey } from '../calc'
@@ -6,6 +6,7 @@ import { uid } from '../blank'
 import { imageToDataUrl, useChar, useStore, useUI, type PageId } from '../store'
 import { Field, Num, Pips, Popover } from './ui'
 import { StatEditor } from './StatEditor'
+import { Icon } from './Icon'
 
 const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']
 
@@ -22,10 +23,17 @@ const TABS: { id: PageId; name: string }[] = [
 export function TopBar() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
-  const theme = useStore((s) => s.theme)
-  const skin = useStore((s) => s.skin)
-  const setTheme = useStore((s) => s.setTheme)
   const { page, go, set } = useUI()
+  // the portrait is a square as tall as the name + stats block beside it
+  const mainRef = useRef<HTMLDivElement>(null)
+  const [mainH, setMainH] = useState(116)
+  useLayoutEffect(() => {
+    const el = mainRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setMainH(el.offsetHeight))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const longRest = () => {
     if (!window.confirm('Take a long rest? This refills HP, spell slots, hit dice (half), resources and clears death saves.')) return
@@ -48,8 +56,8 @@ export function TopBar() {
   const lineStyle = { fontWeight: 600 }
   return (
     <header className="topbar">
-      <Portrait />
-      <div className="top-main">
+      <Portrait size={Math.max(60, mainH - 12)} />
+      <div className="top-main" ref={mainRef}>
         <div className="banner">
           <div className="name-banner">
             <input value={c.name} placeholder="Character name" onChange={(e) => patch((d) => { d.name = e.target.value })} />
@@ -86,14 +94,14 @@ export function TopBar() {
         <button className="btn sm ghost" onClick={shortRest} title="Short rest">☾ Short rest</button>
         <button className="btn sm ghost" onClick={longRest} title="Long rest">☀ Long rest</button>
         <button className="btn sm ghost" onClick={() => set({ rosterOpen: true })}>👥 Characters</button>
-        {skin === 'standard' && <button className="btn sm ghost" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Light / dark">◐</button>}
+        <button className="btn sm ghost" onClick={() => set({ themeOpen: true })} title="UI style (Ctrl + T)">◐</button>
       </nav>
     </header>
   )
 }
 
 /** The character's image, always in the top-left corner. Click to view large; ✎ or drop a file to replace. */
-function Portrait() {
+function Portrait({ size }: { size: number }) {
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const file = useRef<HTMLInputElement>(null)
@@ -105,8 +113,8 @@ function Portrait() {
     }
   }
   return (
-    <div className="top-portrait"
-      style={c.portrait ? { backgroundImage: `url("${c.portrait}")` } : undefined}
+    <div className={`top-portrait ${c.portrait ? '' : 'empty'}`}
+      style={{ width: size, height: size, ...(c.portrait ? { backgroundImage: `url("${c.portrait}")` } : {}) }}
       title={c.portrait ? 'Click to enlarge · drop an image to replace' : 'Click to add an image'}
       onClick={() => (c.portrait ? setBig(true) : file.current?.click())}
       onDragOver={(e) => e.preventDefault()}
@@ -239,7 +247,7 @@ function Vitals() {
       </div>
 
       <button className="inv-btn" onClick={() => useUI.getState().set({ inventoryOpen: true })} title="Open inventory (Ctrl+I)">
-        <span className="ico">🎒</span>
+        <Icon name="pack" className="inv-ico" />
         <span className="l">Inventory</span>
       </button>
 

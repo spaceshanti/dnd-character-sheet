@@ -180,3 +180,13 @@
 [data-skin='cyberpunk'] .coin input { border-radius: 0; border: 1px solid var(--accent); color: var(--accent); background: #000; font-family: var(--font-num); font-weight: 400; }
 [data-skin='cyberpunk'] .coin span { color: var(--cp-red); }
 [data-skin='cyberpunk'] .skin-card { border-radius: 0; }
+
+/* icons: thin neon strokes with a glow */
+:root[data-skin='cyberpunk'] { --icon-stroke: 1.5; }
+[data-skin='cyberpunk'] svg.ico { color: var(--cp-cyan); filter: drop-shadow(0 0 3px rgba(94, 246, 255, 0.65)); }
+[data-skin='cyberpunk'] .inv-btn .inv-ico { color: var(--accent); filter: drop-shadow(0 0 4px rgba(252, 238, 10, 0.6)); }
+[data-skin='cyberpunk'] .inv-btn:hover .inv-ico { color: #000; filter: none; }
+[data-skin='cyberpunk'] .r-legendary svg.ico, [data-skin='cyberpunk'] .r-artifact svg.ico { color: var(--accent); filter: drop-shadow(0 0 4px rgba(252, 238, 10, 0.7)); }
+[data-skin='cyberpunk'] .r-very-rare svg.ico { color: #e36bff; filter: drop-shadow(0 0 4px rgba(227, 107, 255, 0.7)); }
+[data-skin='cyberpunk'] .eq-slot .ph svg.ico { filter: none; }
+[data-skin='cyberpunk'] .icon-pick-btn, [data-skin='cyberpunk'] .icon-grid, [data-skin='cyberpunk'] .icon-grid button { border-radius: 0; }

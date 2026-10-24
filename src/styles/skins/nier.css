@@ -117,3 +117,8 @@
 [data-skin='nier'] .bag .tile.empty-slot { background: var(--panel2); border-color: var(--line); }
 [data-skin='nier'] .coin input { border-radius: 0; border-width: 1px; }
 [data-skin='nier'] .skin-card { border-radius: 0; }
+
+/* icons: slightly heavier, flat, monochrome, no rarity tint */
+:root[data-skin='nier'] { --icon-stroke: 1.9; }
+[data-skin='nier'] .tile svg.ico, [data-skin='nier'] .eq-slot svg.ico, [data-skin='nier'] .icon-grid svg.ico, [data-skin='nier'] .icon-pick-btn svg.ico { color: var(--slot-ink); }
+[data-skin='nier'] .icon-pick-btn, [data-skin='nier'] .icon-grid, [data-skin='nier'] .icon-grid button { border-radius: 0; }

@@ -4,6 +4,7 @@ import { attackInfo, itemIsActive, signed } from '../calc'
 import { newAttack, newResource } from '../blank'
 import { useChar, useStore, useUI } from '../store'
 import { Area, Frame, Num, Pips, Select, Switch } from '../components/ui'
+import { Icon, itemIcon } from '../components/Icon'
 import type { Attack, Effect, Recharge } from '../types'
 
 const effectText = (e: Effect) =>
@@ -38,11 +39,11 @@ export function Overview() {
         <Frame title="Buffs & Item Effects">
           <EffectToggles />
         </Frame>
-        <Frame title="Equipment" tight tools={<button className="btn sm" onClick={() => set({ inventoryOpen: true })}>Open 🎒</button>}>
+        <Frame title="Equipment" tight tools={<button className="btn sm" onClick={() => set({ inventoryOpen: true })}><Icon name="pack" /> Open</button>}>
           {c.items.filter((i) => i.slot).length === 0 && <div className="empty">Nothing equipped.</div>}
           {c.items.filter((i) => i.slot).map((i) => (
             <div key={i.id} className="list-row" onClick={() => set({ inventoryOpen: true, inventorySelected: i.id })}>
-              <span>{i.icon}</span><span className="grow">{i.name}</span>
+              <Icon name={itemIcon(i)} className="list-ico" /><span className="grow">{i.name}</span>
               {i.attunement && <span title={i.attuned ? 'Attuned' : 'Not attuned'}>{i.attuned ? '✦' : '✧'}</span>}
               {!itemIsActive(i) && i.effects.length > 0 && <span className="chip">effects off</span>}
             </div>
@@ -163,7 +164,7 @@ function EffectToggles() {
         <div key={r.kind + r.id} style={{ borderBottom: '1px solid var(--line)', padding: '6px 0' }}>
           <div className="row">
             {r.kind === 'item' ? (
-              <span className="chip" style={{ cursor: 'pointer' }} onClick={() => set({ inventoryOpen: true, inventorySelected: r.id })}>🎒</span>
+              <span className="chip" style={{ cursor: 'pointer' }} onClick={() => set({ inventoryOpen: true, inventorySelected: r.id })}><Icon name="pack" /></span>
             ) : (
               <Switch on={r.on} onChange={(b) => patch((d) => {
                 const list = r.kind === 'feature' ? d.features : d.spells

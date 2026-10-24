@@ -162,3 +162,11 @@
 [data-skin='skyrim'] .bag .tile.empty-slot { background: rgba(0, 0, 0, 0.25); border-color: rgba(255, 255, 255, 0.07); }
 [data-skin='skyrim'] .coin input { border-radius: 0; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.4); font-weight: 400; }
 [data-skin='skyrim'] .skin-card { border-radius: 0; background: rgba(0, 0, 0, 0.3); }
+
+/* icons: fine pale strokes with a soft glow */
+:root[data-skin='skyrim'] { --icon-stroke: 1.15; }
+[data-skin='skyrim'] svg.ico { color: var(--ink); }
+[data-skin='skyrim'] .tile svg.ico, [data-skin='skyrim'] .eq-slot svg.ico { filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.35)); }
+[data-skin='skyrim'] .r-uncommon svg.ico, [data-skin='skyrim'] .r-rare svg.ico, [data-skin='skyrim'] .r-very-rare svg.ico,
+[data-skin='skyrim'] .r-legendary svg.ico, [data-skin='skyrim'] .r-artifact svg.ico { color: #f1e2b8; }
+[data-skin='skyrim'] .icon-pick-btn, [data-skin='skyrim'] .icon-grid, [data-skin='skyrim'] .icon-grid button { border-radius: 0; }

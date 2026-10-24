@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { ACTION_TYPES, ITEM_CATEGORIES, RARITIES, SLOT_IDS } from '../constants'
 import { carryCapacity, totalWeight } from '../calc'
 import { newItem } from '../blank'
 import { useChar, useStore, useUI } from '../store'
 import { Area, EffectsEditor, Modal, Num, Select, Switch } from './ui'
+import { guessIcon, Icon, ICONS, itemIcon } from './Icon'
 import type { Item } from '../types'
 
-const rarityClass = (i: Item) => `r-${i.rarity.replace(' ', '-')}`
+const rarityClass = (i: Item) => (i.magic ? `r-${i.rarity.replace(' ', '-')}` : 'r-common')
+const slotOptions = [{ id: '', name: 'Not equipped' }, ...SLOT_IDS.map((s) => ({ id: s.id, name: s.name + (s.id.startsWith('ring') ? ` (${s.id.slice(-1)})` : '') }))]
 
 export function Inventory() {
   const open = useUI((s) => s.inventoryOpen)
@@ -15,27 +17,34 @@ export function Inventory() {
   return <InventoryInner onClose={() => set({ inventoryOpen: false })} />
 }
 
+/** "16 rations" / "rations x16" → { qty: 16, name: 'rations' } */
+function parseGear(text: string): { qty: number; name: string } {
+  const t = text.trim()
+  let m = t.match(/^(\d+)\s*[x×]?\s+(.+)$/i)
+  if (m) return { qty: +m[1], name: m[2] }
+  m = t.match(/^(.+?)\s*(?:[x×]\s*(\d+)|\((\d+)\))$/i)
+  if (m) return { qty: +(m[2] ?? m[3]), name: m[1] }
+  return { qty: 1, name: t }
+}
+
 function InventoryInner({ onClose }: { onClose: () => void }) {
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const sel = useUI((s) => s.inventorySelected)
   const set = useUI((s) => s.set)
-  const [filter, setFilter] = useState('All')
   const [q, setQ] = useState('')
   const [over, setOver] = useState('')
+  const [draft, setDraft] = useState('')
 
   const w = totalWeight(c)
   const cap = carryCapacity(c)
   const ratio = w / Math.max(1, cap)
   const attuned = c.items.filter((i) => i.attunement && i.attuned).length
   const selected = c.items.find((i) => i.id === sel)
-
-  const bag = useMemo(
-    () => c.items.filter((i) => !i.slot && (filter === 'All' || i.category === filter) && (!q || i.name.toLowerCase().includes(q.toLowerCase()))),
-    [c.items, filter, q],
-  )
-  const cats = ['All', ...Array.from(new Set(c.items.map((i) => i.category)))]
-  const cells = Math.max(30, Math.ceil((bag.length + 1) / 6) * 6)
+  const match = (i: Item) => !q || i.name.toLowerCase().includes(q.toLowerCase())
+  const magic = c.items.filter((i) => i.magic && !i.slot && match(i))
+  const gear = c.items.filter((i) => !i.magic && !i.slot && match(i))
+  const cells = Math.max(12, Math.ceil((magic.length + 1) / 6) * 6)
 
   const equip = (itemId: string, slot: string) =>
     patch((d) => {
@@ -47,28 +56,41 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
       }
       it.slot = slot
     })
+  const up = (id: string, fn: (i: Item) => void) => patch((d) => { const x = d.items.find((y) => y.id === id); if (x) fn(x) })
 
-  const add = () => {
-    const it = newItem()
+  const addGear = () => {
+    if (!draft.trim()) return
+    const { qty, name } = parseGear(draft)
+    const it = { ...newItem(false), name, qty }
+    patch((d) => { d.items.push(it) })
+    setDraft('')
+  }
+  const addMagic = () => {
+    const it = newItem(true)
     patch((d) => { d.items.push(it) })
     set({ inventorySelected: it.id })
   }
 
-  const dragProps = (i: Item) => ({
+  const drag = (i: Item) => ({
     draggable: true,
     onDragStart: (e: React.DragEvent) => { e.dataTransfer.setData('text/item', i.id); e.dataTransfer.effectAllowed = 'move' },
-    onClick: () => set({ inventorySelected: i.id }),
+  })
+  const unequipDrop = (zone: string) => ({
+    onDragOver: (e: React.DragEvent) => { e.preventDefault(); setOver(zone) },
+    onDragLeave: () => setOver(''),
+    onDrop: (e: React.DragEvent) => { e.preventDefault(); setOver(''); const id = e.dataTransfer.getData('text/item'); if (id) equip(id, '') },
   })
 
   return (
     <Modal
       wide
-      title="🎒 Inventory"
+      title={<span className="row" style={{ gap: 8 }}><Icon name="pack" /> Inventory</span>}
       onClose={onClose}
       tools={
         <div className="row small" style={{ gap: 14 }}>
+          <input className="box-input" style={{ width: 150 }} placeholder="search…" value={q} onChange={(e) => setQ(e.target.value)} />
           <span title="Attuned magic items (max 3)" style={{ color: attuned > 3 ? 'var(--dis)' : undefined }}>✦ Attuned {attuned}/3</span>
-          <div style={{ width: 160 }}>
+          <div style={{ width: 150 }}>
             <div className="row" style={{ justifyContent: 'space-between' }}><b>{w}</b><span className="muted">/ {cap} lb</span></div>
             <div className={`weight-bar ${ratio > 1 ? 'over' : ratio > 0.66 ? 'heavy' : ''}`}><i style={{ width: Math.min(100, ratio * 100) + '%' }} /></div>
           </div>
@@ -90,47 +112,74 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
                   onDragOver={(e) => { e.preventDefault(); setOver(s.id) }}
                   onDragLeave={() => setOver('')}
                   onDrop={(e) => { e.preventDefault(); setOver(''); const id = e.dataTransfer.getData('text/item'); if (id) equip(id, s.id) }}
-                  {...(it ? dragProps(it) : {})}
+                  onClick={() => it && set({ inventorySelected: it.id })}
+                  {...(it ? drag(it) : {})}
                 >
-                  {it ? <>{it.icon}<span className="cap">{it.name || 'Unnamed'}</span>{it.attunement && <span className="att">{it.attuned ? '✦' : '✧'}</span>}</> : <><span className="ph">{s.icon}</span><span className="cap" style={{ background: 'transparent', color: '#888' }}>{s.name}</span></>}
+                  {it ? (
+                    <>
+                      <Icon name={itemIcon(it)} />
+                      <span className="cap">{it.name || 'Unnamed'}</span>
+                      {it.qty > 1 && <span className="qty">{it.qty}</span>}
+                      {it.attunement && <span className="att">{it.attuned ? '✦' : '✧'}</span>}
+                    </>
+                  ) : (
+                    <><span className="ph"><Icon name={s.icon} /></span><span className="cap" style={{ background: 'transparent', color: '#888' }}>{s.name}</span></>
+                  )}
                 </div>
               )
             })}
           </div>
-          <div className="muted small" style={{ marginTop: 8 }}>Drag items here to equip them. Equipped (and attuned, if needed) items apply their linked bonuses.</div>
+          <div className="muted small" style={{ marginTop: 8 }}>Drag any item here to equip it. Equipped magic items apply their linked bonuses.</div>
         </div>
 
-        {/* bag */}
-        <div className="col" style={{ minWidth: 0 }}>
-          <div className="row" style={{ flexWrap: 'wrap' }}>
-            <div className="field-lbl">Backpack</div>
-            <input className="box-input" style={{ width: 150 }} placeholder="search…" value={q} onChange={(e) => setQ(e.target.value)} />
-            <span className="grow" />
-            <button className="btn primary sm" onClick={add}>＋ New item</button>
+        {/* backpack */}
+        <div className="col" style={{ minWidth: 0, gap: 12 }}>
+          <div className={over === 'magic' ? 'inv-drop' : ''} {...unequipDrop('magic')}>
+            <div className="inv-sec-head">
+              <span className="field-lbl">Magic items</span>
+              <button className="btn primary sm" onClick={addMagic}>＋ Magic item</button>
+            </div>
+            <div className="magic-grid">
+              {Array.from({ length: cells }, (_, n) => {
+                const it = magic[n]
+                return it ? (
+                  <div key={it.id} className={`tile ${rarityClass(it)} ${it.id === sel ? 'sel' : ''}`} title={it.name}
+                    onClick={() => set({ inventorySelected: it.id })} {...drag(it)}>
+                    <Icon name={itemIcon(it)} />
+                    {it.qty > 1 && <span className="qty">{it.qty}</span>}
+                    {it.attunement && <span className="att">{it.attuned ? '✦' : '✧'}</span>}
+                    <span className="cap">{it.name || 'Unnamed'}</span>
+                  </div>
+                ) : <div key={'e' + n} className="tile empty-slot" />
+              })}
+            </div>
           </div>
-          <div className="row" style={{ flexWrap: 'wrap', gap: 4 }}>
-            {cats.map((x) => <button key={x} className={`chip ${filter === x ? 'accent' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setFilter(x)}>{x}</button>)}
-          </div>
-          <div
-            className={`bag ${over === 'bag' ? 'drop' : ''}`}
-            onDragOver={(e) => { e.preventDefault(); setOver('bag') }}
-            onDragLeave={() => setOver('')}
-            onDrop={(e) => { e.preventDefault(); setOver(''); const id = e.dataTransfer.getData('text/item'); if (id) equip(id, '') }}
-            style={over === 'bag' ? { outline: '2px dashed var(--accent)', outlineOffset: 4, borderRadius: 8 } : undefined}
-          >
-            {Array.from({ length: cells }, (_, n) => {
-              const it = bag[n]
-              return it ? (
-                <div key={it.id} className={`tile ${rarityClass(it)} ${it.id === sel ? 'sel' : ''}`} title={it.name} {...dragProps(it)}>
-                  {it.icon}
-                  {it.qty > 1 && <span className="qty">{it.qty}</span>}
-                  {it.attunement && <span className="att">{it.attuned ? '✦' : '✧'}</span>}
-                  <span className="cap">{it.name || 'Unnamed'}</span>
+
+          <div className={over === 'gear' ? 'inv-drop' : ''} {...unequipDrop('gear')}>
+            <div className="inv-sec-head"><span className="field-lbl">Equipment & gear</span></div>
+            <div className="gear-list">
+              <div className="gear-row head"><span /><span style={{ textAlign: 'center' }}>Qty</span><span>Item</span><span style={{ textAlign: 'right' }}>lb ea.</span><span /><span /></div>
+              {gear.map((it) => (
+                <div key={it.id} className={`gear-row ${it.id === sel ? 'sel' : ''}`} onClick={() => set({ inventorySelected: it.id })}>
+                  <span className="grip" title="Drag to equip" {...drag(it)}><Icon name={itemIcon(it)} className="gico" /></span>
+                  <Num min={0} className="qty-in" value={it.qty} onChange={(n) => up(it.id, (x) => { x.qty = n })} />
+                  <input value={it.name} placeholder="item" onChange={(e) => up(it.id, (x) => { x.name = e.target.value })} />
+                  <Num min={0} className="lb-in" value={it.weight} onChange={(n) => up(it.id, (x) => { x.weight = n })} />
+                  <button className="btn sm ghost" title="Turn into a magic item (rarity, attunement, effects…)"
+                    onClick={(e) => { e.stopPropagation(); up(it.id, (x) => { x.magic = true; if (x.icon === 'box') x.icon = guessIcon(x.name) }); set({ inventorySelected: it.id }) }}>✦</button>
+                  <button className="btn sm ghost" title="Remove"
+                    onClick={(e) => { e.stopPropagation(); patch((d) => { d.items = d.items.filter((y) => y.id !== it.id) }) }}>✕</button>
                 </div>
-              ) : <div key={'e' + n} className="tile empty-slot" />
-            })}
+              ))}
+              <div className="gear-add">
+                <span className="muted">＋</span>
+                <input value={draft} placeholder="Add gear and press Enter, e.g. “16 rations” or “Torch x9”"
+                  onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addGear()} />
+              </div>
+            </div>
           </div>
-          <div className="row" style={{ marginTop: 6, flexWrap: 'wrap' }}>
+
+          <div className="row" style={{ flexWrap: 'wrap' }}>
             {(['cp', 'sp', 'ep', 'gp', 'pp'] as const).map((k) => (
               <div className="coin" key={k}>
                 <Num min={0} value={c.coins[k]} onChange={(n) => patch((d) => { d.coins[k] = n })} />
@@ -143,24 +192,74 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
 
         {/* detail */}
         <div>
-          {selected ? <ItemEditor key={selected.id} item={selected} /> : <div className="empty">Select an item to see or edit its details.</div>}
+          {selected
+            ? selected.magic ? <MagicEditor key={selected.id} item={selected} /> : <GearEditor key={selected.id} item={selected} />
+            : <div className="empty">Click a magic item (or any equipped item) to see its details. Everyday gear is edited right in the list.</div>}
         </div>
       </div>
     </Modal>
   )
 }
 
-function ItemEditor({ item }: { item: Item }) {
+function useItem(item: Item) {
   const patch = useStore((s) => s.patch)
   const set = useUI((s) => s.set)
   const up = (fn: (i: Item) => void) => patch((d) => { const x = d.items.find((y) => y.id === item.id); if (x) fn(x) })
-  const slotOptions = [{ id: '', name: 'In backpack' }, ...SLOT_IDS.map((s) => ({ id: s.id, name: s.name + (s.id.startsWith('ring') ? ` (${s.id.slice(-1)})` : '') }))]
+  const setSlot = (v: string) => patch((d) => {
+    if (v) { const o = d.items.find((i) => i.slot === v && i.id !== item.id); if (o) o.slot = '' }
+    const x = d.items.find((y) => y.id === item.id)
+    if (x) x.slot = v
+  })
+  const remove = () => {
+    if (!window.confirm(`Delete ${item.name || 'this item'}?`)) return
+    set({ inventorySelected: '' })
+    patch((d) => { d.items = d.items.filter((y) => y.id !== item.id) })
+  }
+  return { up, setSlot, remove }
+}
+
+/** Everyday gear: name, amount, weight, a note, where it's worn. */
+function GearEditor({ item }: { item: Item }) {
+  const { up, setSlot, remove } = useItem(item)
   return (
     <div className="col" style={{ gap: 8 }}>
       <div className="row">
-        <input className="box-input" style={{ width: 52, textAlign: 'center', fontSize: 20 }} value={item.icon} title="Icon (type or paste any emoji)" onChange={(e) => up((x) => { x.icon = e.target.value.slice(-2) || '📦' })} />
+        <span className={`icon-pick-btn ${rarityClass(item)}`}><Icon name={itemIcon(item)} /></span>
+        <input className="box-input grow" placeholder="Item name" value={item.name} onChange={(e) => up((x) => { x.name = e.target.value })} />
+      </div>
+      <div className="row">
+        <span className="field-lbl">Qty</span>
+        <Num min={0} className="box-input" width={54} style={{ textAlign: 'center' }} value={item.qty} onChange={(n) => up((x) => { x.qty = n })} />
+        <span className="field-lbl" style={{ marginLeft: 6 }}>Lb ea.</span>
+        <Num min={0} className="box-input" width={54} value={item.weight} onChange={(n) => up((x) => { x.weight = n })} />
+      </div>
+      <div className="row"><span className="field-lbl">Worn in</span><Select value={item.slot} onChange={setSlot} options={slotOptions} /></div>
+      <Area className="box-input" minRows={3} placeholder="Notes (optional)" value={item.description} onChange={(v) => up((x) => { x.description = v })} />
+      <button className="btn" onClick={() => up((x) => { x.magic = true; if (x.icon === 'box') x.icon = guessIcon(x.name) })}>✦ Turn into a magic item</button>
+      <button className="btn danger" onClick={remove}>Delete</button>
+    </div>
+  )
+}
+
+/** Magic items: the full detail. */
+function MagicEditor({ item }: { item: Item }) {
+  const { up, setSlot, remove } = useItem(item)
+  const [picking, setPicking] = useState(false)
+  return (
+    <div className="col" style={{ gap: 8 }}>
+      <div className="row">
+        <button className={`icon-pick-btn ${rarityClass(item)}`} title="Change icon" onClick={() => setPicking(!picking)}><Icon name={item.icon} /></button>
         <input className="box-input grow" placeholder="Item name" autoFocus={!item.name} value={item.name} onChange={(e) => up((x) => { x.name = e.target.value })} />
       </div>
+      {picking && (
+        <div className="icon-grid">
+          {Object.entries(ICONS).map(([key, ic]) => (
+            <button key={key} className={item.icon === key ? 'on' : ''} title={ic.name} onClick={() => { up((x) => { x.icon = key }); setPicking(false) }}>
+              <Icon name={key} />
+            </button>
+          ))}
+        </div>
+      )}
       <div className="row">
         <Select value={item.category} onChange={(v) => up((x) => { x.category = v; const cat = ITEM_CATEGORIES.find((k) => k.name === v); if (cat) x.icon = cat.icon })}
           options={ITEM_CATEGORIES.map((k) => ({ id: k.name, name: k.name }))} />
@@ -178,13 +277,7 @@ function ItemEditor({ item }: { item: Item }) {
         <span className="field-lbl">Value</span>
         <input className="box-input grow" placeholder="e.g. 50 gp" value={item.value} onChange={(e) => up((x) => { x.value = e.target.value })} />
       </div>
-      <div className="row">
-        <span className="field-lbl">Where</span>
-        <Select value={item.slot} onChange={(v) => up((x) => {
-          if (v) useStore.getState().patch((d) => { const o = d.items.find((i) => i.slot === v && i.id !== item.id); if (o) o.slot = '' })
-          x.slot = v
-        })} options={slotOptions} />
-      </div>
+      <div className="row"><span className="field-lbl">Worn in</span><Select value={item.slot} onChange={setSlot} options={slotOptions} /></div>
       <div className="row" style={{ flexWrap: 'wrap', gap: 14 }}>
         <label className="row small"><Switch on={item.attunement} onChange={(b) => up((x) => { x.attunement = b; if (!b) x.attuned = false })} /> Requires attunement</label>
         {item.attunement && <label className="row small"><Switch on={item.attuned} onChange={(b) => up((x) => { x.attuned = b })} /> Attuned</label>}
@@ -198,7 +291,11 @@ function ItemEditor({ item }: { item: Item }) {
         <div className="field-lbl" style={{ marginBottom: 4 }}>What it changes (applies while equipped{item.attunement ? ' & attuned' : ''})</div>
         <EffectsEditor effects={item.effects} onChange={(e) => up((x) => { x.effects = e })} />
       </div>
-      <button className="btn danger" onClick={() => { if (window.confirm(`Delete ${item.name || 'this item'}?`)) { set({ inventorySelected: '' }); patch((d) => { d.items = d.items.filter((y) => y.id !== item.id) }) } }}>Delete item</button>
+      <button className="btn" onClick={() => {
+        if ((item.effects.length || item.attunement) && !window.confirm('Make this everyday gear? Its linked effects and attunement will be removed.')) return
+        up((x) => { x.magic = false; x.effects = []; x.attunement = false; x.attuned = false; x.rarity = 'common'; x.actionType = 'none' })
+      }}>Make everyday gear</button>
+      <button className="btn danger" onClick={remove}>Delete item</button>
     </div>
   )
 }

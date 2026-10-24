@@ -78,6 +78,8 @@ export type Rarity = 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary' 
 export interface Item {
   id: string
   name: string
+  /** false = everyday gear (just name / amount / weight); true = magic item with the full detail */
+  magic: boolean
   icon: string
   category: string
   qty: number
@@ -147,7 +149,10 @@ export interface Character {
   alignment: string
   player: string
   xp: string
+  /** small square image in the top-left corner */
   portrait: string
+  /** larger image in the Appearance box on the Character page */
+  appearanceImage: string
   emblem: string
   appearance: { age: string; height: string; weight: string; eyes: string; skin: string; hair: string }
 

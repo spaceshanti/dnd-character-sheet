@@ -5,6 +5,7 @@ import { LeftDock } from './components/LeftDock'
 import { Inventory } from './components/Inventory'
 import { Roster } from './components/Roster'
 import { DrawerHost } from './components/Drawers'
+import { ThemeMenu } from './components/SkinPicker'
 import { Overview } from './pages/Overview'
 import { CharacterPage } from './pages/Character'
 import { FeaturesPage } from './pages/Features'
@@ -25,11 +26,24 @@ export default function App() {
   useEffect(() => { document.documentElement.dataset.theme = theme }, [theme])
   useEffect(() => { document.documentElement.dataset.skin = skin }, [skin])
 
-  // Ctrl+I opens the inventory from anywhere
+  // Ctrl+I opens the inventory, Tab opens / closes the abilities panel (both only while not typing in a box)
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i' && !/INPUT|TEXTAREA|SELECT/.test(t.tagName)) {
+      const typing = /INPUT|TEXTAREA|SELECT/.test(t.tagName) || t.isContentEditable
+      const overlay = document.querySelector('.backdrop, .drawer, .popover')
+      if (e.key === 'Tab' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && !typing && !overlay) {
+        e.preventDefault()
+        useUI.getState().toggleDock()
+        return
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 't' && !typing) {
+        e.preventDefault()
+        const u = useUI.getState()
+        u.set({ themeOpen: !u.themeOpen })
+        return
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i' && !typing) {
         e.preventDefault()
         const u = useUI.getState()
         u.set({ inventoryOpen: !u.inventoryOpen })
@@ -57,6 +71,7 @@ export default function App() {
       </div>
       <Inventory />
       <Roster />
+      <ThemeMenu />
       <DrawerHost />
     </div>
   )

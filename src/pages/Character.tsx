@@ -18,7 +18,7 @@ export function CharacterPage() {
       {/* left: who they are */}
       <div className="col" style={{ gap: 12 }}>
         <Frame title="Appearance" tight>
-          <ImageBox src={c.portrait} onChange={(s) => patch((d) => { d.portrait = s })} contain maxHeight={c.portrait ? 420 : 160} placeholder="Click or drop an image" />
+          <ImageBox src={c.appearanceImage} onChange={(s) => patch((d) => { d.appearanceImage = s })} contain maxHeight={c.appearanceImage ? 420 : 160} placeholder="Click or drop a full-body / appearance image" />
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 8 }}>
             {(['age', 'height', 'weight', 'eyes', 'skin', 'hair'] as const).map((k) => (
               <div className="field" key={k}>

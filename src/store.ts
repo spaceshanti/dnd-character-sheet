@@ -177,8 +177,10 @@ interface UIState {
   inventoryOpen: boolean
   inventorySelected: string
   rosterOpen: boolean
+  themeOpen: boolean
   drawer: Drawer
   go: (p: PageId) => void
+  toggleDock: () => void
   set: (p: Partial<UIState>) => void
 }
 
@@ -187,8 +189,12 @@ function readOpen() {
 }
 
 export const useUI = create<UIState>((set) => ({
-  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', rosterOpen: false, drawer: null,
+  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', rosterOpen: false, themeOpen: false, drawer: null,
   go: (page) => set({ page }),
+  toggleDock: () => set((s) => {
+    try { localStorage.setItem('dock-open', s.dockOpen ? '0' : '1') } catch { /* private mode */ }
+    return { dockOpen: !s.dockOpen }
+  }),
   set: (p) => set(p),
 }))
 

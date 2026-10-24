@@ -46,12 +46,8 @@ export function LeftDock() {
   const set = useUI((s) => s.set)
   const shown = open
 
-  // stays open until the edge strip is clicked again; remembered between launches
-  const toggleOpen = () => {
-    const next = !open
-    try { localStorage.setItem('dock-open', next ? '1' : '0') } catch { /* private mode */ }
-    set({ dockOpen: next })
-  }
+  // stays open until the edge strip (or Tab) closes it; remembered between launches
+  const toggleOpen = useUI((s) => s.toggleDock)
   const [expanded, setExpanded] = useState<string>('')
   const fx = activeEffects(c)
   const off = inactiveEffects(c)

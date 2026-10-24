@@ -36,7 +36,8 @@ export function GalleryPage() {
               <input className="line-input" style={{ marginTop: 8, fontWeight: 600 }} placeholder="caption" value={g.caption}
                 onChange={(e) => patch((d) => { const x = d.gallery.find((y) => y.id === g.id); if (x) x.caption = e.target.value })} />
               <div className="row" style={{ marginTop: 8, gap: 4 }}>
-                <button className="btn sm" onClick={() => patch((d) => { d.portrait = g.src })}>Use as portrait</button>
+                <button className="btn sm" onClick={() => patch((d) => { d.portrait = g.src })} title="Top-left corner image">Use as portrait</button>
+                <button className="btn sm" onClick={() => patch((d) => { d.appearanceImage = g.src })} title="Appearance box on the Character page">Use in Appearance</button>
                 <span className="grow" />
                 <button className="btn sm danger" onClick={() => { if (window.confirm('Remove this image?')) patch((d) => { d.gallery = d.gallery.filter((y) => y.id !== g.id) }) }}>✕</button>
               </div>
