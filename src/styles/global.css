@@ -428,7 +428,7 @@ table.t tr.hov:hover td { background: var(--panel2); cursor: pointer; }
 .kbd { display: inline-block; font-family: var(--font-body); font-size: 11.5px; font-weight: 700; padding: 0 6px; border: 1px solid var(--ink2); border-bottom-width: 2px; border-radius: 4px; background: var(--panel2); white-space: nowrap; }
 
 /* ---------- UI style picker ---------- */
-.skin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.skin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
 .skin-card { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left; padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 6px; background: var(--panel); }
 .skin-card:hover { border-color: var(--ink2); }
 .skin-card.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }

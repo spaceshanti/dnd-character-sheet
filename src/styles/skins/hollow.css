@@ -1,0 +1,166 @@
+/* ============ Hallownest — inspired by Hollow Knight's menus ============
+   Ink-black depths with a blue haze, pale chalk-white frames with curling corner
+   flourishes, scrollwork beside titles, a Trajan-like serif, mask-shaped pips.
+   All ornaments are drawn here as SVG. */
+
+:root[data-skin='hollow'] {
+  --paper: #07090d;
+  --paper2: transparent;
+  --panel: rgba(10, 13, 20, 0.86);
+  --panel2: rgba(220, 230, 255, 0.05);
+  --ink: #e9ecf3;
+  --ink2: #aab3c5;
+  --muted: #6f7890;
+  --line: rgba(233, 236, 243, 0.2);
+  --accent: #dfe8ff;
+  --accent-soft: rgba(223, 232, 255, 0.1);
+  --good: #9fd6c3;
+  --warn: #f0a24a;
+  --adv: #9fd6c3;
+  --dis: #f08a5d;
+  --slot: rgba(4, 6, 10, 0.75);
+  --slot-border: rgba(233, 236, 243, 0.3);
+  --slot-ink: #f1f4fa;
+  --slot-drop: rgba(223, 232, 255, 0.12);
+  --img-bg: #05070b;
+  --shadow: rgba(0, 0, 0, 0.75);
+  --icon-stroke: 1.35;
+  --font-head: 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --font-body: 'Cormorant Garamond', 'Perpetua', Georgia, serif;
+  --hk-chalk: rgba(236, 240, 248, 0.82);
+  --hk-corner: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none' stroke='%23e9edf6' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 37V15C3 8 8 3 15 3h22'/%3E%3Cpath d='M9 30c0-8 4-14 12-14 4 0 6 3 4 5.5s-5.5 1-4.5-1.5'/%3E%3Cpath d='M3 23c4 0 6-2.5 6-6.5'/%3E%3Ccircle cx='31' cy='8.5' r='1.5' fill='%23e9edf6'/%3E%3C/svg%3E");
+  --hk-curl-l: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 14' fill='none' stroke='%23e9edf6' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M2 7h42c6 0 8-5 13-5 4 0 5 3 3 5s-5 .5-4-1.5'/%3E%3Cpath d='M66 7l-3-3-3 3 3 3z' fill='%23e9edf6'/%3E%3C/svg%3E");
+  --hk-curl-r: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 14' fill='none' stroke='%23e9edf6' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M68 7H26c-6 0-8-5-13-5-4 0-5 3-3 5s5 .5 4-1.5'/%3E%3Cpath d='M4 7l3-3 3 3-3 3z' fill='%23e9edf6'/%3E%3C/svg%3E");
+  color-scheme: dark;
+}
+
+[data-skin='hollow'] body {
+  font-size: 15px;
+  font-weight: 500;
+  background-color: #06080c;
+  background-image:
+    radial-gradient(ellipse 70% 55% at 50% 0%, rgba(70, 92, 140, 0.35), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(50, 70, 110, 0.28), transparent 70%),
+    radial-gradient(ellipse 45% 35% at 100% 80%, rgba(40, 55, 90, 0.25), transparent 70%);
+  background-size: auto;
+}
+[data-skin='hollow'] h1, [data-skin='hollow'] h2, [data-skin='hollow'] h3 { font-weight: 500; letter-spacing: 0.12em; }
+[data-skin='hollow'] ::-webkit-scrollbar-thumb { background: rgba(233, 236, 243, 0.25); border-radius: 6px; border: 3px solid transparent; background-clip: content-box; }
+[data-skin='hollow'] input, [data-skin='hollow'] select, [data-skin='hollow'] textarea { font-weight: 500; }
+
+/* panels: chalk outline, curled corners, scrollwork around the title */
+[data-skin='hollow'] .frame { clip-path: none; background: transparent; padding: 0; filter: none; }
+[data-skin='hollow'] .frame > .frame-in {
+  clip-path: none; position: relative; background: var(--panel); border: 1.5px solid var(--hk-chalk); border-radius: 3px;
+  box-shadow: 0 0 0 4px rgba(6, 8, 12, 0.6), 0 0 22px rgba(120, 150, 210, 0.08) inset; padding-top: 14px;
+}
+[data-skin='hollow'] .frame > .frame-in::before, [data-skin='hollow'] .frame > .frame-in::after {
+  content: ''; position: absolute; width: 30px; height: 30px; background: var(--hk-corner) no-repeat center / contain; pointer-events: none;
+}
+[data-skin='hollow'] .frame > .frame-in::before { top: -6px; left: -6px; }
+[data-skin='hollow'] .frame > .frame-in::after { bottom: -6px; right: -6px; transform: rotate(180deg); }
+[data-skin='hollow'] .frame-title { color: var(--ink); font-size: 11.5px; font-weight: 500; letter-spacing: 0.16em; gap: 8px; white-space: nowrap; }
+[data-skin='hollow'] .frame-title::before, [data-skin='hollow'] .frame-title::after { height: 14px; flex: 0 1 58px; min-width: 10px; opacity: 0.85; background: none; }
+[data-skin='hollow'] .frame-title::before { background: var(--hk-curl-l) no-repeat right center / contain; }
+[data-skin='hollow'] .frame-title::after { background: var(--hk-curl-r) no-repeat left center / contain; }
+
+/* controls */
+[data-skin='hollow'] .btn {
+  border-radius: 2px; border: 1px solid var(--line); background: transparent; color: var(--ink); font-family: var(--font-head);
+  font-weight: 500; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase;
+}
+[data-skin='hollow'] .btn:hover { border-color: var(--hk-chalk); text-shadow: 0 0 8px rgba(223, 232, 255, 0.8); background: rgba(223, 232, 255, 0.06); }
+[data-skin='hollow'] .btn.primary { border-color: var(--hk-chalk); background: rgba(223, 232, 255, 0.1); }
+[data-skin='hollow'] .btn.primary:hover { background: rgba(223, 232, 255, 0.2); }
+[data-skin='hollow'] .btn.ghost { border-color: transparent; }
+[data-skin='hollow'] .btn.danger { color: var(--dis); border-color: rgba(240, 138, 93, 0.5); }
+[data-skin='hollow'] select, [data-skin='hollow'] .box-input { border-radius: 2px; background: rgba(4, 6, 10, 0.6); border-color: var(--line); color: var(--ink); }
+[data-skin='hollow'] option { background: #0c0f16; }
+[data-skin='hollow'] .field > input, [data-skin='hollow'] .line-input { border-bottom: 1px solid var(--line); }
+[data-skin='hollow'] .field > input:focus, [data-skin='hollow'] .line-input:focus { background: var(--accent-soft); border-bottom-color: var(--hk-chalk); }
+[data-skin='hollow'] .field > label, [data-skin='hollow'] .field-lbl { letter-spacing: 0.16em; }
+[data-skin='hollow'] .chip { background: rgba(4, 6, 10, 0.5); border-color: var(--line); }
+[data-skin='hollow'] .chip.accent { color: var(--ink); border-color: var(--hk-chalk); background: var(--accent-soft); }
+[data-skin='hollow'] .tag { background: transparent; color: var(--ink); border: 1px solid var(--hk-chalk); font-family: var(--font-head); font-weight: 500; }
+[data-skin='hollow'] .tag.alt { color: var(--ink2); border-color: var(--line); }
+[data-skin='hollow'] .badge, [data-skin='hollow'] .kbd { background: transparent; border-color: var(--line); color: var(--ink2); }
+[data-skin='hollow'] .seg { border-color: var(--line); border-radius: 2px; }
+[data-skin='hollow'] .seg button { background: transparent; border-color: var(--line); font-family: var(--font-head); font-size: 11px; letter-spacing: 0.1em; }
+[data-skin='hollow'] .seg button.on { background: rgba(223, 232, 255, 0.14); color: var(--ink); text-shadow: 0 0 8px rgba(223, 232, 255, 0.8); }
+/* pips shaped like masks */
+[data-skin='hollow'] .pip { border: 1.5px solid var(--hk-chalk); border-radius: 50% 50% 46% 46% / 58% 58% 42% 42%; width: 12px; height: 14px; }
+[data-skin='hollow'] .pip.on { background: #f3f6fc; box-shadow: 0 0 6px rgba(223, 232, 255, 0.8); }
+[data-skin='hollow'] .pip.diamond { transform: none; }
+[data-skin='hollow'] .pip.succ.on { background: var(--good); border-color: var(--good); }
+[data-skin='hollow'] .pip.fail.on { background: var(--dis); border-color: var(--dis); }
+[data-skin='hollow'] .switch { background: rgba(255, 255, 255, 0.12); }
+[data-skin='hollow'] .switch.on { background: rgba(223, 232, 255, 0.55); }
+[data-skin='hollow'] .hpbar { height: 5px; background: rgba(0, 0, 0, 0.6); outline: 1px solid var(--line); }
+[data-skin='hollow'] .hpbar > i, [data-skin='hollow'] .hpbar.low > i { background: #f3f6fc; box-shadow: 0 0 8px rgba(223, 232, 255, 0.9); }
+[data-skin='hollow'] .hpbar.crit > i { background: var(--warn); box-shadow: 0 0 8px rgba(240, 162, 74, 0.8); }
+
+/* top bar */
+[data-skin='hollow'] .topbar { background: linear-gradient(rgba(6, 8, 12, 0.96), rgba(8, 11, 18, 0.9)); border-bottom: 1.5px solid var(--hk-chalk); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6); }
+[data-skin='hollow'] .top-portrait { border: 1.5px solid var(--hk-chalk); border-radius: 3px; box-shadow: 0 0 0 4px rgba(6, 8, 12, 0.8), 0 0 18px rgba(120, 150, 210, 0.25); }
+[data-skin='hollow'] .name-banner input { font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; font-size: 17px; border-bottom: 1px solid var(--hk-chalk); }
+[data-skin='hollow'] .vbox { border: 1.5px solid var(--hk-chalk); border-radius: 3px; box-shadow: 0 0 0 3px rgba(6, 8, 12, 0.7); background: var(--panel); }
+[data-skin='hollow'] .vbox:hover { box-shadow: 0 0 0 3px rgba(6, 8, 12, 0.7), 0 0 14px rgba(223, 232, 255, 0.25); }
+[data-skin='hollow'] .vbox .v { font-weight: 500; }
+[data-skin='hollow'] .vbox .sub { color: var(--ink2); }
+[data-skin='hollow'] .shield { clip-path: none; border-radius: 3px 3px 30px 30px; }
+[data-skin='hollow'] .hp-box .big input, [data-skin='hollow'] .hp-box .big .of { font-weight: 500; }
+[data-skin='hollow'] .inv-btn { border: 1.5px solid var(--hk-chalk); border-radius: 3px; background: rgba(4, 6, 10, 0.8); box-shadow: 0 0 0 3px rgba(6, 8, 12, 0.7); }
+[data-skin='hollow'] .inv-btn:hover { background: rgba(223, 232, 255, 0.08); }
+[data-skin='hollow'] .nav { background: rgba(4, 6, 10, 0.7); border-top: 1px solid var(--line); }
+[data-skin='hollow'] .nav button.tab { font-weight: 500; letter-spacing: 0.18em; border-bottom: none; }
+[data-skin='hollow'] .nav button.tab:hover { color: var(--ink); text-shadow: 0 0 8px rgba(223, 232, 255, 0.6); }
+[data-skin='hollow'] .nav button.tab.active { color: var(--ink); text-shadow: 0 0 10px rgba(223, 232, 255, 0.9); background: var(--hk-curl-l) no-repeat left -46px bottom 0 / 60px 8px, var(--hk-curl-r) no-repeat right -46px bottom 0 / 60px 8px; }
+
+/* abilities dock */
+[data-skin='hollow'] .dock { background: rgba(6, 8, 12, 0.94); border-right: 1.5px solid var(--hk-chalk); }
+[data-skin='hollow'] .dock-edge { background: rgba(4, 6, 10, 0.85); border-right: 1.5px solid var(--hk-chalk); }
+[data-skin='hollow'] .dock-edge:hover, [data-skin='hollow'] .dock-edge.on { background: rgba(223, 232, 255, 0.1); }
+[data-skin='hollow'] .dock-edge:hover span, [data-skin='hollow'] .dock-edge.on span { color: var(--ink); text-shadow: 0 0 8px rgba(223, 232, 255, 0.8); }
+[data-skin='hollow'] .pill, [data-skin='hollow'] .passive { border: 1.5px solid var(--hk-chalk); background: var(--panel); }
+[data-skin='hollow'] .pill .num { border: 1.5px solid var(--hk-chalk); background: transparent; font-weight: 500; }
+[data-skin='hollow'] .ab-box .name { background: transparent; color: var(--ink); border: 1.5px solid var(--hk-chalk); border-bottom: none; font-weight: 500; letter-spacing: 0.1em; }
+[data-skin='hollow'] .ab-box .mod { border: 1.5px solid var(--hk-chalk); background: var(--panel); font-weight: 500; }
+[data-skin='hollow'] .ab-box .score { border: 1.5px solid var(--hk-chalk); background: #090c12; font-weight: 600; }
+[data-skin='hollow'] .rr { border-bottom: 1px solid rgba(233, 236, 243, 0.07); }
+[data-skin='hollow'] .rr .val { font-weight: 700; }
+[data-skin='hollow'] .rr:hover, [data-skin='hollow'] .list-row:hover, [data-skin='hollow'] .sline:hover, [data-skin='hollow'] .gear-row:hover,
+[data-skin='hollow'] .act-item:hover, [data-skin='hollow'] table.t tr.hov:hover td { background: rgba(223, 232, 255, 0.06); }
+[data-skin='hollow'] .breakdown { background: rgba(4, 6, 10, 0.7); border-color: var(--line); border-left-color: var(--hk-chalk); }
+
+/* spell book */
+[data-skin='hollow'] .spell-sec { position: relative; border: 1.5px solid var(--hk-chalk); border-radius: 3px; background: var(--panel); box-shadow: 0 0 0 4px rgba(6, 8, 12, 0.6); }
+[data-skin='hollow'] .spell-sec::before { content: ''; position: absolute; top: -6px; left: -6px; width: 26px; height: 26px; background: var(--hk-corner) no-repeat center / contain; pointer-events: none; }
+[data-skin='hollow'] .sec-head .lvl-badge { border: 1.5px solid var(--hk-chalk); background: #090c12; font-weight: 500; }
+[data-skin='hollow'] .sec-banner { background: rgba(223, 232, 255, 0.05); border-color: var(--hk-chalk); border-width: 1.5px; }
+[data-skin='hollow'] .sline { border-bottom-color: rgba(233, 236, 243, 0.08); }
+[data-skin='hollow'] .sline .nm { font-weight: 600; font-size: 14px; }
+[data-skin='hollow'] .crm { color: rgba(233, 236, 243, 0.18); }
+[data-skin='hollow'] .crm.on { color: var(--ink); }
+[data-skin='hollow'] .spell-stat { border: 1.5px solid var(--hk-chalk); border-radius: 3px; background: var(--panel); }
+
+/* overlays */
+[data-skin='hollow'] .popover, [data-skin='hollow'] .modal, [data-skin='hollow'] .drawer { border: 1.5px solid var(--hk-chalk); border-radius: 3px; background: rgba(8, 10, 16, 0.97); }
+[data-skin='hollow'] .modal-head, [data-skin='hollow'] .drawer-head { background: transparent; border-bottom: 1.5px solid var(--hk-chalk); }
+[data-skin='hollow'] .modal-head h2, [data-skin='hollow'] .drawer-head h2 { font-weight: 500; letter-spacing: 0.16em; }
+[data-skin='hollow'] .backdrop { background: rgba(0, 0, 0, 0.7); }
+[data-skin='hollow'] .toast { background: rgba(8, 10, 16, 0.97); color: var(--ink); border: 1.5px solid var(--hk-chalk); }
+[data-skin='hollow'] .fx { background: rgba(4, 6, 10, 0.5); border-color: var(--line); }
+[data-skin='hollow'] table.t th, [data-skin='hollow'] .gear-row.head { color: var(--ink2); border-bottom: 1px solid var(--hk-chalk); }
+[data-skin='hollow'] table.t td, [data-skin='hollow'] .gear-row { border-bottom-color: rgba(233, 236, 243, 0.08); }
+[data-skin='hollow'] .gear-list { border-top-color: var(--hk-chalk); }
+
+/* inventory and icons */
+[data-skin='hollow'] .eq-slot, [data-skin='hollow'] .tile { border-width: 1.5px; border-radius: 4px; box-shadow: inset 0 0 14px rgba(120, 150, 210, 0.08); }
+[data-skin='hollow'] .bag .tile.empty-slot, [data-skin='hollow'] .magic-grid .tile.empty-slot { background: rgba(4, 6, 10, 0.4); border-color: rgba(233, 236, 243, 0.1); }
+[data-skin='hollow'] svg.ico { color: var(--ink); }
+[data-skin='hollow'] .tile svg.ico, [data-skin='hollow'] .eq-slot svg.ico { filter: drop-shadow(0 0 3px rgba(223, 232, 255, 0.5)); }
+[data-skin='hollow'] .r-uncommon svg.ico, [data-skin='hollow'] .r-rare svg.ico, [data-skin='hollow'] .r-very-rare svg.ico,
+[data-skin='hollow'] .r-legendary svg.ico, [data-skin='hollow'] .r-artifact svg.ico { color: #f6f8ff; filter: drop-shadow(0 0 5px rgba(223, 232, 255, 0.9)); }
+[data-skin='hollow'] .coin input { border: 1.5px solid var(--hk-chalk); background: rgba(4, 6, 10, 0.6); font-weight: 600; }
+[data-skin='hollow'] .char-portrait { border: 1.5px solid var(--hk-chalk); }
+[data-skin='hollow'] .char-new { border-color: rgba(233, 236, 243, 0.3); border-radius: 3px; }

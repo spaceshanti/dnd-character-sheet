@@ -1,0 +1,186 @@
+/* ============ Valkyrie — inspired by Honkai Impact 3rd's menus ============
+   Bright and clean: white panels on pale blue, cyan-to-blue gradients with a
+   pink accent, slanted labels and tabs, diamond pips, bold italic numbers. */
+
+:root[data-skin='honkai'] {
+  --paper: #e6edf6;
+  --paper2: transparent;
+  --panel: rgba(255, 255, 255, 0.94);
+  --panel2: #eef4fb;
+  --ink: #1a2a46;
+  --ink2: #4b5f82;
+  --muted: #8e9bb3;
+  --line: #d2dceb;
+  --accent: #14aee6;
+  --accent-soft: rgba(20, 174, 230, 0.12);
+  --good: #1fb07c;
+  --warn: #f2a024;
+  --adv: #1fb07c;
+  --dis: #ea4469;
+  --hi-navy: #172f58;
+  --hi-blue: #2a76df;
+  --hi-pink: #ff5d9e;
+  --hi-grad: linear-gradient(90deg, #14aee6, #2a76df);
+  --hi-grad-pink: linear-gradient(90deg, #14aee6, #2a76df 60%, #ff5d9e);
+  --slant: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+  --cut: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+  --slot: #18304f;
+  --slot-border: #3a6196;
+  --slot-ink: #eaf6ff;
+  --slot-drop: #245088;
+  --img-bg: #f3f7fc;
+  --shadow: rgba(23, 47, 88, 0.25);
+  --icon-stroke: 1.6;
+  --font-head: 'Exo 2 Variable', 'Segoe UI', sans-serif;
+  --font-body: 'Exo 2 Variable', 'Segoe UI', sans-serif;
+  color-scheme: light;
+}
+
+[data-skin='honkai'] body {
+  font-size: 13.5px;
+  background-color: #e6edf6;
+  background-image:
+    radial-gradient(ellipse 50% 40% at 100% 0%, rgba(20, 174, 230, 0.18), transparent 70%),
+    radial-gradient(ellipse 45% 35% at 0% 100%, rgba(255, 93, 158, 0.1), transparent 70%),
+    repeating-linear-gradient(135deg, rgba(42, 118, 223, 0.045) 0 2px, transparent 2px 16px);
+  background-size: auto;
+}
+[data-skin='honkai'] h1, [data-skin='honkai'] h2, [data-skin='honkai'] h3 { font-weight: 800; font-style: italic; letter-spacing: 0.04em; }
+[data-skin='honkai'] ::-webkit-scrollbar-thumb { background: #9fb3d1; border-radius: 0; border: 4px solid transparent; background-clip: content-box; }
+[data-skin='honkai'] ::selection { background: var(--accent); color: #fff; }
+
+/* panels: white card, gradient top edge, cut corner, slanted title label */
+[data-skin='honkai'] .frame { clip-path: var(--cut); background: var(--hi-grad-pink); padding: 3px 0 0; filter: drop-shadow(0 4px 10px rgba(23, 47, 88, 0.12)); }
+[data-skin='honkai'] .frame > .frame-in { clip-path: var(--cut); box-shadow: none; background: var(--panel); }
+[data-skin='honkai'] .frame-title { justify-content: flex-start; margin: -2px 0 9px; gap: 7px; font-size: 11px; letter-spacing: 0.12em; }
+[data-skin='honkai'] .frame-title::before { content: ''; flex: none; width: 7px; height: 7px; background: var(--accent); transform: rotate(45deg); }
+[data-skin='honkai'] .frame-title::after { background: linear-gradient(90deg, var(--line), transparent); }
+[data-skin='honkai'] .frame-title > span:first-child {
+  background: var(--hi-navy); color: #fff; padding: 2px 14px 2px 12px; clip-path: var(--slant); font-weight: 700; font-style: italic; white-space: nowrap;
+}
+
+/* controls */
+[data-skin='honkai'] .btn {
+  border: none; border-radius: 0; clip-path: var(--slant); background: var(--panel2); color: var(--ink); font-weight: 700;
+  font-style: italic; letter-spacing: 0.04em; padding: 4px 14px;
+}
+[data-skin='honkai'] .btn.sm { padding: 2px 11px; }
+[data-skin='honkai'] .btn:hover { background: var(--accent); color: #fff; }
+[data-skin='honkai'] .btn.primary { background: var(--hi-grad); color: #fff; }
+[data-skin='honkai'] .btn.primary:hover { background: linear-gradient(90deg, #2a76df, #ff5d9e); }
+[data-skin='honkai'] .btn.ghost { background: transparent; }
+[data-skin='honkai'] .btn.ghost:hover { background: var(--accent-soft); color: var(--hi-blue); }
+[data-skin='honkai'] .btn.danger { background: rgba(234, 68, 105, 0.1); color: var(--dis); }
+[data-skin='honkai'] .btn.danger:hover { background: var(--dis); color: #fff; }
+[data-skin='honkai'] .btn.icon { padding: 2px 9px; }
+[data-skin='honkai'] select, [data-skin='honkai'] .box-input { border-radius: 0; background: #fff; border-color: var(--line); }
+[data-skin='honkai'] .box-input:focus { border-color: var(--accent); }
+[data-skin='honkai'] .field > input, [data-skin='honkai'] .line-input { border-bottom: 1.5px solid #b9c7dc; }
+[data-skin='honkai'] .field > input:focus, [data-skin='honkai'] .line-input:focus { border-bottom-color: var(--accent); background: var(--accent-soft); }
+[data-skin='honkai'] .field > label, [data-skin='honkai'] .field-lbl { color: var(--hi-blue); font-weight: 700; letter-spacing: 0.1em; }
+[data-skin='honkai'] .chip { border-radius: 0; clip-path: var(--slant); border: none; background: var(--panel2); padding: 1px 10px; }
+[data-skin='honkai'] .chip.accent { background: var(--accent); color: #fff; }
+[data-skin='honkai'] .chip.adv { background: var(--good); color: #fff; }
+[data-skin='honkai'] .chip.dis { background: var(--dis); color: #fff; }
+[data-skin='honkai'] .tag { border-radius: 0; clip-path: var(--slant); background: var(--hi-navy); padding: 0 10px; font-style: italic; }
+[data-skin='honkai'] .tag.alt { background: var(--panel2); color: var(--ink2); border: none; }
+[data-skin='honkai'] .badge { border-radius: 0; border-color: var(--hi-blue); color: var(--hi-blue); }
+[data-skin='honkai'] .kbd { border-radius: 0; background: var(--hi-navy); color: #fff; border: none; font-style: italic; }
+[data-skin='honkai'] .seg { border: none; border-radius: 0; gap: 3px; }
+[data-skin='honkai'] .seg button { clip-path: var(--slant); background: var(--panel2); border: none; font-weight: 700; font-style: italic; padding: 3px 14px; }
+[data-skin='honkai'] .seg button.on { background: var(--hi-grad); color: #fff; }
+[data-skin='honkai'] .pip { border-radius: 0; border: 1.5px solid var(--hi-blue); transform: rotate(45deg) scale(0.8); }
+[data-skin='honkai'] .pip.on { background: var(--hi-grad); border-color: var(--accent); }
+[data-skin='honkai'] .pip.succ.on { background: var(--good); border-color: var(--good); }
+[data-skin='honkai'] .pip.fail.on { background: var(--dis); border-color: var(--dis); }
+[data-skin='honkai'] .switch { border-radius: 0; clip-path: var(--slant); width: 36px; }
+[data-skin='honkai'] .switch::after { border-radius: 0; }
+[data-skin='honkai'] .switch.on { background: var(--hi-grad); }
+[data-skin='honkai'] .hpbar, [data-skin='honkai'] .weight-bar { border-radius: 0; background: #d6e0ee; transform: skewX(-20deg); }
+[data-skin='honkai'] .hpbar > i { background: linear-gradient(90deg, #14aee6, #52e0ff); }
+[data-skin='honkai'] .hpbar.low > i { background: linear-gradient(90deg, #f2a024, #ffd36b); }
+[data-skin='honkai'] .hpbar.crit > i { background: linear-gradient(90deg, #ea4469, #ff8bb0); }
+
+/* top bar */
+[data-skin='honkai'] .topbar { background: rgba(255, 255, 255, 0.96); box-shadow: 0 4px 16px rgba(23, 47, 88, 0.12); border-bottom: 3px solid transparent; border-image: var(--hi-grad-pink) 1; }
+[data-skin='honkai'] .top-portrait { border: 2px solid var(--hi-navy); border-radius: 0; clip-path: var(--cut); box-shadow: none; }
+[data-skin='honkai'] .name-banner input { font-weight: 800; font-style: italic; font-size: 21px; letter-spacing: 0.03em; border-bottom: 2px solid var(--hi-navy); }
+[data-skin='honkai'] .name-banner label { color: var(--hi-blue); font-weight: 700; }
+[data-skin='honkai'] .vbox {
+  border: none; border-radius: 0; box-shadow: 0 2px 8px rgba(23, 47, 88, 0.1); background: #fff; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%);
+  border-top: 3px solid transparent; border-image: var(--hi-grad-pink) 1;
+}
+[data-skin='honkai'] .vbox:hover { background: #f4f9ff; }
+[data-skin='honkai'] .vbox .v, [data-skin='honkai'] .hp-box .big input, [data-skin='honkai'] .spell-stat b { font-weight: 800; font-style: italic; color: var(--hi-navy); }
+[data-skin='honkai'] .vbox .l { color: var(--hi-blue); font-weight: 700; }
+[data-skin='honkai'] .vbox .sub { color: var(--hi-pink); }
+[data-skin='honkai'] .hp-box .big .of { font-style: italic; font-weight: 700; }
+[data-skin='honkai'] .shield { clip-path: polygon(0 0, 100% 0, 100% 74%, 50% 100%, 0 74%); padding-bottom: 9px; }
+[data-skin='honkai'] .inv-btn { border: none; border-radius: 0; background: var(--hi-navy); clip-path: var(--cut); box-shadow: none; }
+[data-skin='honkai'] .inv-btn:hover { background: var(--hi-grad); }
+[data-skin='honkai'] .nav { background: var(--hi-navy); border-top: none; gap: 3px; padding-top: 3px; padding-bottom: 3px; }
+[data-skin='honkai'] .nav button.tab { color: rgba(255, 255, 255, 0.72); font-weight: 700; font-style: italic; letter-spacing: 0.08em; border-bottom: none; clip-path: var(--slant); padding: 4px 16px; }
+[data-skin='honkai'] .nav button.tab:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+[data-skin='honkai'] .nav button.tab.active { color: #fff; background: var(--hi-grad); }
+[data-skin='honkai'] .nav .btn { background: transparent; color: rgba(255, 255, 255, 0.8); }
+[data-skin='honkai'] .nav .btn:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
+
+/* abilities dock */
+[data-skin='honkai'] .dock { background: rgba(240, 245, 251, 0.97); border-right: 2px solid var(--hi-navy); }
+[data-skin='honkai'] .dock-edge { background: var(--hi-navy); border-right: none; }
+[data-skin='honkai'] .dock-edge span { color: rgba(255, 255, 255, 0.85); font-style: italic; font-weight: 700; }
+[data-skin='honkai'] .dock-edge:hover, [data-skin='honkai'] .dock-edge.on { background: var(--hi-blue); }
+[data-skin='honkai'] .dock-edge:hover span, [data-skin='honkai'] .dock-edge.on span { color: #fff; }
+[data-skin='honkai'] .pill, [data-skin='honkai'] .passive { border: none; border-radius: 0; background: #fff; box-shadow: 0 2px 6px rgba(23, 47, 88, 0.1); clip-path: var(--slant); padding-left: 10px; }
+[data-skin='honkai'] .pill .num { border-radius: 0; border: none; background: var(--hi-navy); color: #fff; font-style: italic; clip-path: var(--slant); width: 38px; }
+[data-skin='honkai'] .pill.insp.on { background: var(--accent-soft); }
+[data-skin='honkai'] .ab-box .name { border-radius: 0; background: var(--hi-navy); clip-path: var(--slant); font-weight: 700; font-style: italic; letter-spacing: 0.06em; }
+[data-skin='honkai'] .ab-box .mod {
+  border: none; border-radius: 0; background: #fff; color: var(--hi-navy); font-weight: 800; font-style: italic; box-shadow: 0 2px 8px rgba(23, 47, 88, 0.12);
+  border-top: 3px solid transparent; border-image: var(--hi-grad) 1; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+}
+[data-skin='honkai'] .ab-box .mod.changed { color: var(--hi-pink); }
+[data-skin='honkai'] .ab-box .score { border-radius: 0; border: none; background: var(--hi-grad); color: #fff; font-style: italic; font-weight: 800; clip-path: var(--slant); width: 38px; }
+[data-skin='honkai'] .rr { border-radius: 0; border-bottom: 1px solid var(--line); }
+[data-skin='honkai'] .rr .val { color: var(--hi-navy); font-style: italic; font-weight: 800; }
+[data-skin='honkai'] .rr:hover, [data-skin='honkai'] .list-row:hover, [data-skin='honkai'] .sline:hover, [data-skin='honkai'] .gear-row:hover,
+[data-skin='honkai'] .act-item:hover, [data-skin='honkai'] table.t tr.hov:hover td { background: var(--accent-soft); }
+[data-skin='honkai'] .breakdown { border-radius: 0; background: #fff; border-left-color: var(--accent); }
+
+/* spell book */
+[data-skin='honkai'] .spell-sec {
+  border: none; border-radius: 0; background: var(--panel); box-shadow: 0 4px 10px rgba(23, 47, 88, 0.1);
+  border-top: 3px solid transparent; border-image: var(--hi-grad-pink) 1; clip-path: var(--cut);
+}
+[data-skin='honkai'] .sec-head .lvl-badge { border: none; border-radius: 0; background: var(--hi-navy); color: #fff; font-style: italic; font-weight: 800; clip-path: var(--slant); width: 36px; }
+[data-skin='honkai'] .sec-banner { background: var(--panel2); border-color: var(--line); }
+[data-skin='honkai'] .slot-total input { color: var(--hi-navy); font-style: italic; font-weight: 800; border-bottom-color: var(--accent); }
+[data-skin='honkai'] .slot-total label, [data-skin='honkai'] .slot-remain label { color: var(--hi-blue); font-weight: 700; }
+[data-skin='honkai'] .crm.on { color: var(--hi-pink); }
+[data-skin='honkai'] .sline .pip.always { background: var(--hi-pink); border-color: var(--hi-pink); }
+[data-skin='honkai'] .spell-stat { border: none; border-radius: 0; background: #fff; box-shadow: 0 2px 8px rgba(23, 47, 88, 0.1); border-top: 3px solid transparent; border-image: var(--hi-grad) 1; }
+
+/* overlays */
+[data-skin='honkai'] .popover, [data-skin='honkai'] .modal, [data-skin='honkai'] .drawer { border: none; border-radius: 0; background: rgba(255, 255, 255, 0.98); box-shadow: 0 20px 50px rgba(23, 47, 88, 0.3); }
+[data-skin='honkai'] .popover { border-top: 3px solid transparent; border-image: var(--hi-grad-pink) 1; }
+[data-skin='honkai'] .modal-head, [data-skin='honkai'] .drawer-head { background: var(--hi-navy); color: #fff; border-bottom: 3px solid transparent; border-image: var(--hi-grad-pink) 1; }
+[data-skin='honkai'] .modal-head .btn, [data-skin='honkai'] .drawer-head .btn { background: rgba(255, 255, 255, 0.12); color: #fff; }
+[data-skin='honkai'] .modal-head .btn:hover, [data-skin='honkai'] .drawer-head .btn:hover { background: var(--accent); }
+[data-skin='honkai'] .modal-head input { color: var(--ink); }
+[data-skin='honkai'] .backdrop { background: rgba(23, 47, 88, 0.45); }
+[data-skin='honkai'] .toast { border-radius: 0; background: var(--hi-grad); clip-path: var(--slant); padding: 8px 24px; }
+[data-skin='honkai'] .fx { border-radius: 0; background: var(--panel2); border-color: #b9c7dc; }
+[data-skin='honkai'] table.t th, [data-skin='honkai'] .gear-row.head { color: var(--hi-blue); border-bottom: 2px solid var(--hi-navy); font-weight: 700; }
+[data-skin='honkai'] .gear-list { border-top-color: var(--hi-navy); }
+
+/* inventory and icons */
+[data-skin='honkai'] .eq-slot, [data-skin='honkai'] .tile { border-radius: 0; border-width: 1.5px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%); }
+[data-skin='honkai'] .bag .tile.empty-slot, [data-skin='honkai'] .magic-grid .tile.empty-slot { background: #dfe7f2; border-color: #c4d1e4; }
+[data-skin='honkai'] .tile svg.ico, [data-skin='honkai'] .eq-slot svg.ico { filter: drop-shadow(0 0 3px rgba(82, 224, 255, 0.55)); }
+[data-skin='honkai'] .icon-pick-btn, [data-skin='honkai'] .icon-grid, [data-skin='honkai'] .icon-grid button { border-radius: 0; }
+[data-skin='honkai'] .list-ico { color: var(--hi-blue); }
+[data-skin='honkai'] .coin input { border-radius: 0; border: none; background: #fff; box-shadow: 0 1px 5px rgba(23, 47, 88, 0.14); color: var(--hi-navy); font-style: italic; font-weight: 800; }
+[data-skin='honkai'] .coin span { color: var(--hi-blue); font-weight: 700; }
+[data-skin='honkai'] .skin-card { border-radius: 0; }
+[data-skin='honkai'] .char-portrait { border: 2px solid var(--hi-navy); clip-path: var(--cut); }
+[data-skin='honkai'] .char-new { border-radius: 0; border-color: #a9bbd6; }
