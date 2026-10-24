@@ -11,12 +11,12 @@ export function SkinPicker() {
         {SKINS.map((k) => (
           <button key={k.id} className={`skin-card ${skin === k.id ? 'on' : ''}`} onClick={() => setSkin(k.id)}>
             <span className="sw">{k.swatch.map((c) => <i key={c} style={{ background: c }} />)}</span>
-            <b>{k.name}</b>
+            <b>{k.name}{k.modes && <span className="muted small"> · light / dark</span>}</b>
             <span className="small muted">{k.desc}</span>
           </button>
         ))}
       </div>
-      {skin === 'standard' && (
+      {SKINS.find((k) => k.id === skin)?.modes && (
         <div className="row"><span className="grow">Light / dark</span>
           <div className="seg">
             <button className={theme === 'light' ? 'on' : ''} onClick={() => setTheme('light')}>Light</button>

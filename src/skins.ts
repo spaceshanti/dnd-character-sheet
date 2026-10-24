@@ -1,11 +1,13 @@
 /** UI styles. Each one is a stylesheet in src/styles/skins/ keyed off <html data-skin="...">. */
 export type SkinId = 'standard' | 'nier' | 'cyberpunk' | 'skyrim' | 'hollow' | 'honkai'
 
-export const SKINS: { id: SkinId; name: string; desc: string; swatch: string[] }[] = [
+/** `modes`: the style has its own light and dark versions (follows the Light / Dark switch). */
+export const SKINS: { id: SkinId; name: string; desc: string; swatch: string[]; modes?: boolean }[] = [
   {
     id: 'standard', name: 'Character Sheet',
     desc: 'The classic printed-sheet look. Has its own light and dark mode.',
     swatch: ['#fbfaf7', '#1d1d20', '#8e2b2f'],
+    modes: true,
   },
   {
     id: 'nier', name: 'Android',
@@ -29,7 +31,8 @@ export const SKINS: { id: SkinId; name: string; desc: string; swatch: string[] }
   },
   {
     id: 'honkai', name: 'Valkyrie',
-    desc: 'Inspired by Honkai Impact 3rd. White panels, cyan-to-blue gradients with pink, slanted labels and tabs.',
-    swatch: ['#ffffff', '#14aee6', '#ff5d9e'],
+    desc: 'Inspired by Honkai Impact 3rd. Cyan-to-blue gradients with pink, slanted labels and tabs. Light and dark.',
+    swatch: ['#172f58', '#22b8f2', '#ff6aa8'],
+    modes: true,
   },
 ]
