@@ -75,6 +75,7 @@ const SHORTCUTS: [string, string][] = [
   ['Ctrl + I', 'Open / close the inventory'],
   ['Ctrl + T', 'UI style menu'],
   ['Esc', 'Close the open window, side panel or popup'],
+  ['F11', 'Full screen on / off'],
   ['Enter', 'HP box: take damage'],
   ['Shift + Enter', 'HP box: heal'],
   ['Enter', 'Add the spell / gear / condition you just typed'],

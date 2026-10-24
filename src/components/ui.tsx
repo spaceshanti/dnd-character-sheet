@@ -242,11 +242,11 @@ function allowedTypes(target: string): EffectType[] {
 }
 
 /** Lets any feature / item / spell be linked to the things it changes. */
-export function EffectsEditor({ effects, onChange }: { effects: Effect[]; onChange: (e: Effect[]) => void }) {
+export function EffectsEditor({ effects, onChange, bare = false }: { effects: Effect[]; onChange: (e: Effect[]) => void; bare?: boolean }) {
   const set = (id: string, patch: Partial<Effect>) => onChange(effects.map((e) => (e.id === id ? { ...e, ...patch } : e)))
   return (
-    <div className="fx">
-      {effects.length === 0 && <div className="muted small" style={{ marginBottom: 6 }}>No links yet. Link this to a skill, save, AC, speed… and it will show up there and count in the math.</div>}
+    <div className={bare ? 'fx-bare' : 'fx'}>
+      {!bare && effects.length === 0 && <div className="muted small" style={{ marginBottom: 6 }}>No links yet. Link this to a skill, save, AC, speed… and it will show up there and count in the math.</div>}
       {effects.map((e) => {
         const types = allowedTypes(e.target)
         return (
@@ -276,7 +276,7 @@ export function EffectsEditor({ effects, onChange }: { effects: Effect[]; onChan
           </div>
         )
       })}
-      <button className="btn sm" onClick={() => onChange([...effects, newEffect()])}>＋ Link to something</button>
+      {!bare && <button className="btn sm" onClick={() => onChange([...effects, newEffect()])}>＋ Link to something</button>}
     </div>
   )
 }

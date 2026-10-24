@@ -20,7 +20,11 @@ function createWindow() {
     },
   })
   Menu.setApplicationMenu(null)
-  win.once('ready-to-show', () => win.show())
+  // open maximized; F11 toggles true full screen
+  win.once('ready-to-show', () => { win.maximize(); win.show() })
+  win.webContents.on('before-input-event', (e, input) => {
+    if (input.type === 'keyDown' && input.key === 'F11') { win.setFullScreen(!win.isFullScreen()); e.preventDefault() }
+  })
   // right-click: spelling suggestions, add to dictionary, cut / copy / paste
   win.webContents.on('context-menu', (_e, params) => {
     const items = []

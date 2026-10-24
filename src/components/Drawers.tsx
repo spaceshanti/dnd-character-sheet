@@ -5,7 +5,7 @@ import { findLib, applyLib } from '../spellLib'
 import { useChar, useStore, useUI } from '../store'
 import { Drawer, EffectsEditor, Select, Switch, useToast, Toast } from './ui'
 import { RichArea, RichText } from './RichText'
-import { FeatureUsage, FeatureUsageEditor } from './FeatureParts'
+import { FeatureChangesEditor, FeatureUsage, FeatureUsageEditor } from './FeatureParts'
 import { targetName } from '../constants'
 import type { Effect, Feature, FeatureCategory, Spell } from '../types'
 
@@ -269,16 +269,10 @@ export function FeatureDrawer({ id }: { id: string }) {
           <div className="row">
             <span className="field-lbl">The feature itself is</span>
             <Select value={f.actionType} onChange={(v) => up((x) => { x.actionType = v })} options={ACTION_TYPES} />
-            <span className="muted small">(leave as none if it only gives the actions below)</span>
+            <span className="muted small">(none if it only gives actions)</span>
           </div>
+          <FeatureChangesEditor f={f} />
           <FeatureUsageEditor f={f} />
-          <div>
-            <div className="row" style={{ marginBottom: 4 }}>
-              <div className="field-lbl grow">What this changes on my sheet</div>
-              <label className="row small"><Switch on={f.active} onChange={(b) => up((x) => { x.active = b })} /> Applied</label>
-            </div>
-            <EffectsEditor effects={f.effects} onChange={(e) => up((x) => { x.effects = e })} />
-          </div>
         </div>
       )}
       <Toast msg={toast.msg} />

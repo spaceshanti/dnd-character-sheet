@@ -85,7 +85,7 @@ function FeatureCard({ f, onUsed }: { f: Feature; onUsed: (msg: string) => void 
         {!f.collapsed && (
           <div className="col" style={{ gap: 10 }}>
             {f.description ? <RichText className="prose" value={f.description} style={{ fontSize: 13.5 }} /> : <div className="muted small">No description.</div>}
-            <FeatureUsage f={f} onUsed={onUsed} />
+            <FeatureUsage f={f} onUsed={onUsed} showResources={false} />
             {f.effects.length > 0 && (
               <div className="row" style={{ flexWrap: 'wrap', gap: 4, opacity: f.active ? 1 : 0.5 }}>
                 {f.effects.map((e) => <span key={e.id} className={`chip ${e.type === 'advantage' ? 'adv' : e.type === 'disadvantage' ? 'dis' : ''}`}>{targetName(e.target)}: {e.type === 'bonus' ? `${(e.value ?? 0) >= 0 ? '+' : ''}${e.value ?? 0}` : e.type}</span>)}

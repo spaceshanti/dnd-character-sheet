@@ -1,9 +1,10 @@
+import { useState, type ReactNode } from 'react'
 import { ACTION_TYPES, RECHARGES } from '../constants'
 import { WEAPON_NAMES } from '../data/gear'
-import { newFeatureAction, newResource, newSpell, uid } from '../blank'
+import { newEffect, newFeatureAction, newResource, newSpell, uid } from '../blank'
 import { useChar, useStore, useUI } from '../store'
 import { applyLib, bestLib } from '../spellLib'
-import { Num, Pips, Select } from './ui'
+import { EffectsEditor, Num, Pips, Select, Switch } from './ui'
 import type { Character, Feature, FeatureAction, RestEffect, Resource } from '../types'
 
 export const actionTypeName = (t: string) => ACTION_TYPES.find((a) => a.id === t)?.name ?? ''
@@ -26,11 +27,14 @@ export function costText(c: Character, a: FeatureAction): string {
   return r ? `${a.cost} × ${resName(r)} · ${left(r)} left` : ''
 }
 
-/** Read view inside the feature drawer: its resources (with pips) and its actions (with Use). */
-export function FeatureUsage({ f, onUsed }: { f: Feature; onUsed: (msg: string) => void }) {
+export const restText = (e: RestEffect) =>
+  `${e.rest === 'long' ? 'Long' : 'Short'} rest: ${e.kind === 'inspiration' ? 'Heroic Inspiration' : e.kind === 'tempHp' ? `${e.value} temp HP` : e.note || 'reminder'}`
+
+/** Read view: granted spells, rest effects, weapon mastery, resources (optional) and actions with Use buttons. */
+export function FeatureUsage({ f, onUsed, showResources = true }: { f: Feature; onUsed: (msg: string) => void; showResources?: boolean }) {
   const c = useChar()
   const patch = useStore((s) => s.patch)
-  const resources = c.resources.filter((r) => r.featureId === f.id)
+  const resources = showResources ? c.resources.filter((r) => r.featureId === f.id) : []
   const spells = c.spells.filter((sp) => sp.grantedBy === f.id).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
   if (!resources.length && !f.actions.length && !f.masteries.length && !f.restEffects.length && !spells.length) return null
   return (
@@ -80,7 +84,26 @@ export function FeatureUsage({ f, onUsed }: { f: Feature; onUsed: (msg: string) 
   )
 }
 
-/** Edit view: the feature's own resources and actions. */
+/** A folding section of the feature editor; starts open when it has something in it. */
+function Fold({ title, count, onAdd, addLabel, hint, children }: {
+  title: string; count: number; onAdd: () => void; addLabel: string; hint: string; children: ReactNode
+}) {
+  const [open, setOpen] = useState(count > 0)
+  return (
+    <details className="item-sec" open={open} onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}>
+      <summary>
+        <span className="grow">{title}{count > 0 && <span className="muted"> · {count}</span>}</span>
+        <button className="btn sm" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAdd(); setOpen(true) }}>＋ {addLabel}</button>
+      </summary>
+      <div className="col" style={{ gap: 6, paddingTop: 6 }}>
+        {count === 0 && <div className="muted small">{hint}</div>}
+        {children}
+      </div>
+    </details>
+  )
+}
+
+/** Edit view: the feature's resources, actions and rest effects, each folded away until used. */
 export function FeatureUsageEditor({ f }: { f: Feature }) {
   const c = useChar()
   const patch = useStore((s) => s.patch)
@@ -88,17 +111,14 @@ export function FeatureUsageEditor({ f }: { f: Feature }) {
   const upF = (fn: (x: Feature) => void) => patch((d) => { const x = d.features.find((y) => y.id === f.id); if (x) fn(x) })
   const upA = (id: string, fn: (a: FeatureAction) => void) => upF((x) => { const a = x.actions.find((y) => y.id === id); if (a) fn(a) })
   const upR = (id: string, fn: (r: Resource) => void) => patch((d) => { const r = d.resources.find((y) => y.id === id); if (r) fn(r) })
+  const upE = (id: string, fn: (e: RestEffect) => void) => upF((x) => { const e = x.restEffects.find((y) => y.id === id); if (e) fn(e) })
   // actions may spend this feature's resources or any other resource on the sheet
   const resOptions = [{ id: '', name: 'Free (no cost)' }, ...c.resources.map((r) => ({ id: r.id, name: resLabel(r) }))]
 
   return (
-    <div className="col" style={{ gap: 12 }}>
-      <div>
-        <div className="row" style={{ marginBottom: 4 }}>
-          <div className="field-lbl grow">Resources from this feature</div>
-          <button className="btn sm" onClick={() => patch((d) => { d.resources.push(newResource(f.id, resources.length ? '' : `${f.name || 'Feature'} uses`)) })}>＋ Resource</button>
-        </div>
-        {resources.length === 0 && <div className="muted small">e.g. Psionic Energy Dice, Rage, Channel Divinity. They also appear under Class Resources.</div>}
+    <div className="col" style={{ gap: 8 }}>
+      <Fold title="Resources" count={resources.length} addLabel="Resource" hint="e.g. Psionic Energy Dice, Rage, Channel Divinity. Tracked under Class Resources."
+        onAdd={() => patch((d) => { d.resources.push(newResource(f.id, resources.length ? '' : `${f.name || 'Feature'} uses`)) })}>
         {resources.map((r) => (
           <div key={r.id} className="fx-row feat-res-edit">
             <input className="box-input grow" style={{ minWidth: 120 }} placeholder="Resource name" value={r.name} onChange={(e) => upR(r.id, (x) => { x.name = e.target.value })} />
@@ -112,18 +132,10 @@ export function FeatureUsageEditor({ f }: { f: Feature }) {
             })}>✕</button>
           </div>
         ))}
-      </div>
+      </Fold>
 
-      <MasteryEditor f={f} />
-      <SpellGrantEditor f={f} />
-      <RestEditor f={f} />
-
-      <div>
-        <div className="row" style={{ marginBottom: 4 }}>
-          <div className="field-lbl grow">Actions this feature gives</div>
-          <button className="btn sm" onClick={() => upF((x) => { x.actions.push({ ...newFeatureAction(), resourceId: resources[0]?.id ?? '' }) })}>＋ Action</button>
-        </div>
-        {f.actions.length === 0 && <div className="muted small">e.g. Telekinetic Propel (Bonus Action, 1 die). Each one shows on the Actions page with a Use button.</div>}
+      <Fold title="Actions" count={f.actions.length} addLabel="Action" hint="e.g. Telekinetic Propel (Bonus Action, 1 die). Each one shows on the Actions page with a Use button."
+        onAdd={() => upF((x) => { x.actions.push({ ...newFeatureAction(), resourceId: resources[0]?.id ?? '' }) })}>
         {f.actions.map((a) => (
           <div key={a.id} className="feat-act-edit">
             <div className="fx-row">
@@ -139,110 +151,108 @@ export function FeatureUsageEditor({ f }: { f: Feature }) {
             <textarea className="box-input" rows={2} placeholder="Short description (optional)" value={a.description} onChange={(e) => upA(a.id, (x) => { x.description = e.target.value })} />
           </div>
         ))}
-      </div>
-    </div>
-  )
-}
+      </Fold>
 
-/** Which weapon kinds this feature lets you use mastery properties with (e.g. Fighter: Weapon Mastery). */
-function MasteryEditor({ f }: { f: Feature }) {
-  const patch = useStore((s) => s.patch)
-  const set = (list: string[]) => patch((d) => { const x = d.features.find((y) => y.id === f.id); if (x) x.masteries = list })
-  const any = f.masteries.includes('*')
-  const options = WEAPON_NAMES.filter((n) => !f.masteries.includes(n))
-  return (
-    <div>
-      <div className="row" style={{ marginBottom: 4 }}>
-        <div className="field-lbl grow">Weapon mastery</div>
-        {f.masteries.length > 0 && <span className="muted small">{any ? 'any weapon' : `${f.masteries.length} kind${f.masteries.length > 1 ? 's' : ''}`}</span>}
-      </div>
-      {f.masteries.length === 0 && <div className="muted small" style={{ marginBottom: 4 }}>For features like Weapon Mastery: choose the weapon kinds whose mastery property you can use.</div>}
-      <div className="wtags" style={{ marginBottom: 5 }}>
-        {f.masteries.map((m) => (
-          <span key={m} className="wtag mastery">{m === '*' ? 'Any weapon' : m}<button type="button" title="Remove" onClick={() => set(f.masteries.filter((x) => x !== m))}>✕</button></span>
+      <Fold title="On a rest" count={f.restEffects.length} addLabel="Rest effect" hint="e.g. Resourceful: gain Heroic Inspiration on a long rest. Applied when you press Long / Short rest."
+        onAdd={() => upF((x) => { x.restEffects.push({ id: uid(), rest: 'long', kind: 'inspiration', value: 0, note: '' }) })}>
+        {f.restEffects.map((e) => (
+          <div key={e.id} className="fx-row feat-res-edit">
+            <Select value={e.rest} onChange={(v) => upE(e.id, (x) => { x.rest = v })} options={[{ id: 'long', name: 'Long rest' }, { id: 'short', name: 'Short rest' }]} />
+            <Select value={e.kind} onChange={(v) => upE(e.id, (x) => { x.kind = v })}
+              options={[{ id: 'inspiration', name: 'Gain Heroic Inspiration' }, { id: 'tempHp', name: 'Gain temp HP' }, { id: 'reminder', name: 'Show a reminder' }]} />
+            {e.kind === 'tempHp' && <Num min={0} className="box-input" width={48} value={e.value} onChange={(n) => upE(e.id, (x) => { x.value = n })} />}
+            {e.kind === 'reminder' && <input className="box-input grow" placeholder="e.g. Swap a Psionic Discipline" value={e.note} onChange={(ev) => upE(e.id, (x) => { x.note = ev.target.value })} />}
+            <button className="btn icon sm" title="Remove" onClick={() => upF((x) => { x.restEffects = x.restEffects.filter((y) => y.id !== e.id) })}>✕</button>
+          </div>
         ))}
-      </div>
-      {!any && (
-        <div className="row" style={{ gap: 4 }}>
-          <select value="" onChange={(e) => { if (e.target.value) set([...f.masteries, e.target.value]) }}>
-            <option value="">＋ Add a weapon kind…</option>
-            {options.map((n) => <option key={n} value={n}>{n}</option>)}
-          </select>
-          <button className="btn sm" onClick={() => set(['*'])} title="Mastery with every weapon">Any weapon</button>
-        </div>
-      )}
+      </Fold>
     </div>
   )
 }
 
-export const restText = (e: RestEffect) =>
-  `${e.rest === 'long' ? 'Long' : 'Short'} rest: ${e.kind === 'inspiration' ? 'Heroic Inspiration' : e.kind === 'tempHp' ? `${e.value} temp HP` : e.note || 'reminder'}`
-
-/** Things this feature does on a rest (Resourceful: Heroic Inspiration on a long rest). */
-function RestEditor({ f }: { f: Feature }) {
-  const patch = useStore((s) => s.patch)
-  const upF = (fn: (x: Feature) => void) => patch((d) => { const x = d.features.find((y) => y.id === f.id); if (x) fn(x) })
-  const upE = (id: string, fn: (e: RestEffect) => void) => upF((x) => { const e = x.restEffects.find((y) => y.id === id); if (e) fn(e) })
-  return (
-    <div>
-      <div className="row" style={{ marginBottom: 4 }}>
-        <div className="field-lbl grow">On a rest</div>
-        <button className="btn sm" onClick={() => upF((x) => { x.restEffects.push({ id: uid(), rest: 'long', kind: 'inspiration', value: 0, note: '' }) })}>＋ Rest effect</button>
-      </div>
-      {f.restEffects.length === 0 && <div className="muted small">e.g. Resourceful: gain Heroic Inspiration on a long rest. Applied when you press Long / Short rest.</div>}
-      {f.restEffects.map((e) => (
-        <div key={e.id} className="fx-row feat-res-edit">
-          <Select value={e.rest} onChange={(v) => upE(e.id, (x) => { x.rest = v })} options={[{ id: 'long', name: 'Long rest' }, { id: 'short', name: 'Short rest' }]} />
-          <Select value={e.kind} onChange={(v) => upE(e.id, (x) => { x.kind = v })}
-            options={[{ id: 'inspiration', name: 'Gain Heroic Inspiration' }, { id: 'tempHp', name: 'Gain temp HP' }, { id: 'reminder', name: 'Show a reminder' }]} />
-          {e.kind === 'tempHp' && <Num min={0} className="box-input" width={48} value={e.value} onChange={(n) => upE(e.id, (x) => { x.value = n })} />}
-          {e.kind === 'reminder' && <input className="box-input grow" placeholder="e.g. Swap a Psionic Discipline" value={e.note} onChange={(ev) => upE(e.id, (x) => { x.note = ev.target.value })} />}
-          <button className="btn icon sm" title="Remove" onClick={() => upF((x) => { x.restEffects = x.restEffects.filter((y) => y.id !== e.id) })}>✕</button>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-/** Spells and cantrips the feature grants: added to the spell book as always prepared. */
-function SpellGrantEditor({ f }: { f: Feature }) {
+/**
+ * "What this changes on my sheet": stat / skill links, spells it grants and weapon mastery, all in one place,
+ * added from a single menu.
+ */
+export function FeatureChangesEditor({ f }: { f: Feature }) {
   const c = useChar()
   const patch = useStore((s) => s.patch)
-  const granted = c.spells.filter((sp) => sp.grantedBy === f.id).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
-  const add = (input: HTMLInputElement, levelSel: HTMLSelectElement) => {
-    const name = input.value.trim()
-    if (!name) return
+  const [addingSpell, setAddingSpell] = useState(false)
+  const upF = (fn: (x: Feature) => void) => patch((d) => { const x = d.features.find((y) => y.id === f.id); if (x) fn(x) })
+  const spells = c.spells.filter((sp) => sp.grantedBy === f.id).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
+  const nothing = !f.effects.length && !spells.length && !f.masteries.length && !addingSpell
+
+  const addSpell = (name: string, fallbackLevel: number) => {
     const lib = bestLib(name)
-    const level = lib && !lib.stub ? lib.l : +levelSel.value
+    const level = lib && !lib.stub ? lib.l : fallbackLevel
     let sp = newSpell(level, name)
     if (lib) sp = { ...applyLib(sp, lib), level }
     sp = { ...sp, prepared: true, alwaysPrepared: true, grantedBy: f.id }
     patch((d) => { d.spells.push(sp) })
-    input.value = ''
   }
+  const add = (what: string) => {
+    if (what === 'effect') upF((x) => { x.effects.push(newEffect()) })
+    if (what === 'spell') setAddingSpell(true)
+    if (what === 'mastery') upF((x) => { x.masteries.push(WEAPON_NAMES.find((n) => !x.masteries.includes(n)) ?? '*') })
+  }
+
   return (
     <div>
-      <div className="field-lbl" style={{ marginBottom: 4 }}>Spells from this feature</div>
-      {granted.length === 0 && <div className="muted small" style={{ marginBottom: 4 }}>e.g. Spellfire Spark → Sacred Flame. They go in your spell book as always prepared.</div>}
-      <div className="wtags" style={{ marginBottom: 5 }}>
-        {granted.map((sp) => (
-          <span key={sp.id} className="wtag mastery">{sp.name}{sp.level === 0 ? ' · cantrip' : ` · ${sp.level}`}
-            <button type="button" title="Remove from the spell book" onClick={() => patch((d) => { d.spells = d.spells.filter((y) => y.id !== sp.id) })}>✕</button>
-          </span>
-        ))}
+      <div className="row" style={{ marginBottom: 4 }}>
+        <div className="field-lbl grow">What this changes on my sheet</div>
+        <label className="row small"><Switch on={f.active} onChange={(b) => upF((x) => { x.active = b })} /> Applied</label>
       </div>
-      <form className="row" style={{ gap: 4 }} onSubmit={(e) => {
-        e.preventDefault()
-        const form = e.currentTarget
-        add(form.elements.namedItem('spell') as HTMLInputElement, form.elements.namedItem('lvl') as HTMLSelectElement)
-      }}>
-        <input name="spell" className="box-input grow" placeholder="Spell name + Enter (fills from the library)" />
-        <select name="lvl" defaultValue="0" title="Level, if it isn't in the library">
-          <option value="0">Cantrip</option>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((l) => <option key={l} value={l}>Level {l}</option>)}
+      <div className="fx">
+        {nothing && <div className="muted small" style={{ marginBottom: 6 }}>Nothing yet. Add a bonus or proficiency, a spell it grants, or weapon mastery.</div>}
+        <EffectsEditor bare effects={f.effects} onChange={(e) => upF((x) => { x.effects = e })} />
+
+        {spells.map((sp) => (
+          <div key={sp.id} className="fx-row change-row">
+            <span className="change-kind">Spell</span>
+            <b className="grow">{sp.name}</b>
+            <span className="muted small">{sp.level === 0 ? 'cantrip' : `level ${sp.level}`} · always prepared</span>
+            <button className="btn icon sm" title="Remove from the spell book" onClick={() => patch((d) => { d.spells = d.spells.filter((y) => y.id !== sp.id) })}>✕</button>
+          </div>
+        ))}
+        {addingSpell && (
+          <form className="fx-row change-row" onSubmit={(e) => {
+            e.preventDefault()
+            const form = e.currentTarget
+            const input = form.elements.namedItem('spell') as HTMLInputElement
+            if (input.value.trim()) addSpell(input.value.trim(), +(form.elements.namedItem('lvl') as HTMLSelectElement).value)
+            input.value = ''
+            setAddingSpell(false)
+          }}>
+            <span className="change-kind">Spell</span>
+            <input name="spell" autoFocus className="box-input grow" placeholder="Spell name + Enter (fills from the library)" />
+            <select name="lvl" defaultValue="0" title="Level, if it isn't in the library">
+              <option value="0">Cantrip</option>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((l) => <option key={l} value={l}>Level {l}</option>)}
+            </select>
+            <button className="btn sm" type="submit">Add</button>
+            <button className="btn icon sm" type="button" title="Cancel" onClick={() => setAddingSpell(false)}>✕</button>
+          </form>
+        )}
+
+        {f.masteries.map((m, i) => (
+          <div key={`${m}-${i}`} className="fx-row change-row">
+            <span className="change-kind">Mastery</span>
+            <select value={m} onChange={(e) => upF((x) => { x.masteries[i] = e.target.value })}>
+              <option value="*">Any weapon</option>
+              {WEAPON_NAMES.filter((n) => n === m || !f.masteries.includes(n)).map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+            <span className="muted small grow">can use this weapon's mastery property</span>
+            <button className="btn icon sm" title="Remove" onClick={() => upF((x) => { x.masteries.splice(i, 1) })}>✕</button>
+          </div>
+        ))}
+
+        <select className="add-change" value="" onChange={(e) => { add(e.target.value); e.target.value = '' }}>
+          <option value="">＋ Add…</option>
+          <option value="effect">Bonus / advantage / proficiency</option>
+          <option value="spell">A spell or cantrip</option>
+          <option value="mastery">Weapon mastery</option>
         </select>
-        <button className="btn sm" type="submit">Add</button>
-      </form>
+      </div>
     </div>
   )
 }

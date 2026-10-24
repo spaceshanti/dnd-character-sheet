@@ -572,3 +572,9 @@ svg.ico { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14e
 .qty-step .arrows { display: flex; flex-direction: column; justify-content: center; }
 .qty-step .arrows button { border: none; background: none; padding: 0 2px; font-size: 7.5px; line-height: 1.15; color: var(--ink2); cursor: pointer; }
 .qty-step .arrows button:hover { color: var(--accent); }
+
+/* ---------- feature "what this changes" box ---------- */
+.fx-bare { display: contents; }
+.change-row { background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 3px 6px; }
+.change-kind { flex: none; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); min-width: 54px; }
+.add-change { margin-top: 2px; }
