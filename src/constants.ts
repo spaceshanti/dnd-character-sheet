@@ -1,4 +1,4 @@
-import type { AbilityKey, ActionType, EffectType, Rarity, SkillKey } from './types'
+import type { AbilityKey, ActionType, EffectType, Rarity, Recharge, SkillKey } from './types'
 
 export const ABILITIES: { key: AbilityKey; name: string; short: string }[] = [
   { key: 'str', name: 'Strength', short: 'STR' },
@@ -74,6 +74,14 @@ export const ITEM_CATEGORIES: { name: string; icon: string }[] = [
 ]
 
 export const RARITIES: Rarity[] = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact']
+
+export const RECHARGES: { id: Recharge; name: string }[] = [
+  { id: 'long', name: 'Long rest' },
+  { id: 'short', name: 'Short rest' },
+  { id: 'shortOne', name: '1 on short, all on long' },
+  { id: 'dawn', name: 'Dawn' },
+  { id: 'none', name: 'Manual' },
+]
 
 export const ACTION_TYPES: { id: ActionType; name: string }[] = [
   { id: 'none', name: '— none —' },

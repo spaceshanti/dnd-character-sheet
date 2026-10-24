@@ -1,6 +1,6 @@
 import { SKILLS } from './constants'
 import { EMOJI_TO_ICON } from './components/Icon'
-import type { Attack, Character, Effect, Feature, Item, Mod, Resource, Spell } from './types'
+import type { Attack, Character, Effect, Feature, FeatureAction, Item, Mod, Resource, Spell } from './types'
 
 export const uid = () =>
   (globalThis.crypto && 'randomUUID' in globalThis.crypto ? globalThis.crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36))
@@ -19,7 +19,7 @@ export function newSpell(level = 1, name = ''): Spell {
   }
 }
 export function newFeature(category: Feature['category'] = 'class'): Feature {
-  return { id: uid(), name: '', category, source: '', description: '', actionType: 'none', effects: [], active: true }
+  return { id: uid(), name: '', category, source: '', description: '', actionType: 'none', effects: [], active: true, actions: [] }
 }
 export function newItem(): Item {
   return {
@@ -34,8 +34,11 @@ export function newAttack(): Attack {
     addMod: true, range: '', notes: '',
   }
 }
-export function newResource(): Resource {
-  return { id: uid(), name: '', max: 2, used: 0, recharge: 'long' }
+export function newResource(featureId = '', name = ''): Resource {
+  return { id: uid(), name, max: 2, used: 0, recharge: 'long', die: '', featureId }
+}
+export function newFeatureAction(): FeatureAction {
+  return { id: uid(), name: '', actionType: 'action', description: '', resourceId: '', cost: 1 }
 }
 
 export function blankCharacter(name = 'New Character'): Character {
@@ -95,6 +98,8 @@ export function normalize(raw: Partial<Character>): Character {
     c.story.trait3 = ''
   }
   c.spells = c.spells.map((s) => ({ ...s, materialConsumed: s.materialConsumed ?? isConsumed(s.components) }))
+  c.features = c.features.map((f) => ({ ...f, actions: f.actions ?? [] }))
+  c.resources = c.resources.map((r) => ({ ...r, die: r.die ?? '', featureId: r.featureId ?? '' }))
   c.items = c.items.map((i) => ({
     ...i,
     icon: EMOJI_TO_ICON[i.icon] ?? i.icon,

@@ -1,11 +1,11 @@
 import { Fragment, useState } from 'react'
-import { ABILITIES, targetName } from '../constants'
+import { ABILITIES, RECHARGES, targetName } from '../constants'
 import { attackInfo, itemAttacks, itemIsActive, signed } from '../calc'
 import { newAttack, newResource } from '../blank'
 import { useChar, useStore, useUI } from '../store'
 import { Area, Frame, Num, Pips, Select, Switch } from '../components/ui'
 import { Icon, itemIcon } from '../components/Icon'
-import type { Attack, Effect, Recharge } from '../types'
+import type { Attack, Effect } from '../types'
 
 const effectText = (e: Effect) =>
   `${targetName(e.target)} ${e.type === 'bonus' ? signed(e.value ?? 0) : e.type === 'minScore' ? `≥ ${e.value}` : e.type}`
@@ -130,13 +130,12 @@ function AttacksPanel() {
   )
 }
 
-const RECHARGE: { id: Recharge; name: string }[] = [
-  { id: 'long', name: 'Long rest' }, { id: 'short', name: 'Short rest' }, { id: 'dawn', name: 'Dawn' }, { id: 'none', name: 'Manual' },
-]
 
 function ResourcesPanel() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
+  const set = useUI((s) => s.set)
+  const feat = (id: string) => (id ? c.features.find((f) => f.id === id)?.name || 'a feature' : '')
   return (
     <Frame title="Class Resources, Ammo & Charges" tools={<button className="btn sm" onClick={() => patch((d) => { d.resources.push(newResource()) })}>＋ Add</button>}>
       {c.resources.length === 0 && <div className="empty">Track things like Rage, Ki, Psionic Dice, Channel Divinity or ammo. Each one has its own max.</div>}
@@ -144,12 +143,16 @@ function ResourcesPanel() {
         const up = (fn: (x: typeof r) => void) => patch((d) => { const x = d.resources.find((y) => y.id === r.id); if (x) fn(x) })
         return (
           <div key={r.id} className="stat-line" style={{ flexWrap: 'wrap', borderBottom: '1px solid var(--line)', paddingBottom: 6, marginBottom: 6 }}>
-            <input className="line-input" style={{ width: 150 }} placeholder="Resource name" value={r.name} onChange={(e) => up((x) => { x.name = e.target.value })} />
+            <span className="col" style={{ gap: 0, width: 150 }}>
+              <input className="line-input" placeholder="Resource name" value={r.name} onChange={(e) => up((x) => { x.name = e.target.value })} />
+              {feat(r.featureId) && <button className="res-feat" onClick={() => set({ drawer: { kind: 'feature', id: r.featureId } })}>from {feat(r.featureId)}</button>}
+            </span>
             <Pips total={r.max} used={r.used} onChange={(u) => up((x) => { x.used = u })} />
+            <input className="box-input" style={{ width: 42 }} placeholder="die" title="Optional die size, e.g. d8" value={r.die} onChange={(e) => up((x) => { x.die = e.target.value })} />
             <span className="grow" />
             <span className="small muted">max</span>
             <Num min={0} max={999} className="box-input" width={48} style={{ textAlign: 'center' }} value={r.max} onChange={(n) => up((x) => { x.max = n; x.used = Math.min(x.used, n) })} />
-            <Select value={r.recharge} onChange={(v) => up((x) => { x.recharge = v })} options={RECHARGE} />
+            <Select value={r.recharge} onChange={(v) => up((x) => { x.recharge = v })} options={RECHARGES} />
             <button className="btn icon sm ghost" onClick={() => patch((d) => { d.resources = d.resources.filter((y) => y.id !== r.id) })}>✕</button>
           </div>
         )

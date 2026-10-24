@@ -62,6 +62,17 @@ export interface Spell {
 
 export type FeatureCategory = 'class' | 'species' | 'feat' | 'background' | 'buff' | 'other'
 
+/** One thing a feature lets you do, e.g. Psionic Power → Telekinetic Propel (Bonus Action, 1 die). */
+export interface FeatureAction {
+  id: string
+  name: string
+  actionType: ActionType
+  description: string
+  /** resource spent when used ('' = free) */
+  resourceId: string
+  cost: number
+}
+
 export interface Feature {
   id: string
   name: string
@@ -71,6 +82,7 @@ export interface Feature {
   actionType: ActionType
   effects: Effect[]
   active: boolean
+  actions: FeatureAction[]
 }
 
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary' | 'artifact'
@@ -132,7 +144,8 @@ export interface Attack {
   notes: string
 }
 
-export type Recharge = 'short' | 'long' | 'dawn' | 'none'
+/** shortOne = regain one on a short rest, all on a long rest */
+export type Recharge = 'short' | 'shortOne' | 'long' | 'dawn' | 'none'
 
 export interface Resource {
   id: string
@@ -140,6 +153,10 @@ export interface Resource {
   max: number
   used: number
   recharge: Recharge
+  /** optional die size shown with it, e.g. 'd8' for Psionic Energy Dice */
+  die: string
+  /** the feature this resource belongs to ('' = standalone) */
+  featureId: string
 }
 
 export interface HitDie {

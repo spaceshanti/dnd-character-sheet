@@ -50,7 +50,12 @@ export function TopBar() {
   }
   const shortRest = () => {
     if (!window.confirm('Take a short rest? Resources that recharge on a short rest are refilled.')) return
-    patch((d) => { for (const r of d.resources) if (r.recharge === 'short') r.used = 0 })
+    patch((d) => {
+      for (const r of d.resources) {
+        if (r.recharge === 'short') r.used = 0
+        else if (r.recharge === 'shortOne') r.used = Math.max(0, r.used - 1)
+      }
+    })
   }
 
   const lineStyle = { fontWeight: 600 }

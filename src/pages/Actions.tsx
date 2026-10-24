@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { attackInfo, itemAttacks, signed, spellActionType } from '../calc'
 import { useChar, useUI } from '../store'
-import { Frame } from '../components/ui'
+import { Frame, Toast, useToast } from '../components/ui'
+import { costText, spendAction } from '../components/FeatureParts'
 import type { ActionType } from '../types'
 
-interface Row { key: string; kind: string; name: string; right: string; onClick: () => void }
+interface Row { key: string; kind: string; name: string; right: string; onClick: () => void; onUse?: () => void }
 
 const STANDARD: Record<string, string> = {
   Attack: 'Make one melee or ranged attack (or more with Extra Attack).',
@@ -26,6 +27,7 @@ export function ActionsPage() {
   const set = useUI((s) => s.set)
   const go = useUI((s) => s.go)
   const [std, setStd] = useState('')
+  const toast = useToast()
 
   const rows: Record<'action' | 'bonus' | 'reaction' | 'other', Row[]> = { action: [], bonus: [], reaction: [], other: [] }
   const put = (t: ActionType | 'special', r: Row) => {
@@ -49,8 +51,15 @@ export function ActionsPage() {
     })
   }
   for (const f of c.features) {
-    if (f.actionType === 'none') continue
-    put(f.actionType, { key: f.id, kind: f.category, name: f.name, right: '', onClick: () => set({ drawer: { kind: 'feature', id: f.id } }) })
+    const open = () => set({ drawer: { kind: 'feature', id: f.id } })
+    if (f.actionType !== 'none') put(f.actionType, { key: f.id, kind: f.category, name: f.name, right: '', onClick: open })
+    for (const a of f.actions) {
+      if (a.actionType === 'none') continue
+      put(a.actionType, {
+        key: a.id, kind: 'Feature', name: `${f.name || 'Feature'} › ${a.name || 'action'}`, right: costText(c, a), onClick: open,
+        onUse: () => toast.show(spendAction(c, a) || `${a.name || 'Action'} used`),
+      })
+    }
   }
   for (const i of c.items) {
     if (i.actionType === 'none' || i.qty <= 0) continue
@@ -73,8 +82,11 @@ export function ActionsPage() {
             {rows[col.id].map((r) => (
               <div key={r.key} className="act-item" onClick={r.onClick}>
                 <span className="k">{r.kind}</span>
-                <b className="grow">{r.name || 'Unnamed'}</b>
-                <span className="muted small">{r.right}</span>
+                <span className="grow" style={{ minWidth: 0 }}>
+                  <b>{r.name || 'Unnamed'}</b>
+                  {r.right && <span className="muted small" style={{ display: 'block' }}>{r.right}</span>}
+                </span>
+                {r.onUse && <button className="btn sm primary" onClick={(e) => { e.stopPropagation(); r.onUse!() }}>Use</button>}
               </div>
             ))}
           </Frame>
@@ -88,6 +100,7 @@ export function ActionsPage() {
         </div>
         {std && <div style={{ marginTop: 8 }}><b>{std}.</b> {STANDARD[std]}</div>}
       </Frame>
+      <Toast msg={toast.msg} />
     </div>
   )
 }

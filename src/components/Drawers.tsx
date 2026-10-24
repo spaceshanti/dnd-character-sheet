@@ -4,6 +4,7 @@ import { isConsumed, newFeature } from '../blank'
 import { findLib, applyLib } from '../spellLib'
 import { useChar, useStore, useUI } from '../store'
 import { Area, Drawer, EffectsEditor, Select, Switch, useToast, Toast } from './ui'
+import { FeatureUsage, FeatureUsageEditor } from './FeatureParts'
 import { targetName } from '../constants'
 import type { Effect, Feature, FeatureCategory, Spell } from '../types'
 
@@ -217,6 +218,7 @@ export function FeatureDrawer({ id }: { id: string }) {
   const set = useUI((s) => s.set)
   const f = c.features.find((x) => x.id === id)
   const [editing, setEditing] = useState(() => !f?.name)
+  const toast = useToast()
   if (!f) return null
   const up = (fn: (x: Feature) => void) => patch((d) => { const x = d.features.find((y) => y.id === id); if (x) fn(x) })
   const close = () => set({ drawer: null })
@@ -230,6 +232,7 @@ export function FeatureDrawer({ id }: { id: string }) {
             {f.source && <span className="tag alt">{f.source}</span>}
             {f.actionType !== 'none' && <span className="chip accent">{ACTION_TYPES.find((a) => a.id === f.actionType)?.name}</span>}
           </div>
+          <FeatureUsage f={f} onUsed={toast.show} />
           {f.description ? <div className="prose">{f.description}</div> : <div className="empty">No description yet.</div>}
           {f.effects.length > 0 && (
             <div className="col">
@@ -242,7 +245,11 @@ export function FeatureDrawer({ id }: { id: string }) {
           )}
           <div className="row" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
             <span className="grow" />
-            <button className="btn danger" onClick={() => { if (window.confirm(`Remove ${f.name || 'this feature'}?`)) { close(); patch((d) => { d.features = d.features.filter((y) => y.id !== id) }) } }}>Delete</button>
+            <button className="btn danger" onClick={() => {
+              if (!window.confirm(`Remove ${f.name || 'this feature'}? Its resources are kept under Class Resources.`)) return
+              close()
+              patch((d) => { d.features = d.features.filter((y) => y.id !== id); for (const r of d.resources) if (r.featureId === id) r.featureId = '' })
+            }}>Delete</button>
           </div>
         </div>
       ) : (
@@ -254,10 +261,11 @@ export function FeatureDrawer({ id }: { id: string }) {
           </div>
           <Area className="box-input" minRows={9} placeholder="Description" value={f.description} onChange={(v) => up((x) => { x.description = v })} />
           <div className="row">
-            <span className="field-lbl">Uses</span>
+            <span className="field-lbl">The feature itself is</span>
             <Select value={f.actionType} onChange={(v) => up((x) => { x.actionType = v })} options={ACTION_TYPES} />
-            <span className="muted small">(shows up on the Actions page)</span>
+            <span className="muted small">(leave as none if it only gives the actions below)</span>
           </div>
+          <FeatureUsageEditor f={f} />
           <div>
             <div className="row" style={{ marginBottom: 4 }}>
               <div className="field-lbl grow">What this changes on my sheet</div>
@@ -267,6 +275,7 @@ export function FeatureDrawer({ id }: { id: string }) {
           </div>
         </div>
       )}
+      <Toast msg={toast.msg} />
     </Drawer>
   )
 }

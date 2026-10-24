@@ -53,6 +53,14 @@ export function FeaturesPage() {
                 {f.actionType !== 'none' && <span className="chip accent">{ACTION_TYPES.find((a) => a.id === f.actionType)?.name}</span>}
               </div>
               <div className="prose" style={{ display: '-webkit-box', WebkitLineClamp: 9, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: 13.5 }}>{f.description || <span className="muted">No description.</span>}</div>
+              {(f.actions.length > 0 || c.resources.some((r) => r.featureId === f.id)) && (
+                <div className="row" style={{ flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
+                  {c.resources.filter((r) => r.featureId === f.id).map((r) => (
+                    <span key={r.id} className="chip">{r.name || 'Resource'}: {Math.max(0, r.max - r.used)}/{r.max}{r.die ? ` ${r.die}` : ''}</span>
+                  ))}
+                  {f.actions.map((a) => <span key={a.id} className="chip accent">{a.name || 'action'}</span>)}
+                </div>
+              )}
               {f.effects.length > 0 && (
                 <div className="row" style={{ flexWrap: 'wrap', gap: 4, marginTop: 8, opacity: f.active ? 1 : 0.5 }}>
                   {f.effects.map((e) => <span key={e.id} className={`chip ${e.type === 'advantage' ? 'adv' : e.type === 'disadvantage' ? 'dis' : ''}`}>{targetName(e.target)}</span>)}

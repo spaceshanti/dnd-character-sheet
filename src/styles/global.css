@@ -515,3 +515,13 @@ svg.ico { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14e
 .item-sec > summary::before { content: '▸'; transition: transform .15s; }
 .item-sec[open] > summary::before { transform: rotate(90deg); }
 .atk-line { font-size: 13px; padding: 3px 8px; border-left: 3px solid var(--accent); background: var(--panel); }
+
+/* ---------- feature actions & resources ---------- */
+.feat-res { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel2); }
+.feat-act { padding: 7px 9px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--panel); display: flex; flex-direction: column; gap: 3px; }
+.feat-act-edit { border: 1px dashed var(--ink2); border-radius: 6px; padding: 6px 7px 7px; margin-bottom: 6px; background: var(--panel2); }
+.feat-act-edit textarea { width: 100%; resize: vertical; }
+.feat-res-edit { background: var(--panel2); border-radius: 6px; padding: 4px 6px; }
+.res-feat { border: none; background: none; padding: 0; text-align: left; font-size: 10.5px; color: var(--accent); cursor: pointer; }
+.res-feat:hover { text-decoration: underline; }
+.act-item .btn { flex: none; }
