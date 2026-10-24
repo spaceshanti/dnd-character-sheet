@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { ACTION_TYPES, targetName } from '../constants'
+import { ACTION_TYPES } from '../constants'
 import { useChar, useStore, useUI } from '../store'
-import { Frame, Switch, Toast, useToast } from '../components/ui'
+import { Frame, Switch } from '../components/ui'
 import { addFeature } from '../components/Drawers'
-import { FeatureUsage } from '../components/FeatureParts'
 import { RichText } from '../components/RichText'
 import { plainText } from '../rich'
 import type { Feature, FeatureCategory } from '../types'
@@ -21,7 +20,6 @@ const CATS: { id: FeatureCategory | 'all'; name: string }[] = [
 export function FeaturesPage() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
-  const toast = useToast()
   const [cat, setCat] = useState<FeatureCategory | 'all'>('all')
   const [q, setQ] = useState('')
   const matches = (f: Feature) => {
@@ -53,15 +51,14 @@ export function FeaturesPage() {
       {list.length === 0 && <div className="empty">{c.features.length ? 'Nothing matches.' : 'No features yet. Add class features, species traits and feats — you can link them to skills, AC and more.'}</div>}
 
       <div className="feat-cols">
-        {list.map((f) => <FeatureCard key={f.id} f={f} onUsed={toast.show} />)}
+        {list.map((f) => <FeatureCard key={f.id} f={f} />)}
       </div>
-      <Toast msg={toast.msg} />
     </div>
   )
 }
 
-/** A feature shown in full: description, resources, actions (with Use), granted spells, rest effects. */
-function FeatureCard({ f, onUsed }: { f: Feature; onUsed: (msg: string) => void }) {
+/** A feature card: just its description (actions and the rest live in the editor and on the Actions page). */
+function FeatureCard({ f }: { f: Feature }) {
   const patch = useStore((s) => s.patch)
   const set = useUI((s) => s.set)
   const up = (fn: (x: Feature) => void) => patch((d) => { const x = d.features.find((y) => y.id === f.id); if (x) fn(x) })
@@ -80,18 +77,9 @@ function FeatureCard({ f, onUsed }: { f: Feature; onUsed: (msg: string) => void 
           <span className="tag alt">{f.category}</span>
           {f.source && <span className="tag alt">{f.source}</span>}
           {f.actionType !== 'none' && <span className="chip accent">{ACTION_TYPES.find((a) => a.id === f.actionType)?.name}</span>}
-          {f.collapsed && f.actions.length > 0 && <span className="muted small">{f.actions.length} action{f.actions.length > 1 ? 's' : ''}</span>}
         </div>
         {!f.collapsed && (
-          <div className="col" style={{ gap: 10 }}>
-            {f.description ? <RichText className="prose" value={f.description} style={{ fontSize: 13.5 }} /> : <div className="muted small">No description.</div>}
-            <FeatureUsage f={f} onUsed={onUsed} showResources={false} />
-            {f.effects.length > 0 && (
-              <div className="row" style={{ flexWrap: 'wrap', gap: 4, opacity: f.active ? 1 : 0.5 }}>
-                {f.effects.map((e) => <span key={e.id} className={`chip ${e.type === 'advantage' ? 'adv' : e.type === 'disadvantage' ? 'dis' : ''}`}>{targetName(e.target)}: {e.type === 'bonus' ? `${(e.value ?? 0) >= 0 ? '+' : ''}${e.value ?? 0}` : e.type}</span>)}
-              </div>
-            )}
-          </div>
+          f.description ? <RichText className="prose" value={f.description} style={{ fontSize: 13.5 }} /> : <div className="muted small">No description.</div>
         )}
       </Frame>
     </div>
