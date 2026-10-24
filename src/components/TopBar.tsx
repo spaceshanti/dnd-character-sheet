@@ -3,7 +3,7 @@ import { ALIGNMENTS, CONDITIONS } from '../constants'
 import { activeEffects, netAdvantage, signed, statInfo, type StatKey } from '../calc'
 import { uid } from '../blank'
 import { useChar, useStore, useUI, type PageId } from '../store'
-import { Field, FitInput, Num, Pips, Popover } from './ui'
+import { Field, FitInput, Num, Pips, Popover, Toast, useToast } from './ui'
 import { dropImagesOn, Lightbox } from './ImagePicker'
 import { StatEditor } from './StatEditor'
 import { Icon } from './Icon'
@@ -35,8 +35,26 @@ export function TopBar() {
     return () => ro.disconnect()
   }, [])
 
+  const toast = useToast()
+  /** apply every active feature's effects for this kind of rest; returns what happened */
+  const restEffects = (d: typeof c, rest: 'long' | 'short') => {
+    const done: string[] = []
+    for (const f of d.features) {
+      if (!f.active) continue
+      for (const e of f.restEffects) {
+        if (e.rest !== rest) continue
+        if (e.kind === 'inspiration') { d.inspiration = true; done.push(`Heroic Inspiration (${f.name || 'feature'})`) }
+        else if (e.kind === 'tempHp') { d.hp.temp = Math.max(d.hp.temp, e.value); done.push(`${e.value} temp HP (${f.name || 'feature'})`) }
+        else if (e.kind === 'reminder') done.push(`Reminder: ${e.note || f.name}`)
+      }
+    }
+    return done
+  }
+  const report = (rest: string, done: string[]) => toast.show(done.length ? `${rest} rest · ${done.join(' · ')}` : `${rest} rest taken`)
+
   const longRest = () => {
     if (!window.confirm('Take a long rest? This refills HP, spell slots, hit dice (half), resources and clears death saves.')) return
+    let done: string[] = []
     patch((d) => {
       const max = statInfo(d as typeof c, 'hpMax', activeEffects(d as typeof c)).total
       d.hp.current = max
@@ -46,16 +64,21 @@ export function TopBar() {
       let regain = Math.max(1, Math.floor(d.hitDice.reduce((s, h) => s + h.total, 0) / 2))
       for (const h of d.hitDice) { const r = Math.min(h.spent, regain); h.spent -= r; regain -= r }
       for (const r of d.resources) r.used = 0
+      done = restEffects(d, 'long')
     })
+    report('Long', done)
   }
   const shortRest = () => {
     if (!window.confirm('Take a short rest? Resources that recharge on a short rest are refilled.')) return
+    let done: string[] = []
     patch((d) => {
       for (const r of d.resources) {
         if (r.recharge === 'short') r.used = 0
         else if (r.recharge === 'shortOne') r.used = Math.max(0, r.used - 1)
       }
+      done = restEffects(d, 'short')
     })
+    report('Short', done)
   }
 
   const lineStyle = { fontWeight: 600 }
@@ -101,6 +124,7 @@ export function TopBar() {
         <button className="btn sm ghost" onClick={() => set({ charListOpen: true })}>👥 Characters</button>
         <button className="btn sm ghost" onClick={() => set({ themeOpen: true })} title="UI style (Ctrl + T)">◐</button>
       </nav>
+      <Toast msg={toast.msg} />
     </header>
   )
 }

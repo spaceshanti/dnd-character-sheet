@@ -58,6 +58,8 @@ export interface Spell {
   notes: string
   effects: Effect[]
   active: boolean
+  /** id of the feature that grants this spell ('' = added by hand) */
+  grantedBy: string
 }
 
 export type FeatureCategory = 'class' | 'species' | 'feat' | 'background' | 'buff' | 'other'
@@ -85,6 +87,18 @@ export interface Feature {
   actions: FeatureAction[]
   /** weapon kinds this feature lets you use mastery properties with ('*' = any weapon) */
   masteries: string[]
+  /** things that happen on a rest, e.g. Resourceful: Heroic Inspiration on a long rest */
+  restEffects: RestEffect[]
+  /** folded up on the Features page */
+  collapsed: boolean
+}
+
+export interface RestEffect {
+  id: string
+  rest: 'long' | 'short'
+  kind: 'inspiration' | 'tempHp' | 'reminder'
+  value: number
+  note: string
 }
 
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary' | 'artifact'

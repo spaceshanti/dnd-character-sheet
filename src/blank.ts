@@ -16,11 +16,11 @@ export function newSpell(level = 1, name = ''): Spell {
   return {
     id: uid(), name, level, prepared: false, alwaysPrepared: false, school: '', castingTime: '1 action',
     range: '', components: '', duration: '', concentration: false, ritual: false, materialConsumed: false, description: '', url: '',
-    notes: '', effects: [], active: false,
+    notes: '', effects: [], active: false, grantedBy: '',
   }
 }
 export function newFeature(category: Feature['category'] = 'class'): Feature {
-  return { id: uid(), name: '', category, source: '', description: '', actionType: 'none', effects: [], active: true, actions: [], masteries: [] }
+  return { id: uid(), name: '', category, source: '', description: '', actionType: 'none', effects: [], active: true, actions: [], masteries: [], restEffects: [], collapsed: false }
 }
 export function newItem(): Item {
   return {
@@ -99,7 +99,8 @@ export function normalize(raw: Partial<Character>): Character {
     c.story.trait3 = ''
   }
   c.spells = c.spells.map((s) => ({ ...s, materialConsumed: s.materialConsumed ?? isConsumed(s.components) }))
-  c.features = c.features.map((f) => ({ ...f, actions: f.actions ?? [], masteries: f.masteries ?? [] }))
+  c.features = c.features.map((f) => ({ ...f, actions: f.actions ?? [], masteries: f.masteries ?? [], restEffects: f.restEffects ?? [], collapsed: f.collapsed ?? false }))
+  c.spells = c.spells.map((s) => ({ ...s, grantedBy: s.grantedBy ?? '' }))
   c.resources = c.resources.map((r) => ({ ...r, die: r.die ?? '', featureId: r.featureId ?? '' }))
   c.items = c.items.map((i) => ({
     ...i,

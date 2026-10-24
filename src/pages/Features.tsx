@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { ACTION_TYPES, targetName } from '../constants'
 import { useChar, useStore, useUI } from '../store'
-import { Frame, Switch } from '../components/ui'
+import { Frame, Switch, Toast, useToast } from '../components/ui'
 import { addFeature } from '../components/Drawers'
-import type { FeatureCategory } from '../types'
+import { FeatureUsage } from '../components/FeatureParts'
 import { RichText } from '../components/RichText'
 import { plainText } from '../rich'
+import type { Feature, FeatureCategory } from '../types'
 
 const CATS: { id: FeatureCategory | 'all'; name: string }[] = [
   { id: 'all', name: 'All' },
@@ -20,10 +21,15 @@ const CATS: { id: FeatureCategory | 'all'; name: string }[] = [
 export function FeaturesPage() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
-  const set = useUI((s) => s.set)
+  const toast = useToast()
   const [cat, setCat] = useState<FeatureCategory | 'all'>('all')
   const [q, setQ] = useState('')
-  const list = c.features.filter((f) => (cat === 'all' || f.category === cat) && (!q || (f.name + plainText(f.description)).toLowerCase().includes(q.toLowerCase())))
+  const matches = (f: Feature) => {
+    const t = q.toLowerCase()
+    return !t || (f.name + ' ' + plainText(f.description) + ' ' + f.actions.map((a) => a.name + ' ' + a.description).join(' ')).toLowerCase().includes(t)
+  }
+  const list = c.features.filter((f) => (cat === 'all' || f.category === cat) && matches(f))
+  const setAllCollapsed = (v: boolean) => patch((d) => { for (const f of d.features) if (list.some((x) => x.id === f.id)) f.collapsed = v })
 
   return (
     <div className="col" style={{ gap: 14 }}>
@@ -35,45 +41,59 @@ export function FeaturesPage() {
         ))}
         <input className="box-input" style={{ width: 200 }} placeholder="search features…" value={q} onChange={(e) => setQ(e.target.value)} />
         <span className="grow" />
+        {list.length > 0 && (
+          <>
+            <button className="btn sm ghost" onClick={() => setAllCollapsed(false)}>Expand all</button>
+            <button className="btn sm ghost" onClick={() => setAllCollapsed(true)}>Collapse all</button>
+          </>
+        )}
         <button className="btn primary" onClick={() => addFeature(cat === 'all' ? 'class' : cat)}>＋ Add feature</button>
       </div>
 
       {list.length === 0 && <div className="empty">{c.features.length ? 'Nothing matches.' : 'No features yet. Add class features, species traits and feats — you can link them to skills, AC and more.'}</div>}
 
-      <div style={{ columns: '3 340px', columnGap: 14 }}>
-        <style>{`.fcard { break-inside: avoid; margin-bottom: 14px; cursor: pointer; }`}</style>
-        {list.map((f) => (
-          <div key={f.id} className="fcard" onClick={() => set({ drawer: { kind: 'feature', id: f.id } })}>
-            <Frame>
-              <div className="row" style={{ marginBottom: 4 }}>
-                <h3 style={{ fontSize: 14, flex: 1, textDecoration: 'underline', textUnderlineOffset: 3 }}>{f.name || 'Unnamed'}</h3>
-                {f.effects.length > 0 && <Switch on={f.active} onChange={(b) => patch((d) => { const x = d.features.find((y) => y.id === f.id); if (x) x.active = b })} title="Apply linked effects" />}
-              </div>
-              <div className="row" style={{ flexWrap: 'wrap', gap: 4, marginBottom: 6 }}>
-                <span className="tag alt">{f.category}</span>
-                {f.source && <span className="tag alt">{f.source}</span>}
-                {f.actionType !== 'none' && <span className="chip accent">{ACTION_TYPES.find((a) => a.id === f.actionType)?.name}</span>}
-              </div>
-              {f.description
-                ? <RichText className="prose clamp" value={f.description} style={{ fontSize: 13.5 }} />
-                : <div className="prose muted" style={{ fontSize: 13.5 }}>No description.</div>}
-              {(f.actions.length > 0 || c.resources.some((r) => r.featureId === f.id)) && (
-                <div className="row" style={{ flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
-                  {c.resources.filter((r) => r.featureId === f.id).map((r) => (
-                    <span key={r.id} className="chip">{r.name || 'Resource'}: {Math.max(0, r.max - r.used)}/{r.max}{r.die ? ` ${r.die}` : ''}</span>
-                  ))}
-                  {f.actions.map((a) => <span key={a.id} className="chip accent">{a.name || 'action'}</span>)}
-                </div>
-              )}
-              {f.effects.length > 0 && (
-                <div className="row" style={{ flexWrap: 'wrap', gap: 4, marginTop: 8, opacity: f.active ? 1 : 0.5 }}>
-                  {f.effects.map((e) => <span key={e.id} className={`chip ${e.type === 'advantage' ? 'adv' : e.type === 'disadvantage' ? 'dis' : ''}`}>{targetName(e.target)}</span>)}
-                </div>
-              )}
-            </Frame>
-          </div>
-        ))}
+      <div className="feat-cols">
+        {list.map((f) => <FeatureCard key={f.id} f={f} onUsed={toast.show} />)}
       </div>
+      <Toast msg={toast.msg} />
+    </div>
+  )
+}
+
+/** A feature shown in full: description, resources, actions (with Use), granted spells, rest effects. */
+function FeatureCard({ f, onUsed }: { f: Feature; onUsed: (msg: string) => void }) {
+  const patch = useStore((s) => s.patch)
+  const set = useUI((s) => s.set)
+  const up = (fn: (x: Feature) => void) => patch((d) => { const x = d.features.find((y) => y.id === f.id); if (x) fn(x) })
+  return (
+    <div className="fcard">
+      <Frame>
+        <div className="row fcard-head">
+          <button className="btn icon sm ghost fold" title={f.collapsed ? 'Expand' : 'Collapse'} onClick={() => up((x) => { x.collapsed = !x.collapsed })}>
+            {f.collapsed ? '▸' : '▾'}
+          </button>
+          <h3 className="grow" onClick={() => up((x) => { x.collapsed = !x.collapsed })}>{f.name || 'Unnamed'}</h3>
+          {f.effects.length > 0 && <Switch on={f.active} onChange={(b) => up((x) => { x.active = b })} title="Apply linked effects" />}
+          <button className="btn icon sm ghost" title="Edit" onClick={() => set({ drawer: { kind: 'feature', id: f.id } })}>✎</button>
+        </div>
+        <div className="row" style={{ flexWrap: 'wrap', gap: 4, margin: '2px 0 6px 30px' }}>
+          <span className="tag alt">{f.category}</span>
+          {f.source && <span className="tag alt">{f.source}</span>}
+          {f.actionType !== 'none' && <span className="chip accent">{ACTION_TYPES.find((a) => a.id === f.actionType)?.name}</span>}
+          {f.collapsed && f.actions.length > 0 && <span className="muted small">{f.actions.length} action{f.actions.length > 1 ? 's' : ''}</span>}
+        </div>
+        {!f.collapsed && (
+          <div className="col" style={{ gap: 10 }}>
+            {f.description ? <RichText className="prose" value={f.description} style={{ fontSize: 13.5 }} /> : <div className="muted small">No description.</div>}
+            <FeatureUsage f={f} onUsed={onUsed} />
+            {f.effects.length > 0 && (
+              <div className="row" style={{ flexWrap: 'wrap', gap: 4, opacity: f.active ? 1 : 0.5 }}>
+                {f.effects.map((e) => <span key={e.id} className={`chip ${e.type === 'advantage' ? 'adv' : e.type === 'disadvantage' ? 'dis' : ''}`}>{targetName(e.target)}: {e.type === 'bonus' ? `${(e.value ?? 0) >= 0 ? '+' : ''}${e.value ?? 0}` : e.type}</span>)}
+              </div>
+            )}
+          </div>
+        )}
+      </Frame>
     </div>
   )
 }

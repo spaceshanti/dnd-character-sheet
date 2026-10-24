@@ -122,7 +122,7 @@ function SpellSection({ level, spells, editable, filtering, onOpen, onToggle, on
             {level > 0 ? (
               <button
                 className={`pip ${s.prepared || s.alwaysPrepared ? 'on' : ''} ${s.alwaysPrepared ? 'always' : ''}`}
-                title={s.alwaysPrepared ? 'Always prepared' : s.prepared ? 'Prepared (click to unprepare)' : 'Not prepared (click to prepare)'}
+                title={s.grantedBy ? `Always prepared · from ${c.features.find((f) => f.id === s.grantedBy)?.name || 'a feature'}` : s.alwaysPrepared ? 'Always prepared' : s.prepared ? 'Prepared (click to unprepare)' : 'Not prepared (click to prepare)'}
                 onClick={(e) => { e.stopPropagation(); if (onToggle && !s.alwaysPrepared) onToggle(s) }}
               />
             ) : <span className="pip-dot" />}

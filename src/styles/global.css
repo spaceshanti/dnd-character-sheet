@@ -558,3 +558,10 @@ svg.ico { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14e
 .wtag button { border: none; background: none; padding: 0 0 0 2px; font-size: 9px; color: inherit; opacity: 0.6; cursor: pointer; }
 .wtag button:hover { opacity: 1; }
 .atk-line .wtags { margin-top: 4px; }
+
+/* ---------- features page ---------- */
+.feat-cols { columns: 2 420px; column-gap: 14px; }
+.fcard { break-inside: avoid; margin-bottom: 14px; }
+.fcard-head { gap: 6px; }
+.fcard-head h3 { font-size: 15px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.fcard-head .fold { width: 24px; flex: none; }

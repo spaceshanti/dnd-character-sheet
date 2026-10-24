@@ -101,6 +101,7 @@ export function SpellDrawer({ id }: { id: string }) {
             {sp.ritual && <span className="tag alt">Ritual</span>}
             {sp.materialConsumed && <span className="tag alt">Material consumed</span>}
             {sp.alwaysPrepared ? <span className="chip accent">Always prepared</span> : sp.prepared && <span className="chip accent">Prepared</span>}
+            {sp.grantedBy && <span className="chip">From {c.features.find((f) => f.id === sp.grantedBy)?.name || 'a feature'}</span>}
           </div>
           <div className="kv">
             {sp.castingTime && <><b>Casting time</b><span>{sp.castingTime}</span></>}
@@ -247,9 +248,13 @@ export function FeatureDrawer({ id }: { id: string }) {
           <div className="row" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
             <span className="grow" />
             <button className="btn danger" onClick={() => {
-              if (!window.confirm(`Remove ${f.name || 'this feature'}? Its resources are kept under Class Resources.`)) return
+              if (!window.confirm(`Remove ${f.name || 'this feature'}? Spells it grants are removed too; its resources stay under Class Resources.`)) return
               close()
-              patch((d) => { d.features = d.features.filter((y) => y.id !== id); for (const r of d.resources) if (r.featureId === id) r.featureId = '' })
+              patch((d) => {
+                d.features = d.features.filter((y) => y.id !== id)
+                d.spells = d.spells.filter((s) => s.grantedBy !== id)
+                for (const r of d.resources) if (r.featureId === id) r.featureId = ''
+              })
             }}>Delete</button>
           </div>
         </div>

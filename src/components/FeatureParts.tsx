@@ -1,9 +1,10 @@
 import { ACTION_TYPES, RECHARGES } from '../constants'
 import { WEAPON_NAMES } from '../data/gear'
-import { newFeatureAction, newResource } from '../blank'
-import { useChar, useStore } from '../store'
+import { newFeatureAction, newResource, newSpell, uid } from '../blank'
+import { useChar, useStore, useUI } from '../store'
+import { applyLib, bestLib } from '../spellLib'
 import { Num, Pips, Select } from './ui'
-import type { Character, Feature, FeatureAction, Resource } from '../types'
+import type { Character, Feature, FeatureAction, RestEffect, Resource } from '../types'
 
 export const actionTypeName = (t: string) => ACTION_TYPES.find((a) => a.id === t)?.name ?? ''
 export const left = (r: Resource) => Math.max(0, r.max - r.used)
@@ -30,9 +31,27 @@ export function FeatureUsage({ f, onUsed }: { f: Feature; onUsed: (msg: string) 
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const resources = c.resources.filter((r) => r.featureId === f.id)
-  if (!resources.length && !f.actions.length && !f.masteries.length) return null
+  const spells = c.spells.filter((sp) => sp.grantedBy === f.id).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
+  if (!resources.length && !f.actions.length && !f.masteries.length && !f.restEffects.length && !spells.length) return null
   return (
     <div className="col" style={{ gap: 10 }}>
+      {spells.length > 0 && (
+        <div className="feat-res" style={{ flexWrap: 'wrap' }}>
+          <b>Spells</b>
+          {spells.map((sp) => (
+            <button key={sp.id} className="chip accent" style={{ cursor: 'pointer' }} onClick={() => useUI.getState().set({ drawer: { kind: 'spell', id: sp.id } })}
+              title="Always prepared · click to read">
+              {sp.name}{sp.level === 0 ? ' (cantrip)' : ` (${sp.level})`}
+            </button>
+          ))}
+        </div>
+      )}
+      {f.restEffects.length > 0 && (
+        <div className="feat-res" style={{ flexWrap: 'wrap' }}>
+          <b>On rest</b>
+          {f.restEffects.map((e) => <span key={e.id} className="chip">{restText(e)}</span>)}
+        </div>
+      )}
       {f.masteries.length > 0 && (
         <div className="feat-res">
           <b className="grow">Weapon mastery</b>
@@ -96,6 +115,8 @@ export function FeatureUsageEditor({ f }: { f: Feature }) {
       </div>
 
       <MasteryEditor f={f} />
+      <SpellGrantEditor f={f} />
+      <RestEditor f={f} />
 
       <div>
         <div className="row" style={{ marginBottom: 4 }}>
@@ -150,6 +171,78 @@ function MasteryEditor({ f }: { f: Feature }) {
           <button className="btn sm" onClick={() => set(['*'])} title="Mastery with every weapon">Any weapon</button>
         </div>
       )}
+    </div>
+  )
+}
+
+export const restText = (e: RestEffect) =>
+  `${e.rest === 'long' ? 'Long' : 'Short'} rest: ${e.kind === 'inspiration' ? 'Heroic Inspiration' : e.kind === 'tempHp' ? `${e.value} temp HP` : e.note || 'reminder'}`
+
+/** Things this feature does on a rest (Resourceful: Heroic Inspiration on a long rest). */
+function RestEditor({ f }: { f: Feature }) {
+  const patch = useStore((s) => s.patch)
+  const upF = (fn: (x: Feature) => void) => patch((d) => { const x = d.features.find((y) => y.id === f.id); if (x) fn(x) })
+  const upE = (id: string, fn: (e: RestEffect) => void) => upF((x) => { const e = x.restEffects.find((y) => y.id === id); if (e) fn(e) })
+  return (
+    <div>
+      <div className="row" style={{ marginBottom: 4 }}>
+        <div className="field-lbl grow">On a rest</div>
+        <button className="btn sm" onClick={() => upF((x) => { x.restEffects.push({ id: uid(), rest: 'long', kind: 'inspiration', value: 0, note: '' }) })}>＋ Rest effect</button>
+      </div>
+      {f.restEffects.length === 0 && <div className="muted small">e.g. Resourceful: gain Heroic Inspiration on a long rest. Applied when you press Long / Short rest.</div>}
+      {f.restEffects.map((e) => (
+        <div key={e.id} className="fx-row feat-res-edit">
+          <Select value={e.rest} onChange={(v) => upE(e.id, (x) => { x.rest = v })} options={[{ id: 'long', name: 'Long rest' }, { id: 'short', name: 'Short rest' }]} />
+          <Select value={e.kind} onChange={(v) => upE(e.id, (x) => { x.kind = v })}
+            options={[{ id: 'inspiration', name: 'Gain Heroic Inspiration' }, { id: 'tempHp', name: 'Gain temp HP' }, { id: 'reminder', name: 'Show a reminder' }]} />
+          {e.kind === 'tempHp' && <Num min={0} className="box-input" width={48} value={e.value} onChange={(n) => upE(e.id, (x) => { x.value = n })} />}
+          {e.kind === 'reminder' && <input className="box-input grow" placeholder="e.g. Swap a Psionic Discipline" value={e.note} onChange={(ev) => upE(e.id, (x) => { x.note = ev.target.value })} />}
+          <button className="btn icon sm" title="Remove" onClick={() => upF((x) => { x.restEffects = x.restEffects.filter((y) => y.id !== e.id) })}>✕</button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** Spells and cantrips the feature grants: added to the spell book as always prepared. */
+function SpellGrantEditor({ f }: { f: Feature }) {
+  const c = useChar()
+  const patch = useStore((s) => s.patch)
+  const granted = c.spells.filter((sp) => sp.grantedBy === f.id).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
+  const add = (input: HTMLInputElement, levelSel: HTMLSelectElement) => {
+    const name = input.value.trim()
+    if (!name) return
+    const lib = bestLib(name)
+    const level = lib && !lib.stub ? lib.l : +levelSel.value
+    let sp = newSpell(level, name)
+    if (lib) sp = { ...applyLib(sp, lib), level }
+    sp = { ...sp, prepared: true, alwaysPrepared: true, grantedBy: f.id }
+    patch((d) => { d.spells.push(sp) })
+    input.value = ''
+  }
+  return (
+    <div>
+      <div className="field-lbl" style={{ marginBottom: 4 }}>Spells from this feature</div>
+      {granted.length === 0 && <div className="muted small" style={{ marginBottom: 4 }}>e.g. Spellfire Spark → Sacred Flame. They go in your spell book as always prepared.</div>}
+      <div className="wtags" style={{ marginBottom: 5 }}>
+        {granted.map((sp) => (
+          <span key={sp.id} className="wtag mastery">{sp.name}{sp.level === 0 ? ' · cantrip' : ` · ${sp.level}`}
+            <button type="button" title="Remove from the spell book" onClick={() => patch((d) => { d.spells = d.spells.filter((y) => y.id !== sp.id) })}>✕</button>
+          </span>
+        ))}
+      </div>
+      <form className="row" style={{ gap: 4 }} onSubmit={(e) => {
+        e.preventDefault()
+        const form = e.currentTarget
+        add(form.elements.namedItem('spell') as HTMLInputElement, form.elements.namedItem('lvl') as HTMLSelectElement)
+      }}>
+        <input name="spell" className="box-input grow" placeholder="Spell name + Enter (fills from the library)" />
+        <select name="lvl" defaultValue="0" title="Level, if it isn't in the library">
+          <option value="0">Cantrip</option>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((l) => <option key={l} value={l}>Level {l}</option>)}
+        </select>
+        <button className="btn sm" type="submit">Add</button>
+      </form>
     </div>
   )
 }
