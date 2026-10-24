@@ -1,5 +1,5 @@
 import { SKILLS } from './constants'
-import type { AbilityKey, Attack, Character, Effect, Item, ProfLevel, SkillKey, Stat } from './types'
+import type { AbilityKey, Attack, Character, Effect, Item, ProfLevel, SkillKey, Stat, WeaponStats } from './types'
 
 export interface Part {
   label: string
@@ -247,13 +247,22 @@ export function spellActionType(castingTime: string): 'action' | 'bonus' | 'reac
   return 'special'
 }
 
+/** The feature (if any) that lets this character use the weapon's mastery property. */
+export function masterySource(c: Character, w: WeaponStats): string {
+  if (!w.mastery) return ''
+  const kind = w.kind.toLowerCase()
+  const f = c.features.find((x) => x.active && x.masteries.some((m) => m === '*' || (kind && m.toLowerCase() === kind)))
+  return f ? f.name || 'a feature' : ''
+}
+
 /** Inventory items with weapon stats, shaped like attacks so they share the same maths. */
-export function itemAttacks(c: Character): (Attack & { itemId: string; equipped: boolean })[] {
+export function itemAttacks(c: Character): (Attack & { itemId: string; equipped: boolean; weapon: WeaponStats; masteryFrom: string })[] {
   return c.items.filter((i) => i.weapon && i.qty > 0).map((i) => {
     const w = i.weapon!
     return {
       id: 'item:' + i.id, itemId: i.id, equipped: !!i.slot, name: i.name || 'Weapon', ability: w.ability, proficient: w.proficient,
       magicBonus: w.magicBonus, damage: w.damage, damageType: w.damageType, addMod: true, range: w.range, notes: w.properties,
+      weapon: w, masteryFrom: masterySource(c, w),
     }
   })
 }

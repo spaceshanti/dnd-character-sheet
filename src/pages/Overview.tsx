@@ -6,6 +6,7 @@ import { useChar, useStore, useUI } from '../store'
 import { Frame, Num, Pips, Select, Switch } from '../components/ui'
 import { RichArea } from '../components/RichText'
 import { Icon, itemIcon } from '../components/Icon'
+import { WeaponTags } from '../components/WeaponTags'
 import type { Attack, Effect } from '../types'
 
 const effectText = (e: Effect) =>
@@ -86,7 +87,10 @@ function AttacksPanel() {
               const info = attackInfo(c, a)
               return (
                 <tr key={a.id} className="hov" title="From your inventory: click to edit" onClick={() => set({ inventoryOpen: true, inventorySelected: a.itemId })}>
-                  <td><span className="row" style={{ gap: 6 }}><Icon name="sword" className="list-ico" />{a.name}{a.equipped && <span className="itag">in hand</span>}</span></td>
+                  <td>
+                    <span className="row" style={{ gap: 6 }}><Icon name="sword" className="list-ico" />{a.name}{a.equipped && <span className="itag">in hand</span>}</span>
+                    <WeaponTags properties={a.weapon.properties} mastery={a.weapon.mastery} masteryFrom={a.masteryFrom} />
+                  </td>
                   <td style={{ fontWeight: 700, fontSize: 16 }}>{signed(info.bonus)}{info.adv.length > 0 && info.dis.length === 0 && <span className="adv a" style={{ marginLeft: 3, fontSize: 10, color: 'var(--adv)' }}>ADV</span>}</td>
                   <td>{info.damage} <span className="muted">{a.damageType}</span>{a.range && <span className="muted small"> · {a.range}</span>}</td>
                   <td><Icon name="pack" className="list-ico" /></td>

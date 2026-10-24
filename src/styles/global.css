@@ -550,3 +550,11 @@ svg.ico { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14e
 .pick-tile:hover { border-color: var(--ink2); }
 .pick-tile.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 .pick-tile .img { aspect-ratio: 1; background: var(--img-bg) center / contain no-repeat; }
+
+/* ---------- weapon properties & mastery ---------- */
+.wtags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+.wtag { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; line-height: 1.5; padding: 0 6px; border: 1px solid var(--line); border-radius: 3px; color: var(--ink2); background: var(--panel2); cursor: help; white-space: nowrap; }
+.wtag.mastery { color: var(--accent); border-color: var(--accent); font-weight: 700; }
+.wtag button { border: none; background: none; padding: 0 0 0 2px; font-size: 9px; color: inherit; opacity: 0.6; cursor: pointer; }
+.wtag button:hover { opacity: 1; }
+.atk-line .wtags { margin-top: 4px; }

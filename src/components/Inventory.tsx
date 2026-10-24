@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react'
 import { ABILITIES, ACTION_TYPES, ITEM_CATEGORIES, RARITIES, SLOT_IDS } from '../constants'
-import { attackInfo, carryCapacity, itemAttacks, signed, totalWeight } from '../calc'
+import { attackInfo, carryCapacity, itemAttacks, masterySource, signed, totalWeight } from '../calc'
 import { newItem } from '../blank'
-import { lookupArmor, lookupWeapon } from '../data/gear'
+import { MASTERIES, MASTERY_INFO, WEAPON_NAMES, lookupArmor, lookupWeapon } from '../data/gear'
+import { PropertyEditor, WeaponTags } from './WeaponTags'
 import { useChar, useStore, useUI } from '../store'
 import { EffectsEditor, Modal, Num, Select, Switch } from './ui'
 import { RichArea } from './RichText'
@@ -33,9 +34,13 @@ function parseGear(text: string): { qty: number; name: string } {
 /** A new item from a typed line, pre-filled with standard weapon / armor stats when the name matches. */
 function itemFromText(text: string): Item {
   const { qty, name } = parseGear(text)
+  // "Longsword +1", "+2 Chain Mail": the number becomes the magic bonus
+  const plus = +((name.match(/(?:^|\s)\+([1-3])\b/) || [])[1] || 0)
   const weapon = lookupWeapon(name)
   const armor = weapon ? null : lookupArmor(name)
-  return { ...newItem(), name, qty, weapon, armor, category: weapon ? 'Weapon' : armor ? 'Armor' : 'Misc' }
+  if (weapon) weapon.magicBonus = plus
+  if (armor) armor.bonus = plus
+  return { ...newItem(), name, qty, weapon, armor, category: weapon ? 'Weapon' : armor ? 'Armor' : 'Misc', rarity: plus ? (plus === 1 ? 'uncommon' : plus === 2 ? 'rare' : 'very rare') : 'common' }
 }
 
 function InventoryInner({ onClose }: { onClose: () => void }) {
@@ -196,7 +201,7 @@ function Section({ title, open, children, right }: { title: string; open: boolea
   )
 }
 
-const DEFAULT_WEAPON: WeaponStats = { damage: '1d6', damageType: '', ability: 'str', proficient: true, magicBonus: 0, range: '', properties: '' }
+const DEFAULT_WEAPON: WeaponStats = { damage: '1d6', damageType: '', ability: 'str', proficient: true, magicBonus: 0, range: '', properties: '', kind: '', mastery: '' }
 const DEFAULT_ARMOR: ArmorStats = { kind: 'light', ac: 11, bonus: 0 }
 
 /** One editor for every item; the extra sections are folded away until you need them. */
@@ -248,7 +253,12 @@ function ItemEditor({ item }: { item: Item }) {
         right={<Switch on={!!item.weapon} title="Can attack with this" onChange={(b) => up((x) => { x.weapon = b ? (lookupWeapon(x.name) ?? { ...DEFAULT_WEAPON }) : null; if (b && x.category === 'Misc') x.category = 'Weapon' })} />}>
         {!item.weapon ? <div className="muted small">Switch on to list this under Weapons & Attacks.</div> : (
           <>
-            {atkInfo && <div className="atk-line"><b>{signed(atkInfo.bonus)}</b> to hit · <b>{atkInfo.damage}</b> {item.weapon.damageType}</div>}
+            {atkInfo && atk && (
+              <div className="atk-line">
+                <b>{signed(atkInfo.bonus)}</b> to hit · <b>{atkInfo.damage}</b> {item.weapon.damageType}
+                <WeaponTags properties={item.weapon.properties} mastery={item.weapon.mastery} masteryFrom={atk.masteryFrom} />
+              </div>
+            )}
             <div className="row" style={{ flexWrap: 'wrap' }}>
               <input className="box-input" style={{ width: 70 }} placeholder="1d8" value={item.weapon.damage} onChange={(e) => upW((w) => { w.damage = e.target.value })} />
               <input className="box-input" style={{ width: 100 }} placeholder="piercing" value={item.weapon.damageType} onChange={(e) => upW((w) => { w.damageType = e.target.value })} />
@@ -260,7 +270,19 @@ function ItemEditor({ item }: { item: Item }) {
               <label className="row small"><Switch on={item.weapon.proficient} onChange={(b) => upW((w) => { w.proficient = b })} /> Proficient</label>
               <span className="small">Magic +</span><Num className="box-input" width={40} value={item.weapon.magicBonus} onChange={(n) => upW((w) => { w.magicBonus = n })} />
             </div>
-            <input className="box-input" placeholder="properties (Finesse, Light, Thrown…)" value={item.weapon.properties} onChange={(e) => upW((w) => { w.properties = e.target.value })} />
+            <div className="field-lbl">Properties</div>
+            <PropertyEditor value={item.weapon.properties} onChange={(v) => upW((w) => { w.properties = v })} />
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              <span className="field-lbl">Kind</span>
+              <Select value={item.weapon.kind} onChange={(v) => upW((w) => { const std = lookupWeapon(v); w.kind = v; if (std) w.mastery = std.mastery })}
+                options={[{ id: '', name: 'Custom / other' }, ...WEAPON_NAMES.map((n) => ({ id: n, name: n }))]} />
+              <span className="field-lbl">Mastery</span>
+              <Select value={item.weapon.mastery} onChange={(v) => upW((w) => { w.mastery = v })}
+                options={[{ id: '', name: 'None' }, ...MASTERIES.map((m) => ({ id: m, name: m }))]} />
+            </div>
+            {item.weapon.mastery && (masterySource(c, item.weapon)
+              ? <div className="small" style={{ color: 'var(--good)' }} title={MASTERY_INFO[item.weapon.mastery]}>◆ {item.weapon.mastery} unlocked by {masterySource(c, item.weapon)}: {MASTERY_INFO[item.weapon.mastery]}</div>
+              : <div className="small muted" title={MASTERY_INFO[item.weapon.mastery]}>◇ {item.weapon.mastery} is locked: needs a feature that grants weapon mastery with {item.weapon.kind ? `${item.weapon.kind}s` : 'this weapon'}.</div>)}
           </>
         )}
       </Section>

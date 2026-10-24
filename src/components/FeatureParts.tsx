@@ -1,4 +1,5 @@
 import { ACTION_TYPES, RECHARGES } from '../constants'
+import { WEAPON_NAMES } from '../data/gear'
 import { newFeatureAction, newResource } from '../blank'
 import { useChar, useStore } from '../store'
 import { Num, Pips, Select } from './ui'
@@ -29,9 +30,15 @@ export function FeatureUsage({ f, onUsed }: { f: Feature; onUsed: (msg: string) 
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const resources = c.resources.filter((r) => r.featureId === f.id)
-  if (!resources.length && !f.actions.length) return null
+  if (!resources.length && !f.actions.length && !f.masteries.length) return null
   return (
     <div className="col" style={{ gap: 10 }}>
+      {f.masteries.length > 0 && (
+        <div className="feat-res">
+          <b className="grow">Weapon mastery</b>
+          <span className="small">{f.masteries.includes('*') ? 'Any weapon' : f.masteries.join(', ')}</span>
+        </div>
+      )}
       {resources.map((r) => (
         <div key={r.id} className="feat-res">
           <b className="grow">{resName(r)}{r.die && <span className="muted"> · {r.die}</span>}</b>
@@ -88,6 +95,8 @@ export function FeatureUsageEditor({ f }: { f: Feature }) {
         ))}
       </div>
 
+      <MasteryEditor f={f} />
+
       <div>
         <div className="row" style={{ marginBottom: 4 }}>
           <div className="field-lbl grow">Actions this feature gives</div>
@@ -110,6 +119,37 @@ export function FeatureUsageEditor({ f }: { f: Feature }) {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+/** Which weapon kinds this feature lets you use mastery properties with (e.g. Fighter: Weapon Mastery). */
+function MasteryEditor({ f }: { f: Feature }) {
+  const patch = useStore((s) => s.patch)
+  const set = (list: string[]) => patch((d) => { const x = d.features.find((y) => y.id === f.id); if (x) x.masteries = list })
+  const any = f.masteries.includes('*')
+  const options = WEAPON_NAMES.filter((n) => !f.masteries.includes(n))
+  return (
+    <div>
+      <div className="row" style={{ marginBottom: 4 }}>
+        <div className="field-lbl grow">Weapon mastery</div>
+        {f.masteries.length > 0 && <span className="muted small">{any ? 'any weapon' : `${f.masteries.length} kind${f.masteries.length > 1 ? 's' : ''}`}</span>}
+      </div>
+      {f.masteries.length === 0 && <div className="muted small" style={{ marginBottom: 4 }}>For features like Weapon Mastery: choose the weapon kinds whose mastery property you can use.</div>}
+      <div className="wtags" style={{ marginBottom: 5 }}>
+        {f.masteries.map((m) => (
+          <span key={m} className="wtag mastery">{m === '*' ? 'Any weapon' : m}<button type="button" title="Remove" onClick={() => set(f.masteries.filter((x) => x !== m))}>✕</button></span>
+        ))}
+      </div>
+      {!any && (
+        <div className="row" style={{ gap: 4 }}>
+          <select value="" onChange={(e) => { if (e.target.value) set([...f.masteries, e.target.value]) }}>
+            <option value="">＋ Add a weapon kind…</option>
+            {options.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+          <button className="btn sm" onClick={() => set(['*'])} title="Mastery with every weapon">Any weapon</button>
+        </div>
+      )}
     </div>
   )
 }

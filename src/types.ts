@@ -83,6 +83,8 @@ export interface Feature {
   effects: Effect[]
   active: boolean
   actions: FeatureAction[]
+  /** weapon kinds this feature lets you use mastery properties with ('*' = any weapon) */
+  masteries: string[]
 }
 
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary' | 'artifact'
@@ -95,7 +97,12 @@ export interface WeaponStats {
   proficient: boolean
   magicBonus: number
   range: string
+  /** comma-separated, e.g. "Finesse, Light, Thrown" */
   properties: string
+  /** weapon kind from the standard list ("Longsword"), '' for something custom */
+  kind: string
+  /** the kind's mastery property ("Sap"); only usable when a feature grants mastery with this kind */
+  mastery: string
 }
 
 export interface ArmorStats {

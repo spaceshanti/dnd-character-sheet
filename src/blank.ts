@@ -1,5 +1,6 @@
 import { SKILLS } from './constants'
 import { EMOJI_TO_ICON } from './components/Icon'
+import { lookupWeapon } from './data/gear'
 import type { Attack, Character, Effect, Feature, FeatureAction, Item, Mod, Resource, Spell } from './types'
 
 export const uid = () =>
@@ -19,7 +20,7 @@ export function newSpell(level = 1, name = ''): Spell {
   }
 }
 export function newFeature(category: Feature['category'] = 'class'): Feature {
-  return { id: uid(), name: '', category, source: '', description: '', actionType: 'none', effects: [], active: true, actions: [] }
+  return { id: uid(), name: '', category, source: '', description: '', actionType: 'none', effects: [], active: true, actions: [], masteries: [] }
 }
 export function newItem(): Item {
   return {
@@ -98,12 +99,12 @@ export function normalize(raw: Partial<Character>): Character {
     c.story.trait3 = ''
   }
   c.spells = c.spells.map((s) => ({ ...s, materialConsumed: s.materialConsumed ?? isConsumed(s.components) }))
-  c.features = c.features.map((f) => ({ ...f, actions: f.actions ?? [] }))
+  c.features = c.features.map((f) => ({ ...f, actions: f.actions ?? [], masteries: f.masteries ?? [] }))
   c.resources = c.resources.map((r) => ({ ...r, die: r.die ?? '', featureId: r.featureId ?? '' }))
   c.items = c.items.map((i) => ({
     ...i,
     icon: EMOJI_TO_ICON[i.icon] ?? i.icon,
-    weapon: i.weapon ?? null,
+    weapon: i.weapon ? { ...i.weapon, kind: i.weapon.kind ?? (lookupWeapon(i.name)?.kind ?? ''), mastery: i.weapon.mastery ?? (lookupWeapon(i.name)?.mastery ?? '') } : null,
     armor: i.armor ?? null,
   }))
   // the Appearance box used to show the top-left portrait; start it off with the same picture

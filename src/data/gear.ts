@@ -51,6 +51,47 @@ const ARMOR: [name: string, kind: ArmorStats['kind'], ac: number][] = [
   ['Shield', 'shield', 2],
 ]
 
+const MASTERY_OF: Record<string, string> = {
+  'Club': 'Slow',
+  'Dagger': 'Nick',
+  'Greatclub': 'Push',
+  'Handaxe': 'Vex',
+  'Javelin': 'Slow',
+  'Light Hammer': 'Nick',
+  'Mace': 'Sap',
+  'Quarterstaff': 'Topple',
+  'Sickle': 'Nick',
+  'Spear': 'Sap',
+  'Dart': 'Vex',
+  'Light Crossbow': 'Slow',
+  'Shortbow': 'Vex',
+  'Sling': 'Slow',
+  'Battleaxe': 'Topple',
+  'Flail': 'Sap',
+  'Glaive': 'Graze',
+  'Greataxe': 'Cleave',
+  'Greatsword': 'Graze',
+  'Halberd': 'Cleave',
+  'Lance': 'Topple',
+  'Longsword': 'Sap',
+  'Maul': 'Topple',
+  'Morningstar': 'Sap',
+  'Pike': 'Push',
+  'Rapier': 'Vex',
+  'Scimitar': 'Nick',
+  'Shortsword': 'Vex',
+  'Trident': 'Topple',
+  'Warhammer': 'Push',
+  'War Pick': 'Sap',
+  'Whip': 'Slow',
+  'Blowgun': 'Vex',
+  'Hand Crossbow': 'Vex',
+  'Heavy Crossbow': 'Push',
+  'Longbow': 'Slow',
+  'Musket': 'Slow',
+  'Pistol': 'Vex',
+}
+
 // longest names first so "Studded Leather" wins over "Leather", "Half Plate" over "Plate"
 const byLength = <T extends [string, ...unknown[]]>(a: T, b: T) => b[0].length - a[0].length
 const W_SORTED = [...WEAPONS].sort(byLength)
@@ -60,10 +101,10 @@ const has = (name: string, key: string) => new RegExp(`\\b${key.replace(/ /g, '\
 export function lookupWeapon(name: string): WeaponStats | null {
   const w = W_SORTED.find(([n]) => has(name, n))
   if (!w) return null
-  const [, damage, damageType, properties, range = ''] = w
+  const [kind, damage, damageType, properties, range = ''] = w
   const ranged = /ammunition/i.test(properties)
   return {
-    damage, damageType, properties, range, proficient: true, magicBonus: 0,
+    damage, damageType, properties, range, proficient: true, magicBonus: 0, kind, mastery: MASTERY_OF[kind] ?? '',
     ability: /finesse/i.test(properties) ? 'finesse' : ranged ? 'dex' : 'str',
   }
 }
@@ -79,3 +120,38 @@ export function lookupArmor(name: string): ArmorStats | null {
 
 export const WEAPON_NAMES = WEAPONS.map((w) => w[0])
 export const ARMOR_NAMES = ARMOR.map((a) => a[0])
+
+/** Short reminders shown when hovering a property (paraphrased, not rules text). */
+export const PROPERTY_INFO: Record<string, string> = {
+  Ammunition: 'Each attack uses a piece of ammunition; you can usually recover about half after the fight.',
+  Finesse: 'Use STR or DEX, your choice, for the attack and damage rolls.',
+  Heavy: 'Disadvantage on attacks if your STR (melee) or DEX (ranged) is below 13.',
+  Light: 'When you attack with it, you can make one extra attack with a different Light weapon as a Bonus Action (no ability bonus to that damage).',
+  Loading: 'Only one shot per action, Bonus Action or reaction, however many attacks you get.',
+  Reach: 'Adds 5 feet to how far you can hit with it.',
+  Thrown: 'Can be thrown to make a ranged attack, using the same ability as in melee.',
+  'Two-Handed': 'Needs both hands to attack with.',
+  Versatile: 'Use it one- or two-handed; the bracketed damage is for two hands.',
+  Silvered: 'Coated in silver, which some creatures are vulnerable to.',
+}
+
+/** Weapon mastery properties (2024 rules), paraphrased. */
+export const MASTERY_INFO: Record<string, string> = {
+  Cleave: 'Once per turn, after a melee hit, attack a second creature within 5 ft of the first (no ability bonus to that damage).',
+  Graze: 'On a miss, still deal damage equal to the ability modifier you attacked with.',
+  Nick: 'The extra Light-weapon attack can be part of the Attack action instead of a Bonus Action (once per turn).',
+  Push: 'On a hit, push a Large or smaller target up to 10 ft straight away from you.',
+  Sap: 'On a hit, the target has Disadvantage on its next attack roll before your next turn starts.',
+  Slow: 'On a damaging hit, the target loses 10 ft of Speed until your next turn starts.',
+  Topple: 'On a hit, the target makes a CON save (DC 8 + your attack ability mod + PB) or falls Prone.',
+  Vex: 'On a damaging hit, you have Advantage on your next attack against that target before the end of your next turn.',
+}
+
+export const MASTERIES = Object.keys(MASTERY_INFO)
+export const PROPERTY_SUGGESTIONS = ['Ammunition', 'Finesse', 'Heavy', 'Light', 'Loading', 'Reach', 'Thrown', 'Two-Handed', 'Versatile', 'Silvered', 'Magical']
+
+/** "Finesse, Versatile (1d10), Thrown" → ['Finesse', 'Versatile (1d10)', 'Thrown'] (commas inside brackets don't split) */
+export const splitProps = (s: string) => s.split(/,(?![^(]*\))/).map((x) => x.trim()).filter(Boolean)
+export const joinProps = (list: string[]) => list.join(', ')
+/** "Versatile (1d10)" → "Versatile" for looking up its note */
+export const propKey = (p: string) => p.replace(/\s*\(.*$/, '').trim()

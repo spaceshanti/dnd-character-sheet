@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import { WeaponTags } from '../components/WeaponTags'
 import { attackInfo, itemAttacks, signed, spellActionType } from '../calc'
 import { useChar, useUI } from '../store'
 import { Frame, Toast, useToast } from '../components/ui'
 import { costText, spendAction } from '../components/FeatureParts'
 import type { ActionType } from '../types'
 
-interface Row { key: string; kind: string; name: string; right: string; onClick: () => void; onUse?: () => void }
+interface Row { key: string; kind: string; name: string; right: string; onClick: () => void; onUse?: () => void; tags?: ReactNode }
 
 const STANDARD: Record<string, string> = {
   Attack: 'Make one melee or ranged attack (or more with Extra Attack).',
@@ -37,7 +38,11 @@ export function ActionsPage() {
 
   for (const a of itemAttacks(c)) {
     const i = attackInfo(c, a)
-    rows.action.push({ key: a.id, kind: 'Weapon', name: a.name, right: `${signed(i.bonus)} · ${i.damage} ${a.damageType}`, onClick: () => set({ inventoryOpen: true, inventorySelected: a.itemId }) })
+    rows.action.push({
+      key: a.id, kind: 'Weapon', name: a.name, right: `${signed(i.bonus)} · ${i.damage} ${a.damageType}`,
+      onClick: () => set({ inventoryOpen: true, inventorySelected: a.itemId }),
+      tags: <WeaponTags properties={a.weapon.properties} mastery={a.weapon.mastery} masteryFrom={a.masteryFrom} />,
+    })
   }
   for (const a of c.attacks) {
     const i = attackInfo(c, a)
@@ -85,6 +90,7 @@ export function ActionsPage() {
                 <span className="grow" style={{ minWidth: 0 }}>
                   <b>{r.name || 'Unnamed'}</b>
                   {r.right && <span className="muted small" style={{ display: 'block' }}>{r.right}</span>}
+                  {r.tags}
                 </span>
                 {r.onUse && <button className="btn sm primary" onClick={(e) => { e.stopPropagation(); r.onUse!() }}>Use</button>}
               </div>
