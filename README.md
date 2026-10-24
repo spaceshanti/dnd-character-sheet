@@ -2,7 +2,15 @@
 
 A desktop D&D character sheet (Electron + React). Opens as its own window, saves to a local file, works offline.
 
-## Run it
+## Work on it (live reload)
+
+```
+npm run app:dev
+```
+
+Opens the real app window; edits to `src/` appear when you save. Close the window to stop it.
+
+## Run it normally
 
 ```
 npm install      # first time only

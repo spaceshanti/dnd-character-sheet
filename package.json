@@ -8,6 +8,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "app:dev": "node scripts/dev.mjs",
     "build": "tsc --noEmit && vite build",
     "start": "vite build && electron .",
     "launch": "electron .",
