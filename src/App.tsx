@@ -17,11 +17,13 @@ export default function App() {
   const loaded = useStore((s) => s.loaded)
   const load = useStore((s) => s.load)
   const theme = useStore((s) => s.theme)
+  const skin = useStore((s) => s.skin)
   const activeId = useStore((s) => s.activeId)
   const page = useUI((s) => s.page)
 
   useEffect(() => { load() }, [load])
   useEffect(() => { document.documentElement.dataset.theme = theme }, [theme])
+  useEffect(() => { document.documentElement.dataset.skin = skin }, [skin])
 
   // Ctrl+I opens the inventory from anywhere
   useEffect(() => {

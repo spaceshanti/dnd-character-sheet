@@ -12,7 +12,7 @@ export function ImageBox({
         onClick={() => ref.current?.click()}
         title="Click to replace"
         style={{
-          aspectRatio: ratio, maxHeight, cursor: 'pointer', border: '1px solid var(--line)', background: src ? `#fff center/${contain ? 'contain' : 'cover'} no-repeat url("${src}")` : 'var(--panel2)',
+          aspectRatio: ratio, maxHeight, cursor: 'pointer', border: '1px solid var(--line)', background: src ? `var(--img-bg) center/${contain ? 'contain' : 'cover'} no-repeat url("${src}")` : 'var(--panel2)',
           display: 'grid', placeItems: 'center', color: 'var(--muted)', fontSize: 13, textAlign: 'center', padding: 6,
         }}
         onDragOver={(e) => e.preventDefault()}

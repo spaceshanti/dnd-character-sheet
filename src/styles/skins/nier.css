@@ -1,0 +1,119 @@
+/* ============ Android — inspired by NieR: Automata's menus ============
+   Calm beige monochrome, flat rectangles, soft offset shadows, square bullets,
+   dark title strips and inverted highlight bars. */
+
+:root[data-skin='nier'] {
+  --paper: #cdc8b0;
+  --paper2: #c4bfa6;
+  --panel: #dad5be;
+  --panel2: #cfcab1;
+  --ink: #4a4740;
+  --ink2: #6a665b;
+  --muted: #8f8a78;
+  --line: #b1ab93;
+  --accent: #4a4740;
+  --accent-soft: #c3bda3;
+  --good: #5d6c46;
+  --warn: #93742a;
+  --adv: #5d6c46;
+  --dis: #a0473a;
+  --slot: #57534a;
+  --slot-border: #75705f;
+  --slot-ink: #e6e1ca;
+  --slot-drop: #6e5f4b;
+  --img-bg: #e6e1ca;
+  --shadow: rgba(74, 71, 64, 0.3);
+  --nier-drop: 5px 5px 0 rgba(74, 71, 64, 0.16);
+  --font-head: 'Josefin Sans Variable', 'Segoe UI', sans-serif;
+  --font-body: 'Josefin Sans Variable', 'Segoe UI', sans-serif;
+  color-scheme: light;
+}
+
+[data-skin='nier'] body {
+  font-size: 13.5px;
+  letter-spacing: 0.015em;
+  background-color: var(--paper);
+  background-image: repeating-linear-gradient(0deg, rgba(74, 71, 64, 0.05) 0 1px, transparent 1px 4px);
+  background-size: auto;
+}
+[data-skin='nier'] h1, [data-skin='nier'] h2, [data-skin='nier'] h3 { font-weight: 600; letter-spacing: 0.08em; }
+[data-skin='nier'] ::-webkit-scrollbar-thumb { background: var(--ink2); border-radius: 0; border: 3px solid transparent; background-clip: content-box; }
+
+/* panels: flat, offset shadow, dark title strip with a square bullet */
+[data-skin='nier'] .frame { clip-path: none; background: transparent; padding: 0; filter: none; box-shadow: var(--nier-drop); }
+[data-skin='nier'] .frame > .frame-in { clip-path: none; box-shadow: none; background: var(--panel); border: 1px solid var(--ink2); }
+[data-skin='nier'] .frame-title {
+  justify-content: flex-start; margin: -10px -12px 10px; padding: 4px 10px; background: var(--ink); color: var(--panel);
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.2em;
+}
+[data-skin='nier'] .frame.tight .frame-title { margin: -7px -9px 8px; }
+[data-skin='nier'] .frame-title::before { content: ''; flex: none; width: 7px; height: 7px; background: var(--panel); }
+[data-skin='nier'] .frame-title::after { flex: 1; height: 1px; background: rgba(218, 213, 190, 0.3); }
+[data-skin='nier'] .frame-title .btn { color: var(--panel); border-color: transparent; background: transparent; }
+[data-skin='nier'] .frame-title .btn:hover { background: var(--panel); color: var(--ink); }
+
+/* controls */
+[data-skin='nier'] .btn { border-radius: 0; border: 1px solid var(--ink2); background: var(--panel); font-weight: 600; letter-spacing: 0.06em; }
+[data-skin='nier'] .btn:hover { background: var(--ink); color: var(--panel); }
+[data-skin='nier'] .btn.primary { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+[data-skin='nier'] .btn.primary:hover { background: var(--ink2); border-color: var(--ink2); }
+[data-skin='nier'] .btn.ghost { border-color: transparent; background: transparent; }
+[data-skin='nier'] .btn.ghost:hover { background: var(--ink); color: var(--panel); }
+[data-skin='nier'] .btn.danger { border-color: var(--dis); color: var(--dis); }
+[data-skin='nier'] .btn.danger:hover { background: var(--dis); color: var(--panel); }
+[data-skin='nier'] select, [data-skin='nier'] .box-input { border-radius: 0; background: var(--panel); border-color: var(--ink2); }
+[data-skin='nier'] .chip, [data-skin='nier'] .tag, [data-skin='nier'] .badge, [data-skin='nier'] .kbd, [data-skin='nier'] .seg { border-radius: 0; }
+[data-skin='nier'] .chip.accent { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+[data-skin='nier'] .pip { border-radius: 0; border-width: 1.5px; }
+[data-skin='nier'] .pip.diamond { transform: rotate(45deg) scale(0.8); }
+[data-skin='nier'] .switch, [data-skin='nier'] .switch::after { border-radius: 0; }
+[data-skin='nier'] .switch.on { background: var(--ink); }
+[data-skin='nier'] .hpbar, [data-skin='nier'] .weight-bar { border-radius: 0; }
+
+/* top bar */
+[data-skin='nier'] .topbar { background: var(--panel); border-bottom: 1px solid var(--ink2); box-shadow: 0 4px 0 rgba(74, 71, 64, 0.12); }
+[data-skin='nier'] .top-portrait { border-radius: 0; border-width: 1px; box-shadow: 4px 4px 0 rgba(74, 71, 64, 0.2); }
+[data-skin='nier'] .name-banner input { font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-size: 18px; border-bottom-width: 1px; }
+[data-skin='nier'] .vbox { border-radius: 0; border-width: 1px; box-shadow: var(--nier-drop); }
+[data-skin='nier'] .vbox:hover { background: var(--accent-soft); border-color: var(--ink); }
+[data-skin='nier'] .vbox .v { font-weight: 600; }
+[data-skin='nier'] .vbox .sub { color: var(--ink2); }
+[data-skin='nier'] .shield { border-radius: 0; clip-path: polygon(0 0, 100% 0, 100% 82%, 50% 100%, 0 82%); box-shadow: none; }
+[data-skin='nier'] .inv-btn { border-radius: 0; border: 1px solid var(--ink); box-shadow: var(--nier-drop); }
+[data-skin='nier'] .nav { background: var(--paper2); border-top: 1px solid var(--line); }
+[data-skin='nier'] .nav button.tab { font-weight: 600; letter-spacing: 0.16em; border-bottom: none; padding: 5px 13px; }
+[data-skin='nier'] .nav button.tab:hover { background: var(--accent-soft); }
+[data-skin='nier'] .nav button.tab.active { background: var(--ink); color: var(--panel); }
+
+/* abilities dock */
+[data-skin='nier'] .dock { background: var(--paper); }
+[data-skin='nier'] .dock-edge { background: var(--panel2); border-right: 1px solid var(--ink2); }
+[data-skin='nier'] .pill, [data-skin='nier'] .passive { border-radius: 0; border-width: 1px; box-shadow: var(--nier-drop); }
+[data-skin='nier'] .pill .num { border-radius: 0; border-width: 1px; }
+[data-skin='nier'] .ab-box .name { border-radius: 0; letter-spacing: 0.14em; font-weight: 600; }
+[data-skin='nier'] .ab-box .mod { border-radius: 0; border-width: 1px; font-weight: 600; box-shadow: var(--nier-drop); }
+[data-skin='nier'] .ab-box .score { border-radius: 0; border-width: 1px; width: 34px; height: 20px; }
+[data-skin='nier'] .rr { border-radius: 0; border-bottom: 1px solid rgba(74, 71, 64, 0.12); }
+[data-skin='nier'] .rr:hover, [data-skin='nier'] .list-row:hover, [data-skin='nier'] .sline:hover, [data-skin='nier'] .act-item:hover { background: var(--accent-soft); }
+[data-skin='nier'] .breakdown { border-radius: 0; border-left-color: var(--ink); }
+
+/* spell book */
+[data-skin='nier'] .spell-sec { border-radius: 0; border-width: 1px; box-shadow: var(--nier-drop); }
+[data-skin='nier'] .sec-head .lvl-badge { border-radius: 0; background: var(--ink); color: var(--panel); border-width: 1px; }
+[data-skin='nier'] .sec-banner { clip-path: none; border-width: 1px; background: var(--panel2); }
+[data-skin='nier'] .spell-stat { border-radius: 0; border-width: 1px; box-shadow: var(--nier-drop); }
+
+/* overlays */
+[data-skin='nier'] .popover, [data-skin='nier'] .modal, [data-skin='nier'] .drawer { border-radius: 0; border-width: 1px; }
+[data-skin='nier'] .modal-head, [data-skin='nier'] .drawer-head { background: var(--ink); color: var(--panel); border-bottom: none; }
+[data-skin='nier'] .modal-head .btn, [data-skin='nier'] .drawer-head .btn { background: transparent; color: var(--panel); border-color: var(--panel); }
+[data-skin='nier'] .modal-head .btn:hover, [data-skin='nier'] .drawer-head .btn:hover { background: var(--panel); color: var(--ink); }
+[data-skin='nier'] .backdrop { background: rgba(74, 71, 64, 0.45); }
+[data-skin='nier'] .toast { border-radius: 0; }
+[data-skin='nier'] .fx { border-radius: 0; }
+
+/* inventory */
+[data-skin='nier'] .eq-slot, [data-skin='nier'] .tile { border-radius: 0; border-width: 1px; }
+[data-skin='nier'] .bag .tile.empty-slot { background: var(--panel2); border-color: var(--line); }
+[data-skin='nier'] .coin input { border-radius: 0; border-width: 1px; }
+[data-skin='nier'] .skin-card { border-radius: 0; }

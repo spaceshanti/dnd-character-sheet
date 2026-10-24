@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { produce } from 'immer'
 import type { AppData, Character } from './types'
 import { blankCharacter, normalize, uid } from './blank'
+import { SKINS, type SkinId } from './skins'
 
 declare global {
   interface Window {
@@ -42,7 +43,8 @@ async function writeStore(json: string) {
   else try { localStorage.setItem(LS_KEY, json) } catch { /* quota */ }
 }
 
-interface State extends AppData {
+interface State extends Omit<AppData, 'skin'> {
+  skin: SkinId
   loaded: boolean
   saveError: string
   load: () => Promise<void>
@@ -54,10 +56,11 @@ interface State extends AppData {
   deleteChar: (id: string) => void
   importChars: (chars: Character[]) => void
   setTheme: (t: 'light' | 'dark') => void
+  setSkin: (s: SkinId) => void
 }
 
 export const useStore = create<State>((set, get) => ({
-  version: 1, chars: {}, order: [], activeId: '', theme: 'light', loaded: false, saveError: '',
+  version: 1, chars: {}, order: [], activeId: '', theme: 'light', skin: 'standard', loaded: false, saveError: '',
 
   async load() {
     let data: Partial<AppData> | null = null
@@ -75,7 +78,8 @@ export const useStore = create<State>((set, get) => ({
       order = [c.id]
     }
     const activeId = data?.activeId && chars[data.activeId] ? data.activeId : order[0]
-    set({ chars, order, activeId, theme: data?.theme === 'dark' ? 'dark' : 'light', loaded: true })
+    const skin = (SKINS.find((k) => k.id === data?.skin)?.id ?? 'standard') as SkinId
+    set({ chars, order, activeId, theme: data?.theme === 'dark' ? 'dark' : 'light', skin, loaded: true })
   },
 
   patch(fn) {
@@ -134,18 +138,19 @@ export const useStore = create<State>((set, get) => ({
   },
 
   setTheme: (theme) => set({ theme }),
+  setSkin: (skin) => set({ skin }),
 }))
 
 /* debounce-save everything whenever it changes (after the first load) */
 let timer: ReturnType<typeof setTimeout> | undefined
 useStore.subscribe((s, prev) => {
   if (!s.loaded) return
-  if (s.chars === prev.chars && s.order === prev.order && s.activeId === prev.activeId && s.theme === prev.theme) return
+  if (s.chars === prev.chars && s.order === prev.order && s.activeId === prev.activeId && s.theme === prev.theme && s.skin === prev.skin) return
   clearTimeout(timer)
   timer = setTimeout(async () => {
-    const { chars, order, activeId, theme } = useStore.getState()
+    const { chars, order, activeId, theme, skin } = useStore.getState()
     try {
-      await writeStore(JSON.stringify({ version: 1, chars, order, activeId, theme } satisfies AppData))
+      await writeStore(JSON.stringify({ version: 1, chars, order, activeId, theme, skin } satisfies AppData))
       useStore.setState({ saveError: '' })
     } catch (e) {
       useStore.setState({ saveError: String(e) })

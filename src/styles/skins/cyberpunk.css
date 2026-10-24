@@ -1,0 +1,182 @@
+/* ============ Neon City — inspired by Cyberpunk 2077's HUD ============
+   Black glass, thin red outlines with angled corner cuts, yellow highlights,
+   cyan readouts and a faint scanline overlay. */
+
+:root[data-skin='cyberpunk'] {
+  --paper: #07080b;
+  --paper2: rgba(94, 246, 255, 0.045);
+  --panel: #0e1117;
+  --panel2: #151a22;
+  --ink: #e6f4f5;
+  --ink2: #8fcfd5;
+  --muted: #5f6d74;
+  --line: #2a303a;
+  --accent: #fcee0a;
+  --accent-soft: rgba(252, 238, 10, 0.12);
+  --good: #3ff0a1;
+  --warn: #fcb10a;
+  --adv: #3ff0a1;
+  --dis: #ff3b4f;
+  --cp-red: #ff4655;
+  --cp-cyan: #5ef6ff;
+  --slot: #0a0c10;
+  --slot-border: rgba(255, 70, 85, 0.45);
+  --slot-ink: #e6f4f5;
+  --slot-drop: #2a0f14;
+  --img-bg: #050608;
+  --shadow: rgba(0, 0, 0, 0.7);
+  --cut: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+  --cut-sm: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  --font-head: 'Rajdhani', 'Segoe UI', sans-serif;
+  --font-body: 'Rajdhani', 'Segoe UI', sans-serif;
+  --font-num: 'Share Tech Mono', 'Consolas', monospace;
+  color-scheme: dark;
+}
+
+[data-skin='cyberpunk'] body {
+  font-size: 14px;
+  font-weight: 500;
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(ellipse at 0% 0%, rgba(255, 70, 85, 0.12), transparent 45%),
+    linear-gradient(var(--paper2) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper2) 1px, transparent 1px);
+  background-size: auto, 32px 32px, 32px 32px;
+}
+[data-skin='cyberpunk'] body::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px);
+}
+[data-skin='cyberpunk'] h1, [data-skin='cyberpunk'] h2, [data-skin='cyberpunk'] h3 { font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+[data-skin='cyberpunk'] ::-webkit-scrollbar-thumb { background: var(--cp-red); border-radius: 0; border: 4px solid transparent; background-clip: content-box; }
+[data-skin='cyberpunk'] ::selection { background: var(--accent); color: #000; }
+
+/* panels: red hairline, two cut corners */
+[data-skin='cyberpunk'] .frame { --c: 0px; clip-path: var(--cut); background: var(--cp-red); padding: 1px; filter: none; }
+[data-skin='cyberpunk'] .frame > .frame-in {
+  clip-path: var(--cut); box-shadow: none;
+  background: linear-gradient(160deg, rgba(21, 26, 34, 0.96), rgba(10, 12, 16, 0.96));
+}
+[data-skin='cyberpunk'] .frame-title {
+  justify-content: flex-start; color: var(--cp-red); font-size: 12px; font-weight: 700; letter-spacing: 0.22em; margin: -2px 0 9px;
+}
+[data-skin='cyberpunk'] .frame-title::before { content: ''; flex: none; width: 4px; height: 13px; background: var(--accent); }
+[data-skin='cyberpunk'] .frame-title::after { background: linear-gradient(90deg, rgba(255, 70, 85, 0.6), transparent); }
+
+/* controls */
+[data-skin='cyberpunk'] .btn {
+  border-radius: 0; border: 1px solid var(--cp-red); background: transparent; color: var(--ink); font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; clip-path: var(--cut-sm);
+}
+[data-skin='cyberpunk'] .btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
+[data-skin='cyberpunk'] .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); }
+[data-skin='cyberpunk'] .btn.primary:hover { background: var(--cp-cyan); border-color: var(--cp-cyan); }
+[data-skin='cyberpunk'] .btn.ghost { border-color: transparent; clip-path: none; }
+[data-skin='cyberpunk'] .btn.ghost:hover { background: transparent; color: var(--accent); }
+[data-skin='cyberpunk'] .btn.danger { border-color: var(--dis); color: var(--dis); }
+[data-skin='cyberpunk'] .btn.danger:hover { background: var(--dis); color: #000; }
+[data-skin='cyberpunk'] select, [data-skin='cyberpunk'] .box-input { border-radius: 0; background: var(--panel2); border-color: var(--line); color: var(--ink); }
+[data-skin='cyberpunk'] .box-input:focus { border-color: var(--accent); }
+[data-skin='cyberpunk'] option { background: #10131a; }
+[data-skin='cyberpunk'] .field > input, [data-skin='cyberpunk'] .line-input { border-bottom-color: rgba(94, 246, 255, 0.4); }
+[data-skin='cyberpunk'] .field > input:focus, [data-skin='cyberpunk'] .line-input:focus { background: rgba(94, 246, 255, 0.07); border-bottom-color: var(--accent); }
+[data-skin='cyberpunk'] .field > label, [data-skin='cyberpunk'] .field-lbl { color: var(--cp-red); }
+[data-skin='cyberpunk'] .chip { border-radius: 0; background: transparent; border-color: var(--line); }
+[data-skin='cyberpunk'] .chip.accent { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+[data-skin='cyberpunk'] .tag { border-radius: 0; background: var(--cp-red); color: #000; }
+[data-skin='cyberpunk'] .tag.alt { background: transparent; color: var(--ink2); border-color: var(--line); }
+[data-skin='cyberpunk'] .badge, [data-skin='cyberpunk'] .kbd { border-radius: 0; background: transparent; border-color: var(--cp-cyan); color: var(--cp-cyan); }
+[data-skin='cyberpunk'] .seg { border-radius: 0; border-color: var(--cp-red); }
+[data-skin='cyberpunk'] .seg button { background: transparent; border-color: var(--cp-red); text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; }
+[data-skin='cyberpunk'] .seg button.on { background: var(--accent); color: #000; }
+[data-skin='cyberpunk'] .pip { border-radius: 0; border: 1.5px solid var(--cp-cyan); transform: skewX(-18deg); }
+[data-skin='cyberpunk'] .pip.on { background: var(--cp-cyan); box-shadow: 0 0 6px var(--cp-cyan); }
+[data-skin='cyberpunk'] .pip.diamond { transform: rotate(45deg) scale(0.8); }
+[data-skin='cyberpunk'] .pip.succ.on { background: var(--good); border-color: var(--good); box-shadow: 0 0 6px var(--good); }
+[data-skin='cyberpunk'] .pip.fail.on { background: var(--dis); border-color: var(--dis); box-shadow: 0 0 6px var(--dis); }
+[data-skin='cyberpunk'] .switch { border-radius: 0; background: var(--line); }
+[data-skin='cyberpunk'] .switch::after { border-radius: 0; background: var(--ink); }
+[data-skin='cyberpunk'] .switch.on { background: var(--accent); }
+[data-skin='cyberpunk'] .switch.on::after { background: #000; }
+[data-skin='cyberpunk'] .hpbar, [data-skin='cyberpunk'] .weight-bar { border-radius: 0; background: #1d222b; }
+[data-skin='cyberpunk'] .hpbar > i { background: var(--cp-cyan); box-shadow: 0 0 8px var(--cp-cyan); }
+[data-skin='cyberpunk'] .hpbar.low > i { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+[data-skin='cyberpunk'] .hpbar.crit > i { background: var(--dis); box-shadow: 0 0 8px var(--dis); }
+
+/* top bar */
+[data-skin='cyberpunk'] .topbar { background: rgba(9, 11, 15, 0.97); border-bottom: 1px solid var(--cp-red); box-shadow: 0 0 22px rgba(255, 70, 85, 0.25); }
+[data-skin='cyberpunk'] .top-portrait { border-radius: 0; border: 1px solid var(--cp-red); box-shadow: 0 0 12px rgba(255, 70, 85, 0.35); clip-path: var(--cut); }
+[data-skin='cyberpunk'] .name-banner input {
+  color: var(--accent); text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; font-size: 21px;
+  border-bottom: 1px solid var(--cp-red); text-shadow: 0 0 10px rgba(252, 238, 10, 0.35);
+}
+[data-skin='cyberpunk'] .name-banner label { color: var(--cp-red); }
+[data-skin='cyberpunk'] .vbox { border-radius: 0; border: 1px solid var(--cp-red); box-shadow: none; background: rgba(14, 17, 23, 0.9); clip-path: var(--cut-sm); }
+[data-skin='cyberpunk'] .vbox:hover { border-color: var(--accent); background: rgba(252, 238, 10, 0.06); }
+[data-skin='cyberpunk'] .vbox .v, [data-skin='cyberpunk'] .hp-box .big input, [data-skin='cyberpunk'] .spell-stat b {
+  font-family: var(--font-num); font-weight: 400; color: var(--cp-cyan); text-shadow: 0 0 8px rgba(94, 246, 255, 0.55);
+}
+[data-skin='cyberpunk'] .vbox .l { color: var(--cp-red); font-weight: 700; }
+[data-skin='cyberpunk'] .vbox .sub { color: var(--accent); }
+[data-skin='cyberpunk'] .hp-box .big .of { font-family: var(--font-num); color: var(--ink2); }
+[data-skin='cyberpunk'] .shield { clip-path: polygon(0 0, 100% 0, 100% 72%, 50% 100%, 0 72%); padding-bottom: 9px; }
+[data-skin='cyberpunk'] .size-select { color: var(--cp-cyan); }
+[data-skin='cyberpunk'] .inv-btn { border-radius: 0; border: 1px solid var(--accent); background: #000; box-shadow: 0 0 12px rgba(252, 238, 10, 0.25); clip-path: var(--cut-sm); }
+[data-skin='cyberpunk'] .inv-btn .l { color: var(--accent); }
+[data-skin='cyberpunk'] .inv-btn:hover { background: var(--accent); }
+[data-skin='cyberpunk'] .inv-btn:hover .l { color: #000; }
+[data-skin='cyberpunk'] .nav { background: #0a0c10; border-top: 1px solid var(--line); }
+[data-skin='cyberpunk'] .nav button.tab { font-weight: 700; font-size: 12px; letter-spacing: 0.16em; color: var(--muted); }
+[data-skin='cyberpunk'] .nav button.tab:hover { color: var(--cp-cyan); }
+[data-skin='cyberpunk'] .nav button.tab.active { color: var(--accent); border-bottom-color: var(--accent); text-shadow: 0 0 10px rgba(252, 238, 10, 0.5); }
+
+/* abilities dock */
+[data-skin='cyberpunk'] .dock { background: rgba(7, 8, 11, 0.97); border-right: 1px solid var(--cp-red); }
+[data-skin='cyberpunk'] .dock-edge { background: #0a0c10; border-right: 1px solid var(--cp-red); }
+[data-skin='cyberpunk'] .dock-edge span { color: var(--cp-red); font-weight: 700; }
+[data-skin='cyberpunk'] .dock-edge:hover, [data-skin='cyberpunk'] .dock-edge.on { background: var(--cp-red); }
+[data-skin='cyberpunk'] .dock-edge:hover span, [data-skin='cyberpunk'] .dock-edge.on span { color: #000; }
+[data-skin='cyberpunk'] .pill, [data-skin='cyberpunk'] .passive { border-radius: 0; border: 1px solid var(--cp-red); background: var(--panel); }
+[data-skin='cyberpunk'] .pill .num { border-radius: 0; border: 1px solid var(--cp-cyan); color: var(--cp-cyan); font-family: var(--font-num); font-weight: 400; background: transparent; }
+[data-skin='cyberpunk'] .pill.insp.on { background: var(--accent-soft); border-color: var(--accent); }
+[data-skin='cyberpunk'] .ab-box .name { border-radius: 0; background: var(--cp-red); color: #000; font-weight: 700; letter-spacing: 0.1em; }
+[data-skin='cyberpunk'] .ab-box .mod {
+  border-radius: 0; border: 1px solid var(--cp-red); border-top: none; background: var(--panel); color: var(--cp-cyan);
+  font-family: var(--font-num); font-weight: 400; text-shadow: 0 0 8px rgba(94, 246, 255, 0.5);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px));
+}
+[data-skin='cyberpunk'] .ab-box .mod.changed { color: var(--accent); }
+[data-skin='cyberpunk'] .ab-box .score { border-radius: 0; border: 1px solid var(--accent); color: var(--accent); background: #000; font-family: var(--font-num); font-weight: 400; }
+[data-skin='cyberpunk'] .rr { border-radius: 0; border-bottom: 1px solid rgba(255, 70, 85, 0.14); }
+[data-skin='cyberpunk'] .rr .val { color: var(--cp-cyan); font-family: var(--font-num); font-weight: 400; }
+[data-skin='cyberpunk'] .rr:hover, [data-skin='cyberpunk'] .list-row:hover, [data-skin='cyberpunk'] .sline:hover,
+[data-skin='cyberpunk'] .act-item:hover, [data-skin='cyberpunk'] table.t tr.hov:hover td { background: rgba(94, 246, 255, 0.06); }
+[data-skin='cyberpunk'] .breakdown { border-radius: 0; background: var(--panel2); border-color: var(--line); border-left-color: var(--accent); }
+
+/* spell book */
+[data-skin='cyberpunk'] .spell-sec { border-radius: 0; border: 1px solid var(--cp-red); box-shadow: none; background: rgba(14, 17, 23, 0.94); clip-path: var(--cut); }
+[data-skin='cyberpunk'] .sec-head .lvl-badge { border-radius: 0; background: var(--cp-red); color: #000; border-color: var(--cp-red); }
+[data-skin='cyberpunk'] .sec-banner { background: var(--panel2); border-color: var(--cp-red); }
+[data-skin='cyberpunk'] .slot-total input { color: var(--cp-cyan); border-bottom-color: var(--cp-cyan); font-family: var(--font-num); font-weight: 400; }
+[data-skin='cyberpunk'] .slot-total label, [data-skin='cyberpunk'] .slot-remain label { color: var(--cp-red); }
+[data-skin='cyberpunk'] .sline { border-bottom-color: rgba(255, 70, 85, 0.14); }
+[data-skin='cyberpunk'] .crm.on { color: var(--accent); }
+[data-skin='cyberpunk'] .sline .pip.always { background: var(--accent); border-color: var(--accent); }
+[data-skin='cyberpunk'] .spell-stat { border-radius: 0; border: 1px solid var(--cp-red); background: var(--panel); clip-path: var(--cut-sm); }
+
+/* overlays */
+[data-skin='cyberpunk'] .popover, [data-skin='cyberpunk'] .modal, [data-skin='cyberpunk'] .drawer { border-radius: 0; border: 1px solid var(--cp-red); background: #0c0f14; }
+[data-skin='cyberpunk'] .modal-head, [data-skin='cyberpunk'] .drawer-head { background: #07090c; border-bottom: 1px solid var(--cp-red); }
+[data-skin='cyberpunk'] .modal-head h2, [data-skin='cyberpunk'] .drawer-head h2 { color: var(--accent); }
+[data-skin='cyberpunk'] .backdrop { background: rgba(0, 0, 0, 0.72); }
+[data-skin='cyberpunk'] .toast { border-radius: 0; background: var(--accent); color: #000; }
+[data-skin='cyberpunk'] .fx { border-radius: 0; background: var(--panel2); border-color: var(--line); }
+[data-skin='cyberpunk'] table.t th { color: var(--cp-red); border-bottom: 1px solid var(--cp-red); font-weight: 700; }
+[data-skin='cyberpunk'] table.t td { border-bottom-color: rgba(255, 70, 85, 0.12); }
+
+/* inventory */
+[data-skin='cyberpunk'] .eq-slot, [data-skin='cyberpunk'] .tile { border-radius: 0; border-width: 1px; clip-path: var(--cut-sm); }
+[data-skin='cyberpunk'] .bag .tile.empty-slot { background: rgba(255, 255, 255, 0.02); border-color: var(--line); }
+[data-skin='cyberpunk'] .coin input { border-radius: 0; border: 1px solid var(--accent); color: var(--accent); background: #000; font-family: var(--font-num); font-weight: 400; }
+[data-skin='cyberpunk'] .coin span { color: var(--cp-red); }
+[data-skin='cyberpunk'] .skin-card { border-radius: 0; }

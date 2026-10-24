@@ -23,6 +23,7 @@ export function TopBar() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const theme = useStore((s) => s.theme)
+  const skin = useStore((s) => s.skin)
   const setTheme = useStore((s) => s.setTheme)
   const { page, go, set } = useUI()
 
@@ -85,7 +86,7 @@ export function TopBar() {
         <button className="btn sm ghost" onClick={shortRest} title="Short rest">☾ Short rest</button>
         <button className="btn sm ghost" onClick={longRest} title="Long rest">☀ Long rest</button>
         <button className="btn sm ghost" onClick={() => set({ rosterOpen: true })}>👥 Characters</button>
-        <button className="btn sm ghost" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Light / dark">◐</button>
+        {skin === 'standard' && <button className="btn sm ghost" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Light / dark">◐</button>}
       </nav>
     </header>
   )

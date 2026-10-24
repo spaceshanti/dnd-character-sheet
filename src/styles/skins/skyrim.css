@@ -1,0 +1,164 @@
+/* ============ Northern — inspired by Skyrim's menus ============
+   Smoky translucent panels, hairlines that fade out at the ends, small diamond
+   ornaments, quiet letter-spaced type, and a deep red health bar. */
+
+:root[data-skin='skyrim'] {
+  --paper: #121211;
+  --paper2: transparent;
+  --panel: rgba(17, 17, 15, 0.82);
+  --panel2: rgba(255, 255, 255, 0.05);
+  --ink: #ece8df;
+  --ink2: #b8b2a6;
+  --muted: #7d786e;
+  --line: rgba(236, 232, 223, 0.17);
+  --accent: #f1e9d2;
+  --accent-soft: rgba(241, 233, 210, 0.09);
+  --good: #9fc28a;
+  --warn: #d7b25b;
+  --adv: #9fc28a;
+  --dis: #d0705f;
+  --slot: rgba(0, 0, 0, 0.45);
+  --slot-border: rgba(236, 232, 223, 0.22);
+  --slot-ink: #ece8df;
+  --slot-drop: rgba(241, 233, 210, 0.12);
+  --img-bg: #0e0e0d;
+  --shadow: rgba(0, 0, 0, 0.65);
+  --fade-line: linear-gradient(90deg, transparent, rgba(236, 232, 223, 0.5) 18%, rgba(236, 232, 223, 0.5) 82%, transparent);
+  --font-head: 'Jost Variable', 'Futura', 'Segoe UI', sans-serif;
+  --font-body: 'Jost Variable', 'Futura', 'Segoe UI', sans-serif;
+  color-scheme: dark;
+}
+
+[data-skin='skyrim'] body {
+  font-size: 13.5px;
+  background-color: #0c0c0b;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% 20%, rgba(70, 66, 58, 0.45), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 15% 90%, rgba(50, 48, 44, 0.35), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 90% 70%, rgba(45, 43, 40, 0.3), transparent 70%);
+  background-size: auto;
+}
+[data-skin='skyrim'] h1, [data-skin='skyrim'] h2, [data-skin='skyrim'] h3 { font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase; }
+[data-skin='skyrim'] ::-webkit-scrollbar-thumb { background: rgba(236, 232, 223, 0.2); border-radius: 0; border: 4px solid transparent; background-clip: content-box; }
+
+/* panels: only faded hairlines top and bottom, title flanked by diamonds */
+[data-skin='skyrim'] .frame { clip-path: none; background: transparent; padding: 0; filter: none; }
+[data-skin='skyrim'] .frame > .frame-in {
+  clip-path: none; box-shadow: none; background: linear-gradient(rgba(16, 16, 14, 0.78), rgba(16, 16, 14, 0.62));
+  border-style: solid; border-width: 1px 0; border-image: var(--fade-line) 1;
+}
+[data-skin='skyrim'] .frame-title { color: var(--ink); font-size: 11px; font-weight: 400; letter-spacing: 0.32em; }
+[data-skin='skyrim'] .frame-title::before { background: linear-gradient(90deg, transparent, rgba(236, 232, 223, 0.35)); }
+[data-skin='skyrim'] .frame-title::after { background: linear-gradient(90deg, rgba(236, 232, 223, 0.35), transparent); }
+[data-skin='skyrim'] .frame-title > span:first-child::before, [data-skin='skyrim'] .frame-title > span:first-child::after {
+  content: '◆'; font-size: 7px; vertical-align: middle; margin: 0 9px; color: var(--accent);
+}
+
+/* controls: text-like, glow on hover */
+[data-skin='skyrim'] .btn {
+  border-radius: 0; border: 1px solid transparent; background: transparent; color: var(--ink2); font-weight: 400;
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+[data-skin='skyrim'] .btn:hover { color: var(--ink); background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent); text-shadow: 0 0 8px rgba(255, 255, 255, 0.55); }
+[data-skin='skyrim'] .btn.primary { color: var(--ink); border-width: 1px 0; border-image: var(--fade-line) 1; }
+[data-skin='skyrim'] .btn.danger { color: var(--dis); }
+[data-skin='skyrim'] .btn.danger:hover { color: #f0a090; text-shadow: 0 0 8px rgba(208, 112, 95, 0.6); }
+[data-skin='skyrim'] select, [data-skin='skyrim'] .box-input { border-radius: 0; background: rgba(0, 0, 0, 0.4); border-color: var(--line); color: var(--ink); }
+[data-skin='skyrim'] option { background: #161615; }
+[data-skin='skyrim'] .field > input, [data-skin='skyrim'] .line-input { border-bottom: 1px solid var(--line); font-weight: 400; }
+[data-skin='skyrim'] .field > input:focus, [data-skin='skyrim'] .line-input:focus { background: var(--accent-soft); border-bottom-color: var(--accent); }
+[data-skin='skyrim'] .field > label, [data-skin='skyrim'] .field-lbl { letter-spacing: 0.2em; font-weight: 400; }
+[data-skin='skyrim'] .chip { border-radius: 0; background: rgba(0, 0, 0, 0.35); border-color: var(--line); }
+[data-skin='skyrim'] .chip.accent { color: var(--accent); border-color: rgba(241, 233, 210, 0.5); background: var(--accent-soft); }
+[data-skin='skyrim'] .tag { border-radius: 0; background: transparent; color: var(--ink); border: 1px solid rgba(236, 232, 223, 0.4); font-weight: 400; letter-spacing: 0.14em; }
+[data-skin='skyrim'] .tag.alt { color: var(--ink2); border-color: var(--line); }
+[data-skin='skyrim'] .badge, [data-skin='skyrim'] .kbd { border-radius: 0; background: transparent; }
+[data-skin='skyrim'] .seg { border-radius: 0; border-color: var(--line); }
+[data-skin='skyrim'] .seg button { background: transparent; border-color: var(--line); letter-spacing: 0.12em; text-transform: uppercase; font-size: 12px; }
+[data-skin='skyrim'] .seg button.on { background: var(--accent-soft); color: var(--ink); text-shadow: 0 0 8px rgba(255, 255, 255, 0.5); }
+[data-skin='skyrim'] .pip { border-radius: 0; border: 1px solid var(--ink2); transform: rotate(45deg) scale(0.78); }
+[data-skin='skyrim'] .pip.on { background: var(--ink); border-color: var(--ink); box-shadow: 0 0 6px rgba(255, 255, 255, 0.45); }
+[data-skin='skyrim'] .pip.succ.on { background: var(--good); border-color: var(--good); }
+[data-skin='skyrim'] .pip.fail.on { background: var(--dis); border-color: var(--dis); }
+[data-skin='skyrim'] .switch { border-radius: 0; height: 14px; width: 30px; background: rgba(255, 255, 255, 0.12); }
+[data-skin='skyrim'] .switch::after { border-radius: 0; width: 10px; height: 10px; transform: rotate(45deg); }
+[data-skin='skyrim'] .switch.on { background: rgba(241, 233, 210, 0.35); }
+[data-skin='skyrim'] .switch.on::after { left: 17px; box-shadow: 0 0 6px #fff; }
+[data-skin='skyrim'] .hpbar { border-radius: 0; height: 4px; background: rgba(0, 0, 0, 0.6); outline: 1px solid var(--line); }
+[data-skin='skyrim'] .hpbar > i, [data-skin='skyrim'] .hpbar.low > i, [data-skin='skyrim'] .hpbar.crit > i { background: linear-gradient(90deg, #6e241d, #c4503f); }
+[data-skin='skyrim'] .weight-bar { border-radius: 0; }
+
+/* top bar */
+[data-skin='skyrim'] .topbar {
+  background: linear-gradient(rgba(10, 10, 9, 0.95), rgba(10, 10, 9, 0.82)); box-shadow: none;
+  border-bottom: 1px solid transparent; border-image: var(--fade-line) 1;
+}
+[data-skin='skyrim'] .top-portrait { border-radius: 0; border: 1px solid var(--line); box-shadow: 0 0 20px rgba(0, 0, 0, 0.6); }
+[data-skin='skyrim'] .name-banner input { font-weight: 300; text-transform: uppercase; letter-spacing: 0.16em; font-size: 20px; border-bottom: 1px solid var(--line); }
+[data-skin='skyrim'] .name-banner label { letter-spacing: 0.24em; }
+[data-skin='skyrim'] .vbox { border-radius: 0; border: 1px solid var(--line); box-shadow: none; background: rgba(0, 0, 0, 0.35); }
+[data-skin='skyrim'] .vbox:hover { border-color: rgba(236, 232, 223, 0.45); background: rgba(255, 255, 255, 0.05); }
+[data-skin='skyrim'] .vbox .v { font-weight: 300; }
+[data-skin='skyrim'] .vbox .l { letter-spacing: 0.2em; }
+[data-skin='skyrim'] .vbox .sub { color: var(--ink2); }
+[data-skin='skyrim'] .hp-box .big input, [data-skin='skyrim'] .hp-box .big .of { font-weight: 300; }
+[data-skin='skyrim'] .shield { clip-path: polygon(0 0, 100% 0, 100% 74%, 50% 100%, 0 74%); padding-bottom: 9px; }
+[data-skin='skyrim'] .inv-btn { border-radius: 0; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.45); box-shadow: none; }
+[data-skin='skyrim'] .inv-btn:hover { background: rgba(255, 255, 255, 0.07); border-color: rgba(236, 232, 223, 0.45); }
+[data-skin='skyrim'] .nav { background: rgba(0, 0, 0, 0.4); border-top: 1px solid var(--line); }
+[data-skin='skyrim'] .nav button.tab { font-weight: 400; letter-spacing: 0.26em; border-bottom: none; padding: 6px 14px; }
+[data-skin='skyrim'] .nav button.tab:hover { color: var(--ink); text-shadow: 0 0 8px rgba(255, 255, 255, 0.4); }
+[data-skin='skyrim'] .nav button.tab.active {
+  color: var(--ink); font-weight: 400; text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.12), transparent 70%);
+}
+[data-skin='skyrim'] .nav button.tab.active::before { content: '◆ '; font-size: 7px; vertical-align: middle; }
+[data-skin='skyrim'] .nav button.tab.active::after { content: ' ◆'; font-size: 7px; vertical-align: middle; }
+
+/* abilities dock */
+[data-skin='skyrim'] .dock { background: rgba(12, 12, 11, 0.96); border-right: 1px solid var(--line); backdrop-filter: blur(6px); }
+[data-skin='skyrim'] .dock-edge { background: rgba(0, 0, 0, 0.55); border-right: 1px solid var(--line); }
+[data-skin='skyrim'] .dock-edge:hover, [data-skin='skyrim'] .dock-edge.on { background: rgba(255, 255, 255, 0.09); }
+[data-skin='skyrim'] .dock-edge:hover span, [data-skin='skyrim'] .dock-edge.on span { color: var(--ink); }
+[data-skin='skyrim'] .pill, [data-skin='skyrim'] .passive { border-radius: 0; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.35); }
+[data-skin='skyrim'] .pill .num { border-radius: 0; border: 1px solid var(--line); background: transparent; font-weight: 400; }
+[data-skin='skyrim'] .ab-box .name { border-radius: 0; background: transparent; color: var(--ink2); letter-spacing: 0.18em; border-bottom: 1px solid var(--line); font-weight: 400; }
+[data-skin='skyrim'] .ab-box .mod { border-radius: 0; border: 1px solid var(--line); border-top: none; background: rgba(0, 0, 0, 0.35); font-weight: 300; }
+[data-skin='skyrim'] .ab-box .score { border-radius: 0; border: 1px solid var(--line); background: #141413; font-weight: 400; }
+[data-skin='skyrim'] .rr { border-radius: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+[data-skin='skyrim'] .rr .val { font-weight: 500; }
+[data-skin='skyrim'] .rr:hover, [data-skin='skyrim'] .list-row:hover, [data-skin='skyrim'] .sline:hover,
+[data-skin='skyrim'] .act-item:hover, [data-skin='skyrim'] table.t tr.hov:hover td { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent); }
+[data-skin='skyrim'] .breakdown { border-radius: 0; background: rgba(0, 0, 0, 0.45); border-color: var(--line); border-left-color: var(--accent); }
+
+/* spell book */
+[data-skin='skyrim'] .spell-sec {
+  border-radius: 0; border-style: solid; border-width: 1px 0; border-image: var(--fade-line) 1; box-shadow: none;
+  background: linear-gradient(rgba(16, 16, 14, 0.78), rgba(16, 16, 14, 0.6));
+}
+[data-skin='skyrim'] .sec-head .lvl-badge { border-radius: 0; border: 1px solid var(--line); background: transparent; font-weight: 300; }
+[data-skin='skyrim'] .sec-banner { clip-path: none; background: transparent; border-color: var(--line); border-width: 1px 0 1px 0; }
+[data-skin='skyrim'] .sec-title { letter-spacing: 0.3em; font-weight: 400; }
+[data-skin='skyrim'] .slot-total input { font-weight: 300; border-bottom-color: var(--line); }
+[data-skin='skyrim'] .sline { border-bottom-color: rgba(255, 255, 255, 0.06); }
+[data-skin='skyrim'] .sline .nm { font-weight: 400; }
+[data-skin='skyrim'] .crm { color: rgba(236, 232, 223, 0.18); }
+[data-skin='skyrim'] .crm.on { color: var(--accent); }
+[data-skin='skyrim'] .spell-stat { border-radius: 0; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.35); }
+[data-skin='skyrim'] .spell-stat b { font-weight: 300; }
+
+/* overlays */
+[data-skin='skyrim'] .popover, [data-skin='skyrim'] .modal, [data-skin='skyrim'] .drawer { border-radius: 0; border: 1px solid var(--line); background: rgba(14, 14, 13, 0.97); }
+[data-skin='skyrim'] .modal-head, [data-skin='skyrim'] .drawer-head { background: transparent; border-bottom: 1px solid transparent; border-image: var(--fade-line) 1; }
+[data-skin='skyrim'] .modal-head h2, [data-skin='skyrim'] .drawer-head h2 { font-weight: 300; letter-spacing: 0.2em; }
+[data-skin='skyrim'] .backdrop { background: rgba(0, 0, 0, 0.62); backdrop-filter: blur(2px); }
+[data-skin='skyrim'] .toast { border-radius: 0; background: rgba(10, 10, 9, 0.96); color: var(--ink); border: 1px solid var(--line); font-weight: 400; letter-spacing: 0.1em; }
+[data-skin='skyrim'] .fx { border-radius: 0; background: rgba(0, 0, 0, 0.3); border-color: var(--line); }
+[data-skin='skyrim'] table.t th { color: var(--ink2); border-bottom: 1px solid var(--line); font-weight: 400; letter-spacing: 0.2em; }
+[data-skin='skyrim'] table.t td { border-bottom-color: rgba(255, 255, 255, 0.06); }
+
+/* inventory */
+[data-skin='skyrim'] .eq-slot, [data-skin='skyrim'] .tile { border-radius: 0; border-width: 1px; box-shadow: none; }
+[data-skin='skyrim'] .bag .tile.empty-slot { background: rgba(0, 0, 0, 0.25); border-color: rgba(255, 255, 255, 0.07); }
+[data-skin='skyrim'] .coin input { border-radius: 0; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.4); font-weight: 400; }
+[data-skin='skyrim'] .skin-card { border-radius: 0; background: rgba(0, 0, 0, 0.3); }

@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { profBonus } from '../calc'
 import { downloadJson, useChar, useStore } from '../store'
 import { Frame, Num, Switch } from '../components/ui'
+import { SKINS } from '../skins'
 
 export function SettingsPage() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
-  const { theme, setTheme, chars, order } = useStore()
+  const { theme, setTheme, skin, setSkin, chars, order } = useStore()
   const saveError = useStore((s) => s.saveError)
   const [path, setPath] = useState('')
   useEffect(() => { window.sheetApi?.dataPath().then(setPath) }, [])
@@ -34,9 +35,23 @@ export function SettingsPage() {
 
       <Frame title="App">
         <div className="col" style={{ gap: 12 }}>
-          <div className="row"><span className="grow">Theme</span>
-            <div className="seg"><button className={theme === 'light' ? 'on' : ''} onClick={() => setTheme('light')}>Light</button><button className={theme === 'dark' ? 'on' : ''} onClick={() => setTheme('dark')}>Dark</button></div>
+          <div>
+            <div className="field-lbl" style={{ marginBottom: 6 }}>UI style</div>
+            <div className="skin-grid">
+              {SKINS.map((k) => (
+                <button key={k.id} className={`skin-card ${skin === k.id ? 'on' : ''}`} onClick={() => setSkin(k.id)}>
+                  <span className="sw">{k.swatch.map((c) => <i key={c} style={{ background: c }} />)}</span>
+                  <b>{k.name}</b>
+                  <span className="small muted">{k.desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
+          {skin === 'standard' && (
+            <div className="row"><span className="grow">Light / dark</span>
+              <div className="seg"><button className={theme === 'light' ? 'on' : ''} onClick={() => setTheme('light')}>Light</button><button className={theme === 'dark' ? 'on' : ''} onClick={() => setTheme('dark')}>Dark</button></div>
+            </div>
+          )}
           <div className="small muted">
             Saves automatically{path ? <> to <code style={{ wordBreak: 'break-all' }}>{path}</code> (a <code>.bak</code> copy is kept beside it)</> : ' in this browser'}.
           </div>

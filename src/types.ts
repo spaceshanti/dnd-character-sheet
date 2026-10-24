@@ -207,4 +207,5 @@ export interface AppData {
   order: string[]
   activeId: string
   theme: 'light' | 'dark'
+  skin?: string
 }
