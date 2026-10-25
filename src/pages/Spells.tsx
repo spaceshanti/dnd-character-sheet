@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { ABILITIES, SPELL_LEVEL_NAMES } from '../constants'
 import { activeEffects, preparedCount, signed, spellStats } from '../calc'
-import { newSpell, uid } from '../blank'
-import { applyLib, bestLib, fromLib, LIB, LIB_CLASSES, LIB_SCHOOLS, searchLib, type LibSpell } from '../spellLib'
+import { isConsumed, newSpell, uid } from '../blank'
+import { applyLib, bestLib, bundledLib, fromLib, LIB, LIB_CLASSES, LIB_SCHOOLS, searchLib, type LibSpell } from '../spellLib'
 import { useChar, useStore, useUI } from '../store'
 import { Frame, Modal, Num, Pips, Switch, Toast, useToast } from '../components/ui'
 import { RichArea } from '../components/RichText'
@@ -331,6 +331,24 @@ function CustomSpellForm({ initial, onClose, onSaved }: { initial: CustomSpell; 
   const text = (k: 'n' | 's' | 'ct' | 'r' | 'c' | 'd', ph: string) => (
     <input className="box-input" placeholder={ph} value={f[k]} onChange={(e) => upd({ [k]: e.target.value } as Partial<CustomSpell>)} />
   )
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  const srd = f.n.trim() ? bundledLib(f.n) : undefined
+  const fetchIt = async () => {
+    setMsg('')
+    if (!window.sheetApi) { setMsg('Fetching only works in the desktop app.'); return }
+    if (!f.url && !f.n.trim()) { setMsg('Type the spell name or paste its wikidot link first.'); return }
+    setBusy(true)
+    const r = await window.sheetApi.fetchSpell(f.url || f.n)
+    setBusy(false)
+    if (r.error) { setMsg(r.error); return }
+    upd({
+      n: f.n.trim() || r.name || '', url: r.url, l: r.level ?? f.l, s: r.school ? r.school[0].toUpperCase() + r.school.slice(1) : f.s,
+      ct: r.castingTime || f.ct, r: r.range || f.r, c: r.components || f.c, d: r.duration || f.d,
+      co: !!r.concentration, ri: !!r.ritual, m: r.components ? isConsumed(r.components) : f.m, t: r.description || f.t,
+    })
+    setMsg('Fetched ✓')
+  }
   return (
     <Modal title={initial.n ? `Edit ${initial.n}` : 'Add a spell to your library'} onClose={onClose}>
       <div className="col" style={{ gap: 8, maxWidth: 640 }}>
@@ -344,6 +362,21 @@ function CustomSpellForm({ initial, onClose, onSaved }: { initial: CustomSpell; 
           {text('s', 'School')}{text('ct', 'Casting time')}{text('r', 'Range')}{text('d', 'Duration')}
         </div>
         {text('c', 'Components')}
+        <div className="fx" style={{ borderStyle: 'solid' }}>
+          <div className="row" style={{ gap: 4 }}>
+            <input className="box-input grow" placeholder="wikidot link (optional) — or leave empty to look up by name" value={f.url ?? ''} onChange={(e) => upd({ url: e.target.value })} />
+            <button className="btn sm" disabled={busy} onClick={fetchIt}>{busy ? 'Fetching…' : 'Fetch'}</button>
+          </div>
+          {srd && (
+            <div className="row small" style={{ gap: 4, marginTop: 5 }}>
+              <span className="muted">Built-in library has it:</span>
+              <button className="btn sm" onClick={() => upd({ l: srd.l, s: srd.s, ct: srd.ct, r: srd.r, c: srd.c, d: srd.d, co: srd.co, ri: srd.ri, m: srd.m ?? isConsumed(srd.c), cl: srd.cl, t: srd.t })}>
+                Use {srd.e === 'UA' ? 'UA' : `${srd.e} SRD`} text
+              </button>
+            </div>
+          )}
+          {msg && <div className="small" style={{ marginTop: 4, color: msg.endsWith('✓') ? 'var(--good)' : 'var(--dis)' }}>{msg}</div>}
+        </div>
         <input className="box-input" placeholder="Classes, comma separated (Psion, Wizard…)" value={f.cl.join(', ')} onChange={(e) => upd({ cl: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })} />
         <div className="row" style={{ gap: 16 }}>
           <label className="row small"><Switch on={f.co} onChange={(b) => upd({ co: b })} /> Concentration</label>

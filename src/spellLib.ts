@@ -1,5 +1,5 @@
 import raw from './data/spells.json'
-import { isConsumed, newSpell } from './blank'
+import { isConsumed, newSpell, uid } from './blank'
 import type { CustomSpell, Spell } from './types'
 import { useStore } from './store'
 
@@ -75,12 +75,60 @@ export function allLib(custom = useStore.getState().customSpells): LibSpell[] {
 }
 
 /** Turn a spell from a character sheet into a library entry. */
-export function toCustom(sp: Spell, id: string): CustomSpell {
+export function toCustom(sp: Spell, id: string, keep?: CustomSpell): CustomSpell {
   return {
-    id, n: sp.name, l: sp.level, s: sp.school, ct: sp.castingTime, r: sp.range, c: sp.components, d: sp.duration,
-    co: sp.concentration, ri: sp.ritual, m: sp.materialConsumed, cl: [], t: sp.description,
+    id, n: sp.name.trim(), l: sp.level, s: sp.school, ct: sp.castingTime, r: sp.range, c: sp.components, d: sp.duration,
+    co: sp.concentration, ri: sp.ritual, m: sp.materialConsumed, cl: keep?.cl ?? [], t: sp.description, url: sp.url || keep?.url, fromSpell: sp.id,
   }
 }
+
+/** A bundled (not your own) library entry with real text for this name, if there is one. */
+export function bundledLib(name: string): LibSpell | undefined {
+  const k = nameKey(name)
+  const rank = (s: LibSpell) => (s.e === '2024' ? 0 : s.e === 'UA' ? 1 : 2)
+  return LIB.filter((s) => !s.stub && nameKey(s.n) === k).sort((a, b) => rank(a) - rank(b))[0]
+}
+
+/*
+ * Every spell on a character's list that the bundled library doesn't have goes into your own library,
+ * a moment after you stop editing. Entries stay linked to the spell they came from, so renaming or
+ * editing it updates the same entry instead of leaving half-typed copies behind.
+ */
+let syncTimer: ReturnType<typeof setTimeout> | undefined
+function syncLibrary() {
+  const st = useStore.getState()
+  const c = st.chars[st.activeId]
+  if (!c) return
+  let custom = st.customSpells
+  let changed = false
+  for (const sp of c.spells) {
+    const name = sp.name.trim()
+    if (!name) continue
+    const linked = custom.find((x) => x.fromSpell === sp.id)
+    if (bundledLib(name) && !linked) continue // already in the bundled library
+    const byName = custom.find((x) => nameKey(x.n) === nameKey(name))
+    const target = linked ?? byName
+    if (!target) {
+      custom = [...custom, toCustom(sp, uid())]
+      changed = true
+      continue
+    }
+    // keep the linked entry in step with its spell; never overwrite someone else's entry with less text
+    if (target === linked) {
+      const next = toCustom(sp, target.id, target)
+      if (JSON.stringify(next) !== JSON.stringify(target)) { custom = custom.map((x) => (x.id === target.id ? next : x)); changed = true }
+    } else if (!target.t && sp.description) {
+      custom = custom.map((x) => (x.id === target.id ? { ...x, t: sp.description } : x))
+      changed = true
+    }
+  }
+  if (changed) useStore.setState({ customSpells: custom })
+}
+useStore.subscribe((s, prev) => {
+  if (!s.loaded || s.chars === prev.chars) return
+  clearTimeout(syncTimer)
+  syncTimer = setTimeout(syncLibrary, 1200)
+})
 
 export const LIB_CLASSES = Array.from(new Set(LIB.flatMap((s) => s.cl))).sort()
 export const LIB_SCHOOLS = Array.from(new Set(LIB.map((s) => s.s))).sort()

@@ -299,6 +299,10 @@ export interface CustomSpell {
   m: boolean
   cl: string[]
   t: string
+  /** wikidot page it was fetched from */
+  url?: string
+  /** the character spell this entry was saved from; edits to that spell keep it up to date */
+  fromSpell?: string
 }
 
 export interface AppData {
