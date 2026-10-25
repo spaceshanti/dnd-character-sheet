@@ -104,7 +104,7 @@ export function lookupWeapon(name: string): WeaponStats | null {
   const [kind, damage, damageType, properties, range = ''] = w
   const ranged = /ammunition/i.test(properties)
   return {
-    damage, damageType, properties, range, proficient: true, magicBonus: 0, kind, mastery: MASTERY_OF[kind] ?? '',
+    damage, damageType, properties, range, proficient: true, magicBonus: 0, kind, mastery: MASTERY_OF[kind] ?? '', ammoId: '', ammoCost: 1,
     ability: /finesse/i.test(properties) ? 'finesse' : ranged ? 'dex' : 'str',
   }
 }

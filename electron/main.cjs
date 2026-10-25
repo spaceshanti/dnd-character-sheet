@@ -80,8 +80,9 @@ ipcMain.handle('open:external', (_e, url) => {
 })
 
 /* ---------- spell lookup from wikidot ---------- */
-const { fetchSpell } = require('./spells.cjs')
+const { fetchSpell, fetchItem } = require('./spells.cjs')
 ipcMain.handle('spell:fetch', (_e, target) => fetchSpell(target))
+ipcMain.handle('item:fetch', (_e, target) => fetchItem(target))
 
 app.whenReady().then(() => {
   createWindow()

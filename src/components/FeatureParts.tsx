@@ -5,7 +5,7 @@ import { newEffect, newFeatureAction, newResource, newSpell, uid } from '../blan
 import { useChar, useStore, useUI } from '../store'
 import { applyLib, bestLib } from '../spellLib'
 import { EffectsEditor, Num, Pips, Select, Switch } from './ui'
-import type { Character, Feature, FeatureAction, RestEffect, Resource } from '../types'
+import type { ActionMod, Character, Feature, FeatureAction, RestEffect, Resource } from '../types'
 
 export const actionTypeName = (t: string) => ACTION_TYPES.find((a) => a.id === t)?.name ?? ''
 export const left = (r: Resource) => Math.max(0, r.max - r.used)
@@ -27,6 +27,16 @@ export function costText(c: Character, a: FeatureAction): string {
   return r ? `${a.cost} × ${resName(r)} · ${left(r)} left` : ''
 }
 
+/** Additions other features make to an action, e.g. Telekinetic Techniques on Telekinetic Propel. */
+export function modsFor(c: Character, actionId: string): { from: string; text: string }[] {
+  return c.features.flatMap((f) => (f.active ? f.actionMods.filter((m) => m.actionId === actionId).map((m) => ({ from: f.name || 'Feature', text: m.text })) : []))
+}
+
+/** "Psionic Power › Telekinetic Propel" for every action on the sheet (optionally leaving one feature out) */
+export function actionChoices(c: Character, exceptFeatureId = '') {
+  return c.features.filter((f) => f.id !== exceptFeatureId).flatMap((f) => f.actions.map((a) => ({ id: a.id, name: `${f.name || 'Feature'} › ${a.name || 'action'}` })))
+}
+
 export const restText = (e: RestEffect) =>
   `${e.rest === 'long' ? 'Long' : 'Short'} rest: ${e.kind === 'inspiration' ? 'Heroic Inspiration' : e.kind === 'tempHp' ? `${e.value} temp HP` : e.note || 'reminder'}`
 
@@ -36,7 +46,7 @@ export function FeatureUsage({ f, onUsed, showResources = true }: { f: Feature; 
   const patch = useStore((s) => s.patch)
   const resources = showResources ? c.resources.filter((r) => r.featureId === f.id) : []
   const spells = c.spells.filter((sp) => sp.grantedBy === f.id).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
-  if (!resources.length && !f.actions.length && !f.masteries.length && !f.restEffects.length && !spells.length) return null
+  if (!resources.length && !f.actions.length && !f.masteries.length && !f.restEffects.length && !spells.length && !f.actionMods.length) return null
   return (
     <div className="col" style={{ gap: 10 }}>
       {spells.length > 0 && (
@@ -78,6 +88,13 @@ export function FeatureUsage({ f, onUsed, showResources = true }: { f: Feature; 
           </div>
           {costText(c, a) && <div className="small muted">Costs {costText(c, a)}</div>}
           {a.description && <div className="small" style={{ whiteSpace: 'pre-wrap' }}>{a.description}</div>}
+          {modsFor(c, a.id).map((m, i) => <div key={i} className="act-mod"><b>+ {m.from}:</b> {m.text}</div>)}
+        </div>
+      ))}
+      {f.actionMods.filter((m) => m.actionId).map((m) => (
+        <div key={m.id} className="feat-res" style={{ flexWrap: 'wrap' }}>
+          <b>Adds to {actionChoices(c).find((x) => x.id === m.actionId)?.name ?? 'a removed action'}</b>
+          <span className="small">{m.text}</span>
         </div>
       ))}
     </div>
@@ -180,7 +197,9 @@ export function FeatureChangesEditor({ f }: { f: Feature }) {
   const [addingSpell, setAddingSpell] = useState(false)
   const upF = (fn: (x: Feature) => void) => patch((d) => { const x = d.features.find((y) => y.id === f.id); if (x) fn(x) })
   const spells = c.spells.filter((sp) => sp.grantedBy === f.id).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
-  const nothing = !f.effects.length && !spells.length && !f.masteries.length && !addingSpell
+  const nothing = !f.effects.length && !spells.length && !f.masteries.length && !addingSpell && !f.actionMods.length
+  const choices = actionChoices(c, f.id)
+  const upM = (id: string, fn: (m: ActionMod) => void) => upF((x) => { const m = x.actionMods.find((y) => y.id === id); if (m) fn(m) })
 
   const addSpell = (name: string, fallbackLevel: number) => {
     const lib = bestLib(name)
@@ -194,6 +213,7 @@ export function FeatureChangesEditor({ f }: { f: Feature }) {
     if (what === 'effect') upF((x) => { x.effects.push(newEffect()) })
     if (what === 'spell') setAddingSpell(true)
     if (what === 'mastery') upF((x) => { x.masteries.push(WEAPON_NAMES.find((n) => !x.masteries.includes(n)) ?? '*') })
+    if (what === 'actionmod') upF((x) => { x.actionMods.push({ id: uid(), actionId: choices[0]?.id ?? '', text: '' }) })
   }
 
   return (
@@ -203,7 +223,7 @@ export function FeatureChangesEditor({ f }: { f: Feature }) {
         <label className="row small"><Switch on={f.active} onChange={(b) => upF((x) => { x.active = b })} /> Applied</label>
       </div>
       <div className="fx">
-        {nothing && <div className="muted small" style={{ marginBottom: 6 }}>Nothing yet. Add a bonus or proficiency, a spell it grants, or weapon mastery.</div>}
+        {nothing && <div className="muted small" style={{ marginBottom: 6 }}>Nothing yet. Add a bonus or proficiency, a spell it grants, weapon mastery, or something it adds to another feature's action.</div>}
         <EffectsEditor bare effects={f.effects} onChange={(e) => upF((x) => { x.effects = e })} />
 
         {spells.map((sp) => (
@@ -246,11 +266,27 @@ export function FeatureChangesEditor({ f }: { f: Feature }) {
           </div>
         ))}
 
+        {f.actionMods.map((m) => (
+          <div key={m.id} className="fx-row change-row">
+            <span className="change-kind">Adds to</span>
+            {choices.length ? (
+              <select value={m.actionId} onChange={(e) => upM(m.id, (x) => { x.actionId = e.target.value })}>
+                {!choices.some((ch) => ch.id === m.actionId) && <option value="">Choose an action…</option>}
+                {choices.map((ch) => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
+              </select>
+            ) : <span className="muted small">No other feature has actions yet</span>}
+            <input className="box-input grow" style={{ minWidth: 160 }} placeholder="What it adds, e.g. Boost / Disorient / Telekinetic Bolt" value={m.text}
+              onChange={(e) => upM(m.id, (x) => { x.text = e.target.value })} />
+            <button className="btn icon sm" title="Remove" onClick={() => upF((x) => { x.actionMods = x.actionMods.filter((y) => y.id !== m.id) })}>✕</button>
+          </div>
+        ))}
+
         <select className="add-change" value="" onChange={(e) => { add(e.target.value); e.target.value = '' }}>
           <option value="">＋ Add…</option>
           <option value="effect">Bonus / advantage / proficiency</option>
           <option value="spell">A spell or cantrip</option>
           <option value="mastery">Weapon mastery</option>
+          <option value="actionmod">Add onto another feature's action</option>
         </select>
       </div>
     </div>

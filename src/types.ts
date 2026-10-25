@@ -60,6 +60,9 @@ export interface Spell {
   active: boolean
   /** id of the feature that grants this spell ('' = added by hand) */
   grantedBy: string
+  /** inventory item used up per cast (e.g. Telekinetic Fling's ammunition), '' = none */
+  ammoId: string
+  ammoCost: number
 }
 
 export type FeatureCategory = 'class' | 'species' | 'feat' | 'background' | 'buff' | 'other'
@@ -91,6 +94,15 @@ export interface Feature {
   restEffects: RestEffect[]
   /** folded up on the Features page */
   collapsed: boolean
+  /** additions this feature makes to other features' actions */
+  actionMods: ActionMod[]
+}
+
+/** e.g. Telekinetic Techniques adds Boost / Disorient / Telekinetic Bolt to Psionic Power's Telekinetic Propel */
+export interface ActionMod {
+  id: string
+  actionId: string
+  text: string
 }
 
 export interface RestEffect {
@@ -117,6 +129,9 @@ export interface WeaponStats {
   kind: string
   /** the kind's mastery property ("Sap"); only usable when a feature grants mastery with this kind */
   mastery: string
+  /** inventory item used up per attack (arrows, bolts...), '' = none */
+  ammoId: string
+  ammoCost: number
 }
 
 export interface ArmorStats {
@@ -149,6 +164,8 @@ export interface Item {
   weapon: WeaponStats | null
   /** set for armor and shields: counts toward AC while equipped */
   armor: ArmorStats | null
+  /** wikidot (or other) page for the item */
+  url: string
 }
 
 export interface Attack {
@@ -267,6 +284,23 @@ export interface Character {
   updatedAt: number
 }
 
+/** A spell you added to the shared spell library (same fields as the bundled library entries). */
+export interface CustomSpell {
+  id: string
+  n: string
+  l: number
+  s: string
+  ct: string
+  r: string
+  c: string
+  d: string
+  co: boolean
+  ri: boolean
+  m: boolean
+  cl: string[]
+  t: string
+}
+
 export interface AppData {
   version: 1
   chars: Record<string, Character>
@@ -274,4 +308,6 @@ export interface AppData {
   activeId: string
   theme: 'light' | 'dark'
   skin?: string
+  /** your own spells, available to every character */
+  customSpells?: CustomSpell[]
 }

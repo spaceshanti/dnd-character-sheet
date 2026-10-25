@@ -1,6 +1,7 @@
 import raw from './data/spells.json'
 import { isConsumed, newSpell } from './blank'
-import type { Spell } from './types'
+import type { CustomSpell, Spell } from './types'
+import { useStore } from './store'
 
 export interface LibSpell {
   n: string
@@ -22,6 +23,8 @@ export interface LibSpell {
   stub?: boolean
   /** where an imported spell came from */
   src?: string
+  /** set for your own library spells */
+  id?: string
 }
 
 /** Files written by tools/import_ua_spells.py */
@@ -65,15 +68,29 @@ function buildLibrary(): LibSpell[] {
 
 export const LIB = buildLibrary()
 
+const fromCustom = (c: CustomSpell): LibSpell => ({ ...c, e: 'Custom', src: 'My library' })
+/** Bundled spells plus the ones you've added yourself. */
+export function allLib(custom = useStore.getState().customSpells): LibSpell[] {
+  return custom.length ? [...LIB, ...custom.map(fromCustom)] : LIB
+}
+
+/** Turn a spell from a character sheet into a library entry. */
+export function toCustom(sp: Spell, id: string): CustomSpell {
+  return {
+    id, n: sp.name, l: sp.level, s: sp.school, ct: sp.castingTime, r: sp.range, c: sp.components, d: sp.duration,
+    co: sp.concentration, ri: sp.ritual, m: sp.materialConsumed, cl: [], t: sp.description,
+  }
+}
+
 export const LIB_CLASSES = Array.from(new Set(LIB.flatMap((s) => s.cl))).sort()
 export const LIB_SCHOOLS = Array.from(new Set(LIB.map((s) => s.s))).sort()
 
 const editionOk = (e: string, filter: string) =>
-  filter === 'all' || (filter === 'modern' ? e === '2024' || e === 'UA' : e === filter)
+  filter === 'all' || (filter === 'modern' ? e === '2024' || e === 'UA' || e === 'Custom' : e === filter)
 
 export function searchLib(q: string, o: { level: number | 'all'; cls: string; school: string; edition: string }): LibSpell[] {
   const t = q.trim().toLowerCase()
-  return LIB.filter(
+  return allLib().filter(
     (s) =>
       (!t || s.n.toLowerCase().includes(t) || (s.t.toLowerCase().includes(t) && t.length > 3)) &&
       (o.level === 'all' || s.l === o.level) &&
@@ -89,7 +106,7 @@ export function searchLib(q: string, o: { level: number | 'all'; cls: string; sc
 
 export function findLib(name: string): LibSpell[] {
   const k = nameKey(name)
-  return k ? LIB.filter((s) => nameKey(s.n) === k) : []
+  return k ? allLib().filter((s) => nameKey(s.n) === k) : []
 }
 
 export function fromLib(l: LibSpell): Spell {
@@ -106,6 +123,6 @@ export function applyLib(sp: Spell, l: LibSpell): Spell {
 
 /** Best library match for a typed name: full text first (2024, then UA, then 2014), name-only entries last. */
 export function bestLib(name: string): LibSpell | undefined {
-  const rank = (s: LibSpell) => (s.stub ? 9 : s.e === '2024' ? 0 : s.e === 'UA' ? 1 : 2)
+  const rank = (s: LibSpell) => (s.stub ? 9 : s.e === 'Custom' ? -1 : s.e === '2024' ? 0 : s.e === 'UA' ? 1 : 2)
   return findLib(name).sort((a, b) => rank(a) - rank(b))[0]
 }

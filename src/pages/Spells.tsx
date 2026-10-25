@@ -4,8 +4,9 @@ import { activeEffects, preparedCount, signed, spellStats } from '../calc'
 import { newSpell, uid } from '../blank'
 import { applyLib, bestLib, fromLib, LIB, LIB_CLASSES, LIB_SCHOOLS, searchLib, type LibSpell } from '../spellLib'
 import { useChar, useStore, useUI } from '../store'
-import { Frame, Modal, Num, Pips, Toast, useToast } from '../components/ui'
-import type { Spell } from '../types'
+import { Frame, Modal, Num, Pips, Switch, Toast, useToast } from '../components/ui'
+import { RichArea } from '../components/RichText'
+import type { CustomSpell, Spell } from '../types'
 import { RichText } from '../components/RichText'
 
 type View = 'mine' | 'library' | string
@@ -169,7 +170,7 @@ function MySpells() {
     if (lib) sp = { ...applyLib(sp, lib), level }
     sp.prepared = level === 0
     patch((d) => { d.spells.push(sp) })
-    toast.show(lib ? `Added ${sp.name}, description filled in from the ${lib.e} SRD` : `Added ${name}. Click it to add a description`)
+    toast.show(lib ? `Added ${sp.name}, description filled in from ${lib.e === 'Custom' ? 'your library' : lib.e === 'UA' ? 'the imported UA' : `the ${lib.e} SRD`}` : `Added ${name}. Click it to add a description`)
   }
 
   return (
@@ -237,7 +238,10 @@ function Library() {
   const [edition, setEdition] = useState('modern')
   const [sel, setSel] = useState<LibSpell | null>(null)
   const [limit, setLimit] = useState(80)
-  const results = useMemo(() => searchLib(q, { level, cls, school, edition }), [q, level, cls, school, edition])
+  const customSpells = useStore((s) => s.customSpells)
+  const deleteCustomSpell = useStore((s) => s.deleteCustomSpell)
+  const [editing, setEditing] = useState<CustomSpell | null>(null)
+  const results = useMemo(() => searchLib(q, { level, cls, school, edition }), [q, level, cls, school, edition, customSpells])
   const have = (n: string) => c.spells.some((s) => s.name.toLowerCase() === n.toLowerCase())
 
   const add = (l: LibSpell) => {
@@ -263,10 +267,12 @@ function Library() {
           <option value="">Any school</option>{LIB_SCHOOLS.map((x) => <option key={x}>{x}</option>)}
         </select>
         <select value={edition} onChange={(e) => setEdition(e.target.value)}>
-          <option value="modern">2024 + UA</option><option value="2024">2024 SRD only</option><option value="UA">UA / imported only</option>
+          <option value="modern">2024 + UA + mine</option><option value="Custom">My spells only</option><option value="2024">2024 SRD only</option><option value="UA">UA / imported only</option>
           <option value="2014">2014 SRD only</option><option value="all">Everything</option>
         </select>
         <span className="muted small">{results.length} spells</span>
+        <span className="grow" />
+        <button className="btn sm primary" onClick={() => setEditing(blankCustom())}>＋ Add spell to library</button>
       </div>
       <div className="muted small" style={{ marginBottom: 8 }}>
         The free SRD set plus anything imported from your own PDFs (<code>tools/import_ua_spells.py</code>). Entries marked <i>name only</i> come from a class list
@@ -283,7 +289,7 @@ function Library() {
                 {s.stub && <span className="muted small"> · name only</span>}
               </td>
               <td>{s.l === 0 ? 'Cantrip' : s.l}</td><td>{s.s}</td><td className="small">{s.ct}</td>
-              <td className="small muted">{s.cl.join(', ')}</td><td><span className="tag alt">{s.e}</span></td>
+              <td className="small muted">{s.cl.join(', ')}</td><td><span className="tag alt">{s.e === 'Custom' ? 'mine' : s.e}</span></td>
               <td onClick={(e) => e.stopPropagation()}>
                 {have(s.n) ? <span className="muted small">added ✓</span> : <button className="btn sm" onClick={() => add(s)}>Add</button>}
               </td>
@@ -297,13 +303,61 @@ function Library() {
         <SpellPreview spell={fromLib(sel)} subtitle={`${sel.src ?? `${sel.e} SRD`} · ${sel.cl.join(', ')}`} onClose={() => setSel(null)}
           footer={<>
             {sel.stub && <span className="muted small grow">This entry is from the class list only. Add it, then paste the description or Fetch it.</span>}
+            {sel.e === 'Custom' && sel.id && (
+              <>
+                <button className="btn" onClick={() => { const x = customSpells.find((y) => y.id === sel.id); if (x) { setEditing(x); setSel(null) } }}>Edit</button>
+                <button className="btn danger" onClick={() => { if (window.confirm(`Remove ${sel.n} from your library? Characters that already have it keep their copy.`)) { deleteCustomSpell(sel.id!); setSel(null) } }}>Delete from library</button>
+                <span className="grow" />
+              </>
+            )}
             {have(sel.n)
               ? <span className="muted">Already in your spell list.</span>
               : <button className="btn primary" onClick={() => { const sp = add(sel); setSel(null); set({ drawer: { kind: 'spell', id: sp.id } }) }}>Add to my spells</button>}
           </>} />
       )}
+      {editing && <CustomSpellForm initial={editing} onClose={() => setEditing(null)} onSaved={(n) => toast.show(`${n} saved to your library`)} />}
       <Toast msg={toast.msg} />
     </Frame>
+  )
+}
+
+const blankCustom = (): CustomSpell => ({ id: uid(), n: '', l: 1, s: '', ct: '1 action', r: '', c: '', d: '', co: false, ri: false, m: false, cl: [], t: '' })
+
+/** Add or edit one of your own spells in the shared library. */
+function CustomSpellForm({ initial, onClose, onSaved }: { initial: CustomSpell; onClose: () => void; onSaved: (name: string) => void }) {
+  const save = useStore((s) => s.saveCustomSpell)
+  const [f, setF] = useState<CustomSpell>(initial)
+  const upd = (p: Partial<CustomSpell>) => setF((x) => ({ ...x, ...p }))
+  const text = (k: 'n' | 's' | 'ct' | 'r' | 'c' | 'd', ph: string) => (
+    <input className="box-input" placeholder={ph} value={f[k]} onChange={(e) => upd({ [k]: e.target.value } as Partial<CustomSpell>)} />
+  )
+  return (
+    <Modal title={initial.n ? `Edit ${initial.n}` : 'Add a spell to your library'} onClose={onClose}>
+      <div className="col" style={{ gap: 8, maxWidth: 640 }}>
+        <div className="row">
+          <input className="box-input grow" autoFocus placeholder="Spell name" value={f.n} onChange={(e) => upd({ n: e.target.value })} />
+          <select value={f.l} onChange={(e) => upd({ l: +e.target.value })}>
+            {SPELL_LEVEL_NAMES.map((_, i) => <option key={i} value={i}>{i === 0 ? 'Cantrip' : `Level ${i}`}</option>)}
+          </select>
+        </div>
+        <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {text('s', 'School')}{text('ct', 'Casting time')}{text('r', 'Range')}{text('d', 'Duration')}
+        </div>
+        {text('c', 'Components')}
+        <input className="box-input" placeholder="Classes, comma separated (Psion, Wizard…)" value={f.cl.join(', ')} onChange={(e) => upd({ cl: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })} />
+        <div className="row" style={{ gap: 16 }}>
+          <label className="row small"><Switch on={f.co} onChange={(b) => upd({ co: b })} /> Concentration</label>
+          <label className="row small"><Switch on={f.ri} onChange={(b) => upd({ ri: b })} /> Ritual</label>
+          <label className="row small"><Switch on={f.m} onChange={(b) => upd({ m: b })} /> Material consumed</label>
+        </div>
+        <RichArea className="box-input" minRows={8} placeholder="Description" value={f.t} onChange={(v) => upd({ t: v })} />
+        <div className="row">
+          <span className="grow" />
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn primary" disabled={!f.n.trim()} onClick={() => { save({ ...f, n: f.n.trim() }); onSaved(f.n.trim()); onClose() }}>Save to library</button>
+        </div>
+      </div>
+    </Modal>
   )
 }
 

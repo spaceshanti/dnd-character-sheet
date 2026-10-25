@@ -3,7 +3,8 @@ import { ABILITIES, RECHARGES, targetName } from '../constants'
 import { attackInfo, itemAttacks, itemIsActive, signed } from '../calc'
 import { newAttack, newResource } from '../blank'
 import { useChar, useStore, useUI } from '../store'
-import { Frame, Num, Pips, Select, Switch } from '../components/ui'
+import { Frame, Num, Pips, Select, Switch, Toast, useToast } from '../components/ui'
+import { ammoText, useItem } from '../consume'
 import { RichArea } from '../components/RichText'
 import { Icon, itemIcon } from '../components/Icon'
 import { WeaponTags } from '../components/WeaponTags'
@@ -75,6 +76,7 @@ function AttacksPanel() {
   const patch = useStore((s) => s.patch)
   const [open, setOpen] = useState('')
   const set = useUI((s) => s.set)
+  const toast = useToast()
   const fromItems = itemAttacks(c)
   const up = (id: string, fn: (a: Attack) => void) => patch((d) => { const x = d.attacks.find((y) => y.id === id); if (x) fn(x) })
   return (
@@ -93,7 +95,11 @@ function AttacksPanel() {
                   </td>
                   <td style={{ fontWeight: 700, fontSize: 16 }}>{signed(info.bonus)}{info.adv.length > 0 && info.dis.length === 0 && <span className="adv a" style={{ marginLeft: 3, fontSize: 10, color: 'var(--adv)' }}>ADV</span>}</td>
                   <td>{info.damage} <span className="muted">{a.damageType}</span>{a.range && <span className="muted small"> · {a.range}</span>}</td>
-                  <td><Icon name="pack" className="list-ico" /></td>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    {a.weapon.ammoId
+                      ? <button className="btn sm primary" title={ammoText(c, a.weapon.ammoId, a.weapon.ammoCost)} onClick={() => toast.show(useItem(c, a.weapon.ammoId, a.weapon.ammoCost, a.name))}>Use</button>
+                      : <Icon name="pack" className="list-ico" />}
+                  </td>
                 </tr>
               )
             })}
@@ -131,6 +137,7 @@ function AttacksPanel() {
           </tbody>
         </table>
       )}
+      <Toast msg={toast.msg} />
     </Frame>
   )
 }

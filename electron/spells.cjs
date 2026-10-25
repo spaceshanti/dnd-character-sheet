@@ -82,4 +82,41 @@ async function fetchSpell(target) {
   }
 }
 
-module.exports = { fetchSpell }
+// Magic items all live at wondrous-items:<name> on dnd5e.wikidot.com
+async function fetchItem(target) {
+  try {
+    let url = String(target || '').trim()
+    if (!url) return { error: 'Enter an item name or paste a wikidot link.' }
+    if (!/^https?:\/\//i.test(url)) url = `https://dnd5e.wikidot.com/wondrous-items:${slugify(url.replace(/(?:^|\s)\+[1-3](?=\s|$)/, ' '))}`
+    const u = new URL(url)
+    if (!/(^|\.)wikidot\.com$/.test(u.hostname)) return { error: 'Only wikidot.com links can be fetched.' }
+    const res = await fetch(u.toString(), { headers: { 'User-Agent': 'Mozilla/5.0 CharacterSheet' } })
+    if (!res.ok) return { error: `Page returned ${res.status}. Check the item name or paste the link.`, url }
+    const html = await res.text()
+    const start = html.indexOf('id="page-content"')
+    if (start < 0) return { error: 'Could not find item text on that page.', url }
+    let body = html.slice(html.indexOf('>', start) + 1)
+    const end = body.search(/<div class="page-tags"|<div id="wad-|<!-- floating video/)
+    if (end > 0) body = body.slice(0, end)
+    body = body.replace(/<div class="content-separator"[^>]*><\/div>/g, '').replace(/<script[\s\S]*?<\/script>/g, '')
+    const title = (html.match(/<div class="page-title[^>]*>\s*<span>([^<]+)<\/span>/) || [])[1]
+    const text = htmlToText(body)
+    const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
+    const sourceIdx = lines.findIndex((l) => /^Source:/i.test(l))
+    const typeLine = lines[sourceIdx + 1] || ''
+    const rarity = (typeLine.match(/\b(common|uncommon|rare|very rare|legendary|artifact)\b/i) || [])[1]
+    const description = lines.slice(sourceIdx + 2).join('\n\n')
+    return {
+      url,
+      name: title ? decode(title) : '',
+      type: typeLine,
+      rarity: rarity ? rarity.toLowerCase() : '',
+      attunement: /requires attunement/i.test(typeLine),
+      description: typeLine ? `${typeLine}\n\n${description}` : description,
+    }
+  } catch (err) {
+    return { error: `Could not reach the item page (${err.message}). Are you online?` }
+  }
+}
+
+module.exports = { fetchSpell, fetchItem }

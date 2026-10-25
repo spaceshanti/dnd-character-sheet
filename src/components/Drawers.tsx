@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { ACTION_TYPES } from '../constants'
-import { isConsumed, newFeature } from '../blank'
+import { isConsumed, newFeature, uid } from '../blank'
+import { ammoOptions, ammoText, useItem } from '../consume'
+import { toCustom } from '../spellLib'
 import { findLib, applyLib } from '../spellLib'
 import { useChar, useStore, useUI } from '../store'
-import { Drawer, EffectsEditor, Select, Switch, useToast, Toast } from './ui'
+import { Drawer, EffectsEditor, Num, Select, Switch, useToast, Toast } from './ui'
 import { RichArea, RichText } from './RichText'
 import { FeatureChangesEditor, FeatureUsage, FeatureUsageEditor } from './FeatureParts'
 import { targetName } from '../constants'
@@ -34,6 +36,8 @@ function EffectSummary({ effects }: { effects: Effect[] }) {
 export function SpellDrawer({ id }: { id: string }) {
   const c = useChar()
   const patch = useStore((s) => s.patch)
+  const customSpells = useStore((s) => s.customSpells)
+  const saveCustomSpell = useStore((s) => s.saveCustomSpell)
   const set = useUI((s) => s.set)
   const sp = c.spells.find((s) => s.id === id)
   const [editing, setEditing] = useState(() => !sp?.name)
@@ -73,12 +77,17 @@ export function SpellDrawer({ id }: { id: string }) {
   }
 
   const cast = () => {
-    if (sp.level === 0) { toast.show(`${sp.name} cast (cantrip)`); return }
-    const slot = c.slots[castLevel]
-    if (!slot || slot.total - slot.used <= 0) { toast.show(`No level ${castLevel} slots left`); return }
-    patch((d) => { d.slots[castLevel].used += 1 })
-    toast.show(`Cast ${sp.name} using a level ${castLevel} slot`)
+    const ammo = sp.ammoId ? c.items.find((i) => i.id === sp.ammoId) : undefined
+    if (sp.ammoId && (!ammo || ammo.qty < sp.ammoCost)) { toast.show(ammo ? `Out of ${ammo.name}!` : 'Its linked item is gone. Pick another in Edit.'); return }
+    if (sp.level > 0) {
+      const slot = c.slots[castLevel]
+      if (!slot || slot.total - slot.used <= 0) { toast.show(`No level ${castLevel} slots left`); return }
+      patch((d) => { d.slots[castLevel].used += 1 })
+    }
+    const used = sp.ammoId ? useItem(c, sp.ammoId, sp.ammoCost, sp.name) : ''
+    toast.show(used || (sp.level > 0 ? `Cast ${sp.name} using a level ${castLevel} slot` : `${sp.name} cast`))
   }
+  const libEntry = customSpells.find((x) => x.n.toLowerCase() === sp.name.toLowerCase())
 
   const levelOptions = Array.from({ length: 10 }, (_, i) => ({ id: String(i), name: i === 0 ? 'Cantrip' : `Level ${i}` }))
 
@@ -108,6 +117,7 @@ export function SpellDrawer({ id }: { id: string }) {
             {sp.range && <><b>Range</b><span>{sp.range}</span></>}
             {sp.components && <><b>Components</b><span>{sp.components}</span></>}
             {sp.duration && <><b>Duration</b><span>{sp.duration}</span></>}
+            {sp.ammoId && <><b>Uses up</b><span>{ammoText(c, sp.ammoId, sp.ammoCost) || 'a missing item'} per cast</span></>}
           </div>
           {sp.description ? <RichText className="prose" value={sp.description} /> : (
             <div className="empty">
@@ -127,7 +137,7 @@ export function SpellDrawer({ id }: { id: string }) {
             </div>
           )}
           <div className="row" style={{ flexWrap: 'wrap', borderTop: '1px solid var(--line)', paddingTop: 12 }}>
-            {sp.level > 0 && (
+            {(sp.level > 0 || sp.ammoId) && (
               <>
                 <button className="btn primary" onClick={cast}>Cast</button>
                 <span className="small">at level</span>
@@ -142,6 +152,12 @@ export function SpellDrawer({ id }: { id: string }) {
               <button className="btn" onClick={() => up((x) => { x.prepared = !x.prepared })}>{sp.prepared ? 'Unprepare' : 'Prepare'}</button>
             )}
             {sp.url && <button className="btn" onClick={() => window.sheetApi ? window.sheetApi.openExternal(sp.url) : window.open(sp.url, '_blank')}>Open page ↗</button>}
+            {sp.name && (
+              <button className="btn" title="Keep this spell in the shared spell library for all your characters"
+                onClick={() => { saveCustomSpell(toCustom(sp, libEntry?.id ?? uid())); toast.show(libEntry ? 'Updated in your spell library' : 'Saved to your spell library') }}>
+                {libEntry ? 'Update in library' : 'Save to library'}
+              </button>
+            )}
             <span className="grow" />
             <button className="btn danger" onClick={() => { if (window.confirm(`Remove ${sp.name || 'this spell'}?`)) { close(); patch((d) => { d.spells = d.spells.filter((y) => y.id !== id) }) } }}>Delete</button>
           </div>
@@ -188,6 +204,11 @@ export function SpellDrawer({ id }: { id: string }) {
             <label className="row small"><Switch on={sp.concentration} onChange={(b) => up((x) => { x.concentration = b })} /> Concentration</label>
             <label className="row small"><Switch on={sp.ritual} onChange={(b) => up((x) => { x.ritual = b })} /> Ritual</label>
             <label className="row small"><Switch on={sp.materialConsumed} onChange={(b) => up((x) => { x.materialConsumed = b })} /> Material consumed</label>
+          </div>
+          <div className="row" style={{ flexWrap: 'wrap' }}>
+            <span className="field-lbl">Uses up an item</span>
+            <Select value={sp.ammoId} onChange={(v) => up((x) => { x.ammoId = v })} options={ammoOptions(c)} />
+            {sp.ammoId && <><span className="small">×</span><Num min={1} max={20} className="box-input" width={36} value={sp.ammoCost} onChange={(n) => up((x) => { x.ammoCost = n })} /><span className="small">per cast</span></>}
             <label className="row small"><Switch on={sp.prepared} onChange={(b) => up((x) => { x.prepared = b })} /> Prepared</label>
             <label className="row small"><Switch on={sp.alwaysPrepared} onChange={(b) => up((x) => { x.alwaysPrepared = b })} /> Always prepared</label>
           </div>

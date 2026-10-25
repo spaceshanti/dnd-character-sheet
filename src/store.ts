@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { produce } from 'immer'
-import type { AppData, Character } from './types'
+import type { AppData, Character, CustomSpell } from './types'
 import { blankCharacter, normalize, uid } from './blank'
 import { SKINS, type SkinId } from './skins'
 
@@ -10,10 +10,21 @@ declare global {
       load: () => Promise<string | null>
       save: (json: string) => Promise<boolean>
       fetchSpell: (target: string) => Promise<SpellLookup>
+      fetchItem: (target: string) => Promise<ItemLookup>
       openExternal: (url: string) => Promise<void>
       dataPath: () => Promise<string>
     }
   }
+}
+
+export interface ItemLookup {
+  error?: string
+  url?: string
+  name?: string
+  type?: string
+  rarity?: string
+  attunement?: boolean
+  description?: string
 }
 
 export interface SpellLookup {
@@ -43,8 +54,11 @@ async function writeStore(json: string) {
   else try { localStorage.setItem(LS_KEY, json) } catch { /* quota */ }
 }
 
-interface State extends Omit<AppData, 'skin'> {
+interface State extends Omit<AppData, 'skin' | 'customSpells'> {
   skin: SkinId
+  customSpells: CustomSpell[]
+  saveCustomSpell: (s: CustomSpell) => void
+  deleteCustomSpell: (id: string) => void
   loaded: boolean
   saveError: string
   load: () => Promise<void>
@@ -60,7 +74,7 @@ interface State extends Omit<AppData, 'skin'> {
 }
 
 export const useStore = create<State>((set, get) => ({
-  version: 1, chars: {}, order: [], activeId: '', theme: 'light', skin: 'standard', loaded: false, saveError: '',
+  version: 1, chars: {}, order: [], activeId: '', theme: 'light', skin: 'standard', customSpells: [], loaded: false, saveError: '',
 
   async load() {
     let data: Partial<AppData> | null = null
@@ -77,7 +91,7 @@ export const useStore = create<State>((set, get) => ({
     // no character, or the last one opened is gone → the character list is shown instead
     const activeId = data?.activeId && chars[data.activeId] ? data.activeId : ''
     const skin = (SKINS.find((k) => k.id === data?.skin)?.id ?? 'standard') as SkinId
-    set({ chars, order, activeId, theme: data?.theme === 'dark' ? 'dark' : 'light', skin, loaded: true })
+    set({ chars, order, activeId, theme: data?.theme === 'dark' ? 'dark' : 'light', skin, customSpells: data?.customSpells ?? [], loaded: true })
   },
 
   patch(fn) {
@@ -132,6 +146,8 @@ export const useStore = create<State>((set, get) => ({
 
   setTheme: (theme) => set({ theme }),
   setSkin: (skin) => set({ skin }),
+  saveCustomSpell: (sp) => set((s) => ({ customSpells: s.customSpells.some((x) => x.id === sp.id) ? s.customSpells.map((x) => (x.id === sp.id ? sp : x)) : [...s.customSpells, sp] })),
+  deleteCustomSpell: (id) => set((s) => ({ customSpells: s.customSpells.filter((x) => x.id !== id) })),
 }))
 
 /* debounce-save everything whenever it changes (after the first load) */
@@ -139,12 +155,12 @@ let timer: ReturnType<typeof setTimeout> | undefined
 useStore.subscribe((s, prev) => {
   // nothing to save for the load itself, only for changes after it (keeps the .bak a real previous version)
   if (!s.loaded || !prev.loaded) return
-  if (s.chars === prev.chars && s.order === prev.order && s.activeId === prev.activeId && s.theme === prev.theme && s.skin === prev.skin) return
+  if (s.chars === prev.chars && s.order === prev.order && s.activeId === prev.activeId && s.theme === prev.theme && s.skin === prev.skin && s.customSpells === prev.customSpells) return
   clearTimeout(timer)
   timer = setTimeout(async () => {
-    const { chars, order, activeId, theme, skin } = useStore.getState()
+    const { chars, order, activeId, theme, skin, customSpells } = useStore.getState()
     try {
-      await writeStore(JSON.stringify({ version: 1, chars, order, activeId, theme, skin } satisfies AppData))
+      await writeStore(JSON.stringify({ version: 1, chars, order, activeId, theme, skin, customSpells } satisfies AppData))
       useStore.setState({ saveError: '' })
     } catch (e) {
       useStore.setState({ saveError: String(e) })

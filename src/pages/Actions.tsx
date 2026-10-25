@@ -3,7 +3,8 @@ import { WeaponTags } from '../components/WeaponTags'
 import { attackInfo, itemAttacks, signed, spellActionType } from '../calc'
 import { useChar, useUI } from '../store'
 import { Frame, Toast, useToast } from '../components/ui'
-import { costText, spendAction } from '../components/FeatureParts'
+import { costText, modsFor, spendAction } from '../components/FeatureParts'
+import { ammoText, useItem } from '../consume'
 import type { ActionType } from '../types'
 
 interface Row { key: string; kind: string; name: string; right: string; onClick: () => void; onUse?: () => void; tags?: ReactNode }
@@ -38,9 +39,12 @@ export function ActionsPage() {
 
   for (const a of itemAttacks(c)) {
     const i = attackInfo(c, a)
+    const w = a.weapon
     rows.action.push({
-      key: a.id, kind: 'Weapon', name: a.name, right: `${signed(i.bonus)} · ${i.damage} ${a.damageType}`,
+      key: a.id, kind: 'Weapon', name: a.name,
+      right: `${signed(i.bonus)} · ${i.damage} ${a.damageType}${w.ammoId ? ` · ${ammoText(c, w.ammoId, w.ammoCost)}` : ''}`,
       onClick: () => set({ inventoryOpen: true, inventorySelected: a.itemId }),
+      onUse: w.ammoId ? () => toast.show(useItem(c, w.ammoId, w.ammoCost, a.name)) : undefined,
       tags: <WeaponTags properties={a.weapon.properties} mastery={a.weapon.mastery} masteryFrom={a.masteryFrom} />,
     })
   }
@@ -52,7 +56,9 @@ export function ActionsPage() {
     if (s.level > 0 && !s.prepared && !s.alwaysPrepared) continue
     put(spellActionType(s.castingTime), {
       key: s.id, kind: s.level === 0 ? 'Cantrip' : `Spell ${s.level}`, name: s.name,
-      right: [s.range, s.concentration ? 'Conc.' : ''].filter(Boolean).join(' · '), onClick: () => set({ drawer: { kind: 'spell', id: s.id } }),
+      right: [s.range, s.concentration ? 'Conc.' : '', s.ammoId ? ammoText(c, s.ammoId, s.ammoCost) : ''].filter(Boolean).join(' · '),
+      onClick: () => set({ drawer: { kind: 'spell', id: s.id } }),
+      onUse: s.ammoId ? () => toast.show(useItem(c, s.ammoId, s.ammoCost, s.name)) : undefined,
     })
   }
   for (const f of c.features) {
@@ -63,6 +69,7 @@ export function ActionsPage() {
       put(a.actionType, {
         key: a.id, kind: 'Feature', name: `${f.name || 'Feature'} › ${a.name || 'action'}`, right: costText(c, a), onClick: open,
         onUse: () => toast.show(spendAction(c, a) || `${a.name || 'Action'} used`),
+        tags: modsFor(c, a.id).length ? <>{modsFor(c, a.id).map((m, i) => <span key={i} className="act-mod"><b>+ {m.from}:</b> {m.text}</span>)}</> : undefined,
       })
     }
   }

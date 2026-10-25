@@ -16,17 +16,17 @@ export function newSpell(level = 1, name = ''): Spell {
   return {
     id: uid(), name, level, prepared: false, alwaysPrepared: false, school: '', castingTime: '1 action',
     range: '', components: '', duration: '', concentration: false, ritual: false, materialConsumed: false, description: '', url: '',
-    notes: '', effects: [], active: false, grantedBy: '',
+    notes: '', effects: [], active: false, grantedBy: '', ammoId: '', ammoCost: 1,
   }
 }
 export function newFeature(category: Feature['category'] = 'class'): Feature {
-  return { id: uid(), name: '', category, source: '', description: '', actionType: 'none', effects: [], active: true, actions: [], masteries: [], restEffects: [], collapsed: false }
+  return { id: uid(), name: '', category, source: '', description: '', actionType: 'none', effects: [], active: true, actions: [], masteries: [], restEffects: [], collapsed: false, actionMods: [] }
 }
 export function newItem(): Item {
   return {
     id: uid(), name: '', icon: 'box', category: 'Misc', qty: 1, weight: 0, value: '', rarity: 'common',
     description: '', slot: '', attunement: false, attuned: false, actionType: 'none', effects: [],
-    weapon: null, armor: null,
+    weapon: null, armor: null, url: '',
   }
 }
 export function newAttack(): Attack {
@@ -99,13 +99,14 @@ export function normalize(raw: Partial<Character>): Character {
     c.story.trait3 = ''
   }
   c.spells = c.spells.map((s) => ({ ...s, materialConsumed: s.materialConsumed ?? isConsumed(s.components) }))
-  c.features = c.features.map((f) => ({ ...f, actions: f.actions ?? [], masteries: f.masteries ?? [], restEffects: f.restEffects ?? [], collapsed: f.collapsed ?? false }))
-  c.spells = c.spells.map((s) => ({ ...s, grantedBy: s.grantedBy ?? '' }))
+  c.features = c.features.map((f) => ({ ...f, actions: f.actions ?? [], masteries: f.masteries ?? [], restEffects: f.restEffects ?? [], collapsed: f.collapsed ?? false, actionMods: f.actionMods ?? [] }))
+  c.spells = c.spells.map((s) => ({ ...s, grantedBy: s.grantedBy ?? '', ammoId: s.ammoId ?? '', ammoCost: s.ammoCost ?? 1 }))
   c.resources = c.resources.map((r) => ({ ...r, die: r.die ?? '', featureId: r.featureId ?? '' }))
   c.items = c.items.map((i) => ({
     ...i,
     icon: EMOJI_TO_ICON[i.icon] ?? i.icon,
-    weapon: i.weapon ? { ...i.weapon, kind: i.weapon.kind ?? (lookupWeapon(i.name)?.kind ?? ''), mastery: i.weapon.mastery ?? (lookupWeapon(i.name)?.mastery ?? '') } : null,
+    weapon: i.weapon ? { ...i.weapon, kind: i.weapon.kind ?? (lookupWeapon(i.name)?.kind ?? ''), mastery: i.weapon.mastery ?? (lookupWeapon(i.name)?.mastery ?? ''), ammoId: i.weapon.ammoId ?? '', ammoCost: i.weapon.ammoCost ?? 1 } : null,
+    url: i.url ?? '',
     armor: i.armor ?? null,
   }))
   // the Appearance box used to show the top-left portrait; start it off with the same picture

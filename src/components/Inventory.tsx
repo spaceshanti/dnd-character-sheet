@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { ABILITIES, ACTION_TYPES, ITEM_CATEGORIES, RARITIES, SLOT_IDS } from '../constants'
 import { attackInfo, carryCapacity, itemAttacks, masterySource, signed, totalWeight } from '../calc'
 import { newItem } from '../blank'
+import { bestItem } from '../itemLib'
+import { ammoOptions, ammoText } from '../consume'
 import { MASTERIES, MASTERY_INFO, WEAPON_NAMES, lookupArmor, lookupWeapon } from '../data/gear'
 import { PropertyEditor, WeaponTags } from './WeaponTags'
 import { useChar, useStore, useUI } from '../store'
@@ -40,7 +42,14 @@ function itemFromText(text: string): Item {
   const armor = weapon ? null : lookupArmor(name)
   if (weapon) weapon.magicBonus = plus
   if (armor) armor.bonus = plus
-  return { ...newItem(), name, qty, weapon, armor, category: weapon ? 'Weapon' : armor ? 'Armor' : 'Misc', rarity: plus ? (plus === 1 ? 'uncommon' : plus === 2 ? 'rare' : 'very rare') : 'common' }
+  const lib = bestItem(name)
+  return {
+    ...newItem(), name, qty, weapon, armor,
+    category: weapon ? 'Weapon' : armor ? 'Armor' : lib?.k ?? 'Misc',
+    description: lib?.d ?? '', weight: lib?.w ?? 0, value: lib?.c ?? '',
+    rarity: plus ? (plus === 1 ? 'uncommon' : plus === 2 ? 'rare' : 'very rare') : lib?.r ?? 'common',
+    attunement: lib?.a ?? false,
+  }
 }
 
 function InventoryInner({ onClose }: { onClose: () => void }) {
@@ -207,7 +216,7 @@ function Section({ title, open, children, right }: { title: string; open: boolea
   )
 }
 
-const DEFAULT_WEAPON: WeaponStats = { damage: '1d6', damageType: '', ability: 'str', proficient: true, magicBonus: 0, range: '', properties: '', kind: '', mastery: '' }
+const DEFAULT_WEAPON: WeaponStats = { damage: '1d6', damageType: '', ability: 'str', proficient: true, magicBonus: 0, range: '', properties: '', kind: '', mastery: '', ammoId: '', ammoCost: 1 }
 const DEFAULT_ARMOR: ArmorStats = { kind: 'light', ac: 11, bonus: 0 }
 
 /** One editor for every item; the extra sections are folded away until you need them. */
@@ -279,6 +288,12 @@ function ItemEditor({ item }: { item: Item }) {
             <div className="field-lbl">Properties</div>
             <PropertyEditor value={item.weapon.properties} onChange={(v) => upW((w) => { w.properties = v })} />
             <div className="row" style={{ flexWrap: 'wrap' }}>
+              <span className="field-lbl">Uses up</span>
+              <Select value={item.weapon.ammoId} onChange={(v) => upW((w) => { w.ammoId = v })} options={ammoOptions(c, item.id)} />
+              {item.weapon.ammoId && <><span className="small">×</span><Num min={1} max={20} className="box-input" width={36} value={item.weapon.ammoCost} onChange={(n) => upW((w) => { w.ammoCost = n })} /><span className="small">per attack</span></>}
+            </div>
+            {item.weapon.ammoId && <div className="small muted">{ammoText(c, item.weapon.ammoId, item.weapon.ammoCost)}: the Use button in Weapons & Attacks counts it down.</div>}
+            <div className="row" style={{ flexWrap: 'wrap' }}>
               <span className="field-lbl">Kind</span>
               <Select value={item.weapon.kind} onChange={(v) => upW((w) => { const std = lookupWeapon(v); w.kind = v; if (std) w.mastery = std.mastery })}
                 options={[{ id: '', name: 'Custom / other' }, ...WEAPON_NAMES.map((n) => ({ id: n, name: n }))]} />
@@ -330,7 +345,8 @@ function ItemEditor({ item }: { item: Item }) {
         <EffectsEditor effects={item.effects} onChange={(e) => up((x) => { x.effects = e })} />
       </Section>
 
-      <Section title="Notes" open={!!item.description || !!item.value}>
+      <Section title="Description" open={!!item.description || !!item.value}>
+        <ItemTextSource item={item} />
         <div className="row">
           <span className="field-lbl">Value</span>
           <input className="box-input grow" placeholder="e.g. 50 gp" value={item.value} onChange={(e) => up((x) => { x.value = e.target.value })} />
@@ -343,6 +359,49 @@ function ItemEditor({ item }: { item: Item }) {
         set({ inventorySelected: '' })
         patch((d) => { d.items = d.items.filter((y) => y.id !== item.id) })
       }}>Delete item</button>
+    </div>
+  )
+}
+
+/** Fill an item's description from the bundled SRD library, or fetch it from wikidot by name / link. */
+function ItemTextSource({ item }: { item: Item }) {
+  const patch = useStore((s) => s.patch)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  const up = (fn: (i: Item) => void) => patch((d) => { const x = d.items.find((y) => y.id === item.id); if (x) fn(x) })
+  const lib = bestItem(item.name)
+  const replaceOk = () => !item.description.trim() || window.confirm('Replace the current description?')
+  const fetchIt = async () => {
+    setMsg('')
+    if (!window.sheetApi?.fetchItem) { setMsg('Fetching only works in the desktop app.'); return }
+    setBusy(true)
+    const r = await window.sheetApi.fetchItem(item.url || item.name)
+    setBusy(false)
+    if (r.error) { setMsg(r.error); return }
+    if (!replaceOk()) return
+    up((x) => {
+      x.description = r.description || x.description
+      if (r.url) x.url = r.url
+      if (r.rarity) x.rarity = r.rarity as Item['rarity']
+      if (r.attunement) x.attunement = true
+    })
+    setMsg('Fetched ✓')
+  }
+  return (
+    <div className="col" style={{ gap: 4 }}>
+      <div className="row" style={{ gap: 4 }}>
+        <input className="box-input grow" placeholder="wikidot link (optional) — or leave empty to look up by name" value={item.url} onChange={(e) => up((x) => { x.url = e.target.value })} />
+        <button className="btn sm" disabled={busy} onClick={fetchIt}>{busy ? 'Fetching…' : 'Fetch'}</button>
+      </div>
+      {lib && lib.d && (
+        <div className="row small" style={{ gap: 4 }}>
+          <span className="muted">Built-in library:</span>
+          <button className="btn sm" onClick={() => { if (replaceOk()) up((x) => { x.description = lib.d; if (!x.weight && lib.w) x.weight = lib.w; if (!x.value && lib.c) x.value = lib.c; if (lib.m) { x.rarity = lib.r; x.attunement = lib.a } }) }}>
+            Use {lib.n} ({lib.e} SRD)
+          </button>
+        </div>
+      )}
+      {msg && <div className="small" style={{ color: msg.endsWith('✓') ? 'var(--good)' : 'var(--dis)' }}>{msg}</div>}
     </div>
   )
 }

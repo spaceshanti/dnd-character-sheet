@@ -44,6 +44,6 @@ Spells on the list that aren't in the SRD and aren't written out in the PDF appe
 
 ## Credits
 
-Spell library data includes content from the System Reference Document 5.1 and 5.2 by Wizards of the Coast LLC,
+Spell and item library data includes content from the System Reference Document 5.1 and 5.2 by Wizards of the Coast LLC,
 licensed under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/), via [5e-bits/5e-database](https://github.com/5e-bits/5e-database).
 This is unofficial fan software, not affiliated with Wizards of the Coast.
