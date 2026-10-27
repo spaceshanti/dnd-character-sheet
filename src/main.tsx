@@ -20,6 +20,7 @@ import './styles/skins/cyberpunk.css'
 import './styles/skins/skyrim.css'
 import './styles/skins/hollow.css'
 import './styles/skins/honkai.css'
+import './styles/skins/arknights.css'
 import App from './App'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

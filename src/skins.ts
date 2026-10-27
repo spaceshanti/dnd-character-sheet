@@ -1,5 +1,5 @@
 /** UI styles. Each one is a stylesheet in src/styles/skins/ keyed off <html data-skin="...">. */
-export type SkinId = 'standard' | 'nier' | 'cyberpunk' | 'skyrim' | 'hollow' | 'honkai'
+export type SkinId = 'standard' | 'nier' | 'cyberpunk' | 'skyrim' | 'hollow' | 'honkai' | 'arknights'
 
 /** `modes`: the style has its own light and dark versions (follows the Light / Dark switch). */
 export const SKINS: { id: SkinId; name: string; desc: string; swatch: string[]; modes?: boolean }[] = [
@@ -33,6 +33,12 @@ export const SKINS: { id: SkinId; name: string; desc: string; swatch: string[]; 
     id: 'honkai', name: 'Valkyrie',
     desc: 'Inspired by Honkai Impact 3rd. Cyan-to-blue gradients with pink, slanted labels and tabs. Light and dark.',
     swatch: ['#172f58', '#22b8f2', '#ff6aa8'],
+    modes: true,
+  },
+  {
+    id: 'arknights', name: 'Rhodes Island',
+    desc: 'Inspired by Arknights. Graphite terminal panels, hazard-yellow and cyan accents, mono readouts, clipped corners. Light and dark.',
+    swatch: ['#1b1d21', '#f2f2f0', '#ffd23f', '#23b3e6'],
     modes: true,
   },
 ]
