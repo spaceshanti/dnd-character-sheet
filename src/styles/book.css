@@ -1,7 +1,20 @@
 /* ============ AK5e sourcebook reader ============
    Full-window reader using the active UI style's colours. */
 
-.book { position: fixed; inset: 0; z-index: 95; display: flex; flex-direction: column; background: var(--paper); color: var(--ink); }
+/* full screen, or a pane on the right that the sheet makes room for */
+.book-frame { position: fixed; inset: 0; z-index: 95; }
+.book-frame.side { left: auto; width: var(--book-w, 620px); z-index: 80; border-left: 2px solid var(--ink); box-shadow: -6px 0 24px var(--shadow); }
+html[data-book='side'] .app { margin-right: var(--book-w, 620px); }
+.bk-resize { position: absolute; left: -5px; top: 0; bottom: 0; width: 9px; cursor: ew-resize; z-index: 2; }
+.bk-resize:hover, body.bk-dragging .bk-resize { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+body.bk-dragging { cursor: ew-resize; user-select: none; }
+body.bk-dragging iframe, body.bk-dragging img { pointer-events: none; }
+.book-frame.side .bk-title { display: none; }
+.book-frame.side .bk-search input { width: 170px; }
+.book-frame.side .bk-head { gap: 5px; padding: 6px 8px; }
+.book-frame.side .bk-nav { width: 210px; }
+.book-frame.side .bk-text { padding: 14px 18px 40px; }
+.book { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--paper); color: var(--ink); }
 .bk-head {
   display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: var(--panel); border-bottom: 2px solid var(--ink);
   flex-wrap: wrap;

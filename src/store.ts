@@ -207,7 +207,9 @@ interface UIState {
   /** AK5e: the full-screen operator view */
   operatorOpen: boolean
   /** AK5e: the sourcebook reader */
-  bookOpen: boolean
+  book: '' | 'side' | 'full'
+  /** bumped to put the cursor in the sourcebook's search box */
+  bookSearch: number
   themeOpen: boolean
   drawer: Drawer
   /** which image the gallery picker is choosing, if open */
@@ -222,7 +224,7 @@ function readOpen() {
 }
 
 export const useUI = create<UIState>((set) => ({
-  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', charListOpen: false, operatorOpen: false, bookOpen: false, themeOpen: false, drawer: null, imagePick: null,
+  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', charListOpen: false, operatorOpen: false, book: '', bookSearch: 0, themeOpen: false, drawer: null, imagePick: null,
   go: (page) => set({ page }),
   toggleDock: () => set((s) => {
     try { localStorage.setItem('dock-open', s.dockOpen ? '0' : '1') } catch { /* private mode */ }

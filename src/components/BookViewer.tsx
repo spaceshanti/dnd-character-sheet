@@ -11,34 +11,84 @@ import { findPageBook, PageReader, type PageBook } from './PageReader'
  * Ctrl + F focuses search, Enter / Shift + Enter step through hits, Esc closes.
  */
 
+export type BookLayout = 'side' | 'full'
+
+/** Things every reader view gets: how it's shown, how to close it, and the "focus your search box" signal. */
+export interface ReaderProps { layout: BookLayout; onClose: () => void; extra: ReactNode; searchTick: number }
+
+/** In side mode, keys only count when you're in the pane (so Esc etc. still work on the sheet). */
+export const keyInScope = (layout: BookLayout, e: KeyboardEvent) =>
+  layout === 'full' || !!(e.target as HTMLElement | null)?.closest?.('.book-frame')
+
+const WIDTH_KEY = 'book-side-w'
+
 export function BookViewer() {
-  const open = useUI((s) => s.bookOpen)
+  const layout = useUI((s) => s.book)
   const set = useUI((s) => s.set)
-  if (!open) return null
-  return createPortal(<Reader onClose={() => set({ bookOpen: false })} />, document.body)
+  const [w, setW] = useState(() => { try { return +(localStorage.getItem(WIDTH_KEY) || 0) || 620 } catch { return 620 } })
+
+  // the side pane pushes the sheet over instead of covering it
+  useEffect(() => {
+    const root = document.documentElement
+    root.dataset.book = layout
+    root.style.setProperty('--book-w', `${w}px`)
+    return () => { root.dataset.book = '' }
+  }, [layout, w])
+
+  if (!layout) return null
+  const startDrag = (e: React.MouseEvent) => {
+    e.preventDefault()
+    const move = (ev: MouseEvent) => setW(Math.round(Math.min(window.innerWidth * 0.75, Math.max(360, window.innerWidth - ev.clientX))))
+    const up = () => {
+      window.removeEventListener('mousemove', move)
+      window.removeEventListener('mouseup', up)
+      document.body.classList.remove('bk-dragging')
+      setW((v) => { try { localStorage.setItem(WIDTH_KEY, String(v)) } catch { /* private mode */ } return v })
+    }
+    document.body.classList.add('bk-dragging')
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseup', up)
+  }
+  return createPortal(
+    <div className={`book-frame ${layout}`}>
+      {layout === 'side' && <div className="bk-resize" title="Drag to resize" onMouseDown={startDrag} />}
+      <Reader layout={layout} onClose={() => set({ book: '' })} />
+    </div>,
+    document.body,
+  )
 }
 
 /** The real pages when the PDF has been imported (tools/import_ak5e_pdf.py), the text otherwise; switchable. */
-function Reader({ onClose }: { onClose: () => void }) {
+function Reader({ layout, onClose }: { layout: BookLayout; onClose: () => void }) {
+  const set = useUI((s) => s.set)
+  const searchTick = useUI((s) => s.bookSearch)
   const [book, setBook] = useState<BookSection[] | null>(null)
   const [pb, setPb] = useState<PageBook | null | undefined>(undefined)
   const [mode, setModeState] = useState<'pages' | 'text'>(() => { try { return localStorage.getItem('book-mode') === 'text' ? 'text' : 'pages' } catch { return 'pages' } })
   const setMode = (m: 'pages' | 'text') => { setModeState(m); try { localStorage.setItem('book-mode', m) } catch { /* private mode */ } }
   useEffect(() => { loadBook().then(setBook); findPageBook().then(setPb) }, [])
-  if (pb === undefined || (hasBook() && !book)) return <div className="book"><div className="bk-empty muted">Opening the sourcebook…</div></div>
-  const switcher = pb && hasBook() ? (
-    <div className="seg bk-mode">
-      <button className={mode === 'pages' ? 'on' : ''} onClick={() => setMode('pages')} title="The book's real pages">Pages</button>
-      <button className={mode === 'text' ? 'on' : ''} onClick={() => setMode('text')} title="Plain text, follows your UI style">Text</button>
-    </div>
-  ) : null
-  if (pb && (mode === 'pages' || !hasBook())) return <PageReader book={book ?? []} pb={pb} onClose={onClose} extra={switcher} />
-  return <TextReader onClose={onClose} extra={switcher} />
+  if (pb === undefined || (hasBook() && !book)) return <div className={`book ${layout}`}><div className="bk-empty muted">Opening the sourcebook…</div></div>
+  const extra = (
+    <>
+      {pb && hasBook() && (
+        <div className="seg bk-mode">
+          <button className={mode === 'pages' ? 'on' : ''} onClick={() => setMode('pages')} title="The book's real pages">Pages</button>
+          <button className={mode === 'text' ? 'on' : ''} onClick={() => setMode('text')} title="Plain text, follows your UI style">Text</button>
+        </div>
+      )}
+      {layout === 'side'
+        ? <button className="btn sm" title="Full screen" onClick={() => set({ book: 'full' })}>⤢</button>
+        : <button className="btn sm" title="Side pane (Ctrl + B)" onClick={() => set({ book: 'side' })}>◧</button>}
+    </>
+  )
+  const props: ReaderProps = { layout, onClose, extra, searchTick }
+  if (pb && (mode === 'pages' || !hasBook())) return <PageReader book={book ?? []} pb={pb} {...props} />
+  return <TextReader {...props} />
 }
 
 const LAST = 'book-last'
 
-function TextReader({ onClose, extra }: { onClose: () => void; extra: ReactNode }) {
+function TextReader({ layout, onClose, extra, searchTick }: ReaderProps) {
   const [book, setBook] = useState<BookSection[] | null>(null)
   const [cur, setCur] = useState(() => { try { return +(localStorage.getItem(LAST) || 0) } catch { return 0 } })
   const [q, setQ] = useState('')
@@ -98,14 +148,15 @@ function TextReader({ onClose, extra }: { onClose: () => void; extra: ReactNode 
     go(hits[n].section, { nth: hits[n].nth })
   }
 
+  // Ctrl+F from anywhere in the app lands in this search box
+  useEffect(() => { if (searchTick) { search.current?.focus(); search.current?.select() } }, [searchTick])
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') { e.preventDefault(); search.current?.focus(); search.current?.select() }
-      else if (e.key === 'Escape') { e.stopImmediatePropagation(); if (q && document.activeElement === search.current) setQ(''); else onClose() }
+      if (e.key === 'Escape' && keyInScope(layout, e)) { e.stopImmediatePropagation(); if (q && document.activeElement === search.current) setQ(''); else onClose() }
     }
     window.addEventListener('keydown', k, true)
     return () => window.removeEventListener('keydown', k, true)
-  }, [q, onClose])
+  }, [q, onClose, layout])
 
   // links inside the book: its own contents page uses #p<page>; web links open in the browser
   const onClick = (e: React.MouseEvent) => {

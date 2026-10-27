@@ -1,6 +1,7 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { BookSection } from '../book/book'
 import { BookContents } from './BookContents'
+import { keyInScope, type ReaderProps } from './BookViewer'
 
 /*
  * The sourcebook as its real pages (rendered from your PDF by tools/import_ak5e_pdf.py), with the same
@@ -28,7 +29,7 @@ interface PageHit { page: number; w0: number; w1: number; before: string; match:
 const LAST = 'book-page'
 const GAP = 14
 
-export function PageReader({ book, pb, onClose, extra }: { book: BookSection[]; pb: PageBook; onClose: () => void; extra: ReactNode }) {
+export function PageReader({ book, pb, layout, onClose, extra, searchTick }: ReaderProps & { book: BookSection[]; pb: PageBook }) {
   const scroller = useRef<HTMLDivElement>(null)
   const search = useRef<HTMLInputElement>(null)
   const [width, setWidth] = useState(900)
@@ -38,8 +39,13 @@ export function PageReader({ book, pb, onClose, extra }: { book: BookSection[]; 
   const [q, setQ] = useState('')
   const [hitIdx, setHitIdx] = useState(-1)
   const [pageInput, setPageInput] = useState('')
-  const [navOpen, setNavOpen] = useState(() => { try { return localStorage.getItem('book-nav') !== '0' } catch { return true } })
-  useEffect(() => { try { localStorage.setItem('book-nav', navOpen ? '1' : '0') } catch { /* private mode */ } }, [navOpen])
+  // contents shown or not, remembered separately for the side pane (folded away by default: it's narrow) and full screen
+  const navKey = `book-nav-${layout}`
+  const [navOpen, setNavOpen] = useState(() => { try { const v = localStorage.getItem(navKey); return v ? v === '1' : layout === 'full' } catch { return layout === 'full' } })
+  useEffect(() => { try { const v = localStorage.getItem(navKey); setNavOpen(v ? v === '1' : layout === 'full') } catch { /* private mode */ } }, [navKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  const toggleNav = () => setNavOpen((o) => { try { localStorage.setItem(navKey, o ? '0' : '1') } catch { /* private mode */ } return !o })
+  // Ctrl+F from anywhere in the app lands in this search box
+  useEffect(() => { if (searchTick) { search.current?.focus(); search.current?.select() } }, [searchTick])
 
   useEffect(() => { fetch(pb.base + 'words.json').then((r) => r.json()).then(setWords).catch(() => setWords([])) }, [pb.base])
   useEffect(() => { try { localStorage.setItem(LAST, String(page)); localStorage.setItem('book-zoom', String(zoom)) } catch { /* private mode */ } }, [page, zoom])
@@ -161,9 +167,9 @@ export function PageReader({ book, pb, onClose, extra }: { book: BookSection[]; 
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
+      if (!keyInScope(layout, e)) return
       const typing = /INPUT|TEXTAREA/.test((e.target as HTMLElement).tagName)
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') { e.preventDefault(); search.current?.focus(); search.current?.select() }
-      else if (e.key === 'Escape') { e.stopImmediatePropagation(); if (q && document.activeElement === search.current) setQ(''); else onClose() }
+      if (e.key === 'Escape') { e.stopImmediatePropagation(); if (q && document.activeElement === search.current) setQ(''); else onClose() }
       else if (!typing && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) { e.preventDefault(); scrollToPage(page + (e.key === 'ArrowRight' ? 1 : -1)) }
     }
     window.addEventListener('keydown', k, true)
@@ -177,7 +183,7 @@ export function PageReader({ book, pb, onClose, extra }: { book: BookSection[]; 
   return (
     <div className="book">
       <div className="bk-head">
-        <button className={`btn sm ${navOpen ? '' : 'primary'}`} title={navOpen ? 'Hide the contents' : 'Show the contents'} onClick={() => setNavOpen(!navOpen)}>☰</button>
+        <button className={`btn sm ${navOpen ? 'primary' : ''}`} title={navOpen ? 'Hide the contents' : 'Show the contents'} onClick={toggleNav}>☰</button>
         <b className="bk-title">Arknights 5e</b>
         <div className="bk-search">
           <input ref={search} placeholder={words ? 'Search the book (Ctrl + F)' : 'Loading the words…'} value={q} autoFocus

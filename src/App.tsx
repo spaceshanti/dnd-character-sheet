@@ -59,13 +59,19 @@ export default function App() {
         u.set({ themeOpen: !u.themeOpen })
         return
       }
-      // Ctrl+B: Arknights sourcebook (Ctrl+B in a text box is bold, so not there, except the book's own search)
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b' && (!typing || t.closest('.book'))) {
-        const st = useStore.getState()
-        if (st.chars[st.activeId]?.system !== 'ak5e') return
+      // Arknights sourcebook. Ctrl+B: side pane on / off (not in a text box, where it's bold, except the book's own search).
+      // Ctrl+F: open the side pane if it's closed and jump to its search box.
+      const ak = () => { const st = useStore.getState(); return st.chars[st.activeId]?.system === 'ak5e' }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b' && (!typing || t.closest('.book')) && ak()) {
         e.preventDefault()
         const u = useUI.getState()
-        u.set({ bookOpen: !u.bookOpen })
+        u.set({ book: u.book === 'side' ? '' : 'side' })
+        return
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f' && ak()) {
+        e.preventDefault()
+        const u = useUI.getState()
+        u.set({ book: u.book || 'side', bookSearch: u.bookSearch + 1 })
         return
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i' && !typing) {
