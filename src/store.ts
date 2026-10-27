@@ -14,6 +14,11 @@ declare global {
       fetchItem: (target: string) => Promise<ItemLookup>
       openExternal: (url: string) => Promise<void>
       dataPath: () => Promise<string>
+      listTemplates: () => Promise<string[]>
+      readTemplate: (name: string) => Promise<Uint8Array | null>
+      addTemplate: (name: string, bytes: Uint8Array) => Promise<string>
+      removeTemplate: (name: string) => Promise<void>
+      saveFile: (name: string, bytes: Uint8Array) => Promise<string>
     }
   }
 }
@@ -197,6 +202,8 @@ interface UIState {
   inventorySelected: string
   /** the character list screen, opened from inside a character */
   charListOpen: boolean
+  /** AK5e: the full-screen operator view */
+  operatorOpen: boolean
   themeOpen: boolean
   drawer: Drawer
   /** which image the gallery picker is choosing, if open */
@@ -211,7 +218,7 @@ function readOpen() {
 }
 
 export const useUI = create<UIState>((set) => ({
-  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', charListOpen: false, themeOpen: false, drawer: null, imagePick: null,
+  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', charListOpen: false, operatorOpen: false, themeOpen: false, drawer: null, imagePick: null,
   go: (page) => set({ page }),
   toggleDock: () => set((s) => {
     try { localStorage.setItem('dock-open', s.dockOpen ? '0' : '1') } catch { /* private mode */ }

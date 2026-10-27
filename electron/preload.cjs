@@ -7,4 +7,9 @@ contextBridge.exposeInMainWorld('sheetApi', {
   fetchItem: (target) => ipcRenderer.invoke('item:fetch', target),
   openExternal: (url) => ipcRenderer.invoke('open:external', url),
   dataPath: () => ipcRenderer.invoke('store:path'),
+  listTemplates: () => ipcRenderer.invoke('templates:list'),
+  readTemplate: (name) => ipcRenderer.invoke('templates:read', name),
+  addTemplate: (name, bytes) => ipcRenderer.invoke('templates:add', name, bytes),
+  removeTemplate: (name) => ipcRenderer.invoke('templates:remove', name),
+  saveFile: (name, bytes) => ipcRenderer.invoke('file:save', name, bytes),
 })

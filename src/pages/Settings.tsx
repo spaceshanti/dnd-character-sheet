@@ -3,6 +3,7 @@ import { profBonus } from '../calc'
 import { downloadJson, useChar, useStore } from '../store'
 import { Frame, Num, Switch } from '../components/ui'
 import { SkinPicker } from '../components/SkinPicker'
+import { PdfExport } from '../components/PdfExport'
 import { convertSkills, isAK, SYSTEMS, systemName, systemOf, type SystemId } from '../systems'
 
 export function SettingsPage() {
@@ -67,6 +68,10 @@ export function SettingsPage() {
           )}
           <div className="muted small">Each game remembers its own UI style: pick one while a character of that game is open.</div>
         </div>
+      </Frame>
+
+      <Frame title="Export to a printable sheet">
+        <PdfExport />
       </Frame>
 
       <Frame title="App">

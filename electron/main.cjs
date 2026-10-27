@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, Menu } = require('electron')
+const { app, BrowserWindow, ipcMain, shell, Menu, dialog } = require('electron')
 const fs = require('fs')
 const path = require('path')
 
@@ -77,6 +77,32 @@ ipcMain.handle('store:save', (_e, json) => {
 ipcMain.handle('store:path', () => dataFile())
 ipcMain.handle('open:external', (_e, url) => {
   if (/^https?:\/\//.test(url)) shell.openExternal(url)
+})
+
+/* ---------- PDF sheet templates (copies of the user's own PDFs / images, kept beside the save file) ---------- */
+const templateDir = () => path.join(app.getPath('userData'), 'templates')
+const safeName = (n) => String(n).replace(/[\\/:*?"<>|]+/g, '_').slice(0, 120)
+ipcMain.handle('templates:list', () => {
+  try { return fs.readdirSync(templateDir()) } catch { return [] }
+})
+ipcMain.handle('templates:read', (_e, name) => {
+  try { return fs.readFileSync(path.join(templateDir(), safeName(name))) } catch { return null }
+})
+ipcMain.handle('templates:add', (_e, name, bytes) => {
+  fs.mkdirSync(templateDir(), { recursive: true })
+  fs.writeFileSync(path.join(templateDir(), safeName(name)), Buffer.from(bytes))
+  return safeName(name)
+})
+ipcMain.handle('templates:remove', (_e, name) => {
+  try { fs.unlinkSync(path.join(templateDir(), safeName(name))) } catch { /* already gone */ }
+})
+ipcMain.handle('file:save', async (e, defaultName, bytes) => {
+  const win = BrowserWindow.fromWebContents(e.sender)
+  const r = await dialog.showSaveDialog(win, { defaultPath: defaultName, filters: [{ name: 'PDF', extensions: ['pdf'] }] })
+  if (r.canceled || !r.filePath) return ''
+  fs.writeFileSync(r.filePath, Buffer.from(bytes))
+  shell.showItemInFolder(r.filePath)
+  return r.filePath
 })
 
 /* ---------- spell lookup from wikidot ---------- */
