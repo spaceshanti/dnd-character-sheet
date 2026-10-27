@@ -1,10 +1,13 @@
 /* ============ AK5e sourcebook reader ============
    Full-window reader using the active UI style's colours. */
 
-/* full screen, or a pane on the right that the sheet makes room for */
+/* full screen, or a pane that slides out over the right side of the sheet */
 .book-frame { position: fixed; inset: 0; z-index: 95; }
-.book-frame.side { left: auto; width: var(--book-w, 620px); z-index: 80; border-left: 2px solid var(--ink); box-shadow: -6px 0 24px var(--shadow); }
-html[data-book='side'] .app { margin-right: var(--book-w, 620px); }
+.book-frame.side {
+  left: auto; width: var(--book-w, 620px); max-width: 100vw; z-index: 80; border-left: 2px solid var(--ink);
+  box-shadow: -10px 0 34px var(--shadow); animation: bk-slide .18s ease-out;
+}
+@keyframes bk-slide { from { transform: translateX(100%); } to { transform: none; } }
 .bk-resize { position: absolute; left: -5px; top: 0; bottom: 0; width: 9px; cursor: ew-resize; z-index: 2; }
 .bk-resize:hover, body.bk-dragging .bk-resize { background: color-mix(in srgb, var(--accent) 35%, transparent); }
 body.bk-dragging { cursor: ew-resize; user-select: none; }

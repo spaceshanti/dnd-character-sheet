@@ -27,7 +27,7 @@ export function BookViewer() {
   const set = useUI((s) => s.set)
   const [w, setW] = useState(() => { try { return +(localStorage.getItem(WIDTH_KEY) || 0) || 620 } catch { return 620 } })
 
-  // the side pane pushes the sheet over instead of covering it
+  // the side pane's width (it slides out over the sheet)
   useEffect(() => {
     const root = document.documentElement
     root.dataset.book = layout
