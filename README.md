@@ -53,6 +53,15 @@ Each character belongs to a game, chosen when you create it (switch later in Set
 
 Each game remembers its own UI style. The Rhodes Island style is made for the Arknights sheet.
 
+Arknights characters also get an **Operator view** (top bar): the character shown like the game's operator screen.
+
+## Exporting to a printable sheet
+
+Settings → *Export to a printable sheet*. Add your own copy of a form-fillable sheet once (the official 2014 or 2024 sheet,
+or the Current Standard CS v1.4) and export any D&D character onto it. For Arknights characters, add the three sheet page
+images from the book's [imgchest link](https://imgchest.com/p/qb4zpmejdyj); the export writes onto them. The sheets stay
+in the app's data folder and aren't part of this repository.
+
 ## Importing the Arknights 5e book
 
 ```

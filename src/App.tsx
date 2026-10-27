@@ -15,6 +15,7 @@ import { ActionsPage } from './pages/Actions'
 import { GalleryPage } from './pages/Gallery'
 import { SettingsPage } from './pages/Settings'
 import { OperatorSkillsPage } from './pages/OperatorSkills'
+import { OperatorScreen } from './components/OperatorScreen'
 import { systemOf } from './systems'
 
 export default function App() {
@@ -94,6 +95,7 @@ export default function App() {
       <ThemeMenu />
       <ImagePicker />
       <DrawerHost />
+      {system === 'ak5e' && <OperatorScreen />}
     </div>
   )
 }

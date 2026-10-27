@@ -1,0 +1,117 @@
+/* ============ AK5e operator screen ============
+   A full-screen view in the spirit of Arknights' operator detail page: angular black / white
+   shards behind the character art, attributes on the left, level and skills on the right.
+   Fixed colours on purpose: it looks the same whichever UI style is active. */
+
+.opscreen {
+  position: fixed; inset: 0; z-index: 900; overflow: hidden; background: #111214; color: #f2f2f0;
+  font-family: 'Source Sans 3 Variable', 'Segoe UI', sans-serif; user-select: none;
+  animation: ops-in .22s ease-out;
+}
+@keyframes ops-in { from { opacity: 0; transform: scale(1.015) } to { opacity: 1; transform: none } }
+
+/* background shards */
+.ops-bg { position: absolute; inset: 0; background: linear-gradient(105deg, #d9dad7 0%, #b9bab7 38%, #2a2b2e 38.2%, #141517 100%); }
+.ops-bg i { position: absolute; inset: 0; display: block; }
+.ops-bg .s1 { background: #f4f4f2; clip-path: polygon(14% 0, 46% 0, 72% 100%, 30% 100%); opacity: .9; }
+.ops-bg .s2 { background: #0d0e10; clip-path: polygon(46% 0, 64% 0, 30% 58%, 18% 30%); }
+.ops-bg .s3 { background: linear-gradient(160deg, #fafaf8, #9fa09d); clip-path: polygon(64% 0, 100% 0, 100% 12%, 44% 70%, 38% 52%); opacity: .85; }
+.ops-bg .s4 { background: #000; clip-path: polygon(0 62%, 22% 54%, 40% 100%, 0 100%); opacity: .55; }
+.opscreen::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, .45)); }
+
+.ops-art {
+  position: absolute; left: 22%; right: 26%; top: 4%; bottom: 0; background: center bottom / contain no-repeat;
+  filter: drop-shadow(0 0 30px rgba(0, 0, 0, .45)); z-index: 1;
+}
+.ops-art.empty { display: grid; place-items: center; color: #666; font-size: 14px; letter-spacing: .1em; }
+
+/* top bar */
+.ops-top { position: absolute; left: 1.4%; top: 1.6%; display: flex; gap: 1.2vh; z-index: 3; }
+.ops-btn {
+  height: 6.5vh; min-width: 9vh; border: none; background: rgba(40, 41, 44, .92); color: #f0f0ee; font-size: 3.4vh; line-height: 1;
+  display: grid; place-items: center; cursor: pointer; transition: background .15s;
+}
+.ops-btn.wide { min-width: 22vh; justify-content: start; padding-left: 2vh; font-size: 5vh; }
+.ops-btn:hover { background: rgba(70, 72, 76, .95); }
+
+/* left column */
+.ops-left { position: absolute; left: 1.4%; bottom: 3%; width: 31%; z-index: 3; display: flex; flex-direction: column; gap: .9vh; }
+.ops-attr-h { font-size: 2.6vh; color: #1b1c1f; background: linear-gradient(90deg, #f6f6f4 70%, transparent); padding: .2vh .8vh; width: 60%; }
+.ops-attr-h span { color: #666; margin-left: .5vh; }
+.ops-attrs { display: grid; grid-template-columns: 1fr 1fr; gap: .6vh 1vh; }
+.ops-attr { display: flex; align-items: center; height: 4.2vh; background: linear-gradient(90deg, rgba(255, 255, 255, .85) 55%, rgba(255, 255, 255, .25)); color: #141517; }
+.op-ico { width: 4.2vh; height: 4.2vh; padding: .55vh; fill: #fff; background: #1b1c1f; flex: none; }
+.ops-attr b { font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 3.1vh; padding-left: 1vh; white-space: nowrap; }
+.ops-attr small { font-size: 2vh; color: #555; }
+.ops-trust {
+  position: relative; display: flex; align-items: center; gap: 1vh; height: 5vh; padding: 0 1.2vh; margin-top: .8vh;
+  background: rgba(250, 250, 248, .95); color: #18191c; font-size: 2.8vh; width: 88%;
+}
+.ops-trust b { font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 3.2vh; }
+.ops-trust i { position: absolute; left: 1vh; bottom: .5vh; height: .55vh; background: #ff8a3d; max-width: calc(100% - 2vh); }
+.ops-stars { font-size: 3.6vh; letter-spacing: -.3vh; color: #fff; text-shadow: 0 0 2px #000, 0 0 6px rgba(0, 0, 0, .6); }
+.ops-name {
+  font-family: 'Rajdhani', 'Bahnschrift', sans-serif; font-weight: 700; font-size: 13vh; line-height: .85; letter-spacing: -.02em;
+  color: #fafaf8; -webkit-text-stroke: .25vh #2b2c2f; text-shadow: .5vh .5vh 0 rgba(0, 0, 0, .35); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; margin: .6vh 0;
+}
+.ops-class { display: flex; gap: 1vh; height: 14vh; }
+.ops-classbox {
+  width: 14vh; flex: none; border: .3vh solid #ddd; background: rgba(30, 31, 34, .9); display: grid; place-items: center;
+  font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 8vh; color: #eee;
+}
+.ops-range { width: 21vh; flex: none; background: rgba(40, 41, 44, .9); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 1vh; }
+.ops-range b { font-family: 'Rajdhani', sans-serif; font-size: 3.4vh; flex: 1; display: grid; place-items: center; }
+.ops-range span { font-size: 2.4vh; color: #ccc; }
+.ops-tags { flex: 1; display: flex; flex-direction: column; gap: .8vh; }
+.ops-tags span {
+  flex: 1; display: grid; place-items: center; font-size: 2.9vh; color: #f0f0ee;
+  background: repeating-linear-gradient(45deg, rgba(60, 61, 64, .95) 0 3px, rgba(48, 49, 52, .95) 3px 6px);
+}
+
+/* right column */
+.ops-right { position: absolute; right: 3.5%; top: 6%; width: 28%; z-index: 3; display: flex; flex-direction: column; gap: 2.2vh; }
+.ops-lv { position: relative; height: 19vh; display: flex; align-items: center; }
+.ops-lv .ring {
+  position: relative; z-index: 2; width: 17vh; height: 17vh; border-radius: 50%; border: .55vh solid #ffd23f; background: rgba(15, 16, 18, .85);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: .85;
+}
+.ops-lv .ring small { font-size: 2.6vh; }
+.ops-lv .ring b { font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 10vh; }
+.ops-lv .cap { position: absolute; left: 14.5vh; bottom: 0; font-family: 'Rajdhani', sans-serif; font-size: 4vh; z-index: 2; }
+.ops-lv .exp { flex: 1; margin-left: -2vh; height: 8vh; background: rgba(48, 49, 52, .92); display: flex; flex-direction: column; justify-content: center; padding-left: 4vh; }
+.ops-lv .exp small { font-size: 1.8vh; color: #bbb; }
+.ops-lv .exp b { font-family: 'Rajdhani', sans-serif; font-size: 3.2vh; color: #ffd23f; }
+.ops-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1vh; }
+.ops-card { height: 10vh; background: rgba(44, 45, 48, .94); display: flex; flex-direction: column; justify-content: center; padding: 0 2vh; box-shadow: 0 .4vh 0 rgba(0, 0, 0, .35); }
+.ops-card span { font-size: 2.8vh; color: #ddd; }
+.ops-card b { font-family: 'Rajdhani', sans-serif; font-size: 4.4vh; line-height: 1; }
+.ops-card b.elite { color: #ffd23f; letter-spacing: .1em; }
+.ops-skills { display: flex; gap: 1vh; align-items: stretch; background: rgba(36, 37, 40, .94); padding: 1.4vh; }
+.ops-skill {
+  position: relative; flex: 1; height: 13vh; border: none; cursor: pointer; padding: .8vh; text-align: left; color: #fff;
+  background: linear-gradient(135deg, #c8242f, #7d1119); display: flex; flex-direction: column; justify-content: space-between;
+}
+.ops-skill .nm { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 2.2vh; line-height: 1.05; text-transform: uppercase; }
+.ops-skill .cost { align-self: flex-end; font-family: 'Rajdhani', sans-serif; font-size: 2.4vh; background: rgba(0, 0, 0, .45); padding: 0 .6vh; color: #b6f23a; }
+.ops-skill .chk { position: absolute; right: 0; top: 0; width: 3.4vh; height: 3.4vh; background: #23b3e6; clip-path: polygon(0 0, 100% 0, 100% 100%); font-size: 1.8vh; text-align: right; padding-right: .3vh; }
+.ops-skill.active { outline: .35vh solid #23b3e6; }
+.ops-skill.none { background: rgba(255, 255, 255, .05); border: .25vh solid #555; cursor: default; }
+.ops-skill.locked { opacity: .45; }
+.ops-skill:not(.none):hover { filter: brightness(1.15); }
+.ops-rank { width: 11vh; flex: none; display: flex; flex-direction: column; justify-content: center; padding-left: 1vh; border-left: .2vh solid #555; }
+.ops-rank small { font-size: 2vh; color: #aaa; }
+.ops-rank b { font-family: 'Rajdhani', sans-serif; font-size: 4.6vh; line-height: 1; }
+.ops-rank span { font-size: 1.8vh; color: #ccc; }
+.ops-branch { background: rgba(40, 41, 44, .95); padding: 1.6vh; margin-top: 4vh; }
+.ops-branch .top { display: flex; align-items: center; gap: 1.6vh; border-bottom: .2vh solid #555; padding-bottom: 1.4vh; }
+.ops-branch .ico { width: 8vh; height: 8vh; background: #2c2d30; display: grid; place-items: center; font-family: 'Rajdhani', sans-serif; font-size: 5vh; color: #ccc; }
+.ops-branch .top b { font-size: 3vh; font-weight: 500; }
+.ops-branch .sep { width: .2vh; align-self: stretch; background: #666; margin-left: auto; }
+.ops-branch .mod { font-size: 2.6vh; color: #ccc; padding-right: 1vh; }
+.ops-branch .talent { display: flex; gap: 2vh; align-items: flex-start; padding-top: 1.4vh; }
+.ops-branch .talent > span { font-size: 2.8vh; }
+.ops-branch .talent > div { display: flex; flex-wrap: wrap; gap: .8vh; }
+.chip-t { background: #f2f2f0; color: #18191c; font-size: 2.2vh; padding: .3vh 1vh; }
+.opscreen .muted { color: #888; }
