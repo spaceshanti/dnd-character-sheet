@@ -42,8 +42,29 @@ Reads the class spell list and any full spell write-ups from the PDF and writes 
 The app merges every file in that folder into the Spell Library (filter Class → Psion). Restart the app after importing.
 Spells on the list that aren't in the SRD and aren't written out in the PDF appear as "name only" entries.
 
+## Games
+
+Each character belongs to a game, chosen when you create it (switch later in Settings → Game):
+
+- **D&D 5e**: spell slots, prepared spells, coins, death saves.
+- **Arknights 5e** ([the homebrew overhaul](https://homebrewery.naturalcrit.com/share/mt8mcG6iRDbv)): Arts with an Arts Points pool and
+  max Art level, Operator Skills with SP, Mettle while Dying, Damage Reduction, Martial DC, Nationality, LMD, and the AK skill list
+  (Arts, Lore, Technology, Wilderness).
+
+Each game remembers its own UI style. The Rhodes Island style is made for the Arknights sheet.
+
+## Importing the Arknights 5e book
+
+```
+python tools/import_ak5e.py
+```
+
+Downloads the book's source from Homebrewery and writes `src/data/extra/ak5e.json` with every Arts pool, the new Arts and every
+Operator Skill table, so the Arts library can filter by pool and the Op. Skills page can add skills from the book. Rebuild afterwards.
+
 ## Credits
 
 Spell and item library data includes content from the System Reference Document 5.1 and 5.2 by Wizards of the Coast LLC,
 licensed under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/), via [5e-bits/5e-database](https://github.com/5e-bits/5e-database).
-This is unofficial fan software, not affiliated with Wizards of the Coast.
+This is unofficial fan software, not affiliated with Wizards of the Coast, Hypergryph or Yostar.
+Arknights 5e is a fan homebrew by its own authors; its text is imported locally from your own copy and is not part of this repository.
