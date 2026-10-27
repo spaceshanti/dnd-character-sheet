@@ -184,8 +184,10 @@ input[type='number']::-webkit-inner-spin-button { display: none; }
 .name-banner label { font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink2); font-family: var(--font-head); }
 .details { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px 12px; align-content: center; }
 .details .field > input, .details .line-input { font-size: 13px; font-weight: 600; }
-.details .field > label { font-size: 8px; margin-top: 0; }
-.vitals { display: flex; flex-wrap: wrap; align-items: stretch; gap: 7px; padding: 4px 12px 6px; }
+.details .field > label { font-size: 8px; margin-top: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* one row whatever the width (e.g. with the sourcebook pane open): scrolls sideways instead of growing the top bar */
+.vitals { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 7px; padding: 4px 12px 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.vitals::-webkit-scrollbar { height: 6px; }
 .vbox {
   position: relative; border: 2px solid var(--ink); border-radius: 8px; background: var(--panel); min-width: 60px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px 6px 1px; cursor: pointer;
@@ -218,7 +220,10 @@ input[type='number']::-webkit-inner-spin-button { display: none; }
 .inv-btn .l { font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; font-family: var(--font-head); }
 .inv-btn:hover { border-color: var(--accent); background: var(--slot-drop); }
 
-.nav { grid-column: 1 / -1; display: flex; align-items: center; gap: 2px; padding: 0 12px; border-top: 1px solid var(--line); background: var(--panel2); overflow-x: auto; }
+.nav { grid-column: 1 / -1; display: flex; align-items: center; gap: 2px; padding: 0 12px; border-top: 1px solid var(--line); background: var(--panel2); overflow-x: auto; scrollbar-width: none; }
+.nav::-webkit-scrollbar { display: none; }
+.nav > * { flex-shrink: 0; white-space: nowrap; }
+.nav > .spacer { flex-shrink: 1; }
 .nav button.tab {
   border: none; background: none; padding: 5px 11px; font-family: var(--font-head); font-size: 10.5px; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--ink2); border-bottom: 3px solid transparent; white-space: nowrap;
