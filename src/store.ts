@@ -240,6 +240,12 @@ export function downloadJson(name: string, data: unknown) {
 }
 
 /** Read an image file, downscale it so saves stay small, return a data URL. */
+function hasTransparency(ctx: CanvasRenderingContext2D, w: number, h: number): boolean {
+  const d = ctx.getImageData(0, 0, w, h).data
+  for (let i = 3; i < d.length; i += 4) if (d[i] < 250) return true
+  return false
+}
+
 export function imageToDataUrl(file: File, max = 1100, png = false): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -253,10 +259,14 @@ export function imageToDataUrl(file: File, max = 1100, png = false): Promise<str
         cv.width = Math.round(img.width * scale)
         cv.height = Math.round(img.height * scale)
         const ctx = cv.getContext('2d')!
-        // icons keep their transparency; photos get a white backdrop and JPEG to stay small
-        if (!png) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height) }
         ctx.drawImage(img, 0, 0, cv.width, cv.height)
-        resolve(png ? cv.toDataURL('image/png') : cv.toDataURL('image/jpeg', 0.86))
+        // pictures with see-through parts (cut-out character art, icons) stay PNG so the transparency survives;
+        // everything else becomes JPEG on white to keep saves small
+        if (png || hasTransparency(ctx, cv.width, cv.height)) { resolve(cv.toDataURL('image/png')); return }
+        ctx.globalCompositeOperation = 'destination-over'
+        ctx.fillStyle = '#fff'
+        ctx.fillRect(0, 0, cv.width, cv.height)
+        resolve(cv.toDataURL('image/jpeg', 0.86))
       }
       img.src = String(reader.result)
     }

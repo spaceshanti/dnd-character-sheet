@@ -4,7 +4,7 @@
    Fixed colours on purpose: it looks the same whichever UI style is active. */
 
 .opscreen {
-  position: fixed; inset: 0; z-index: 900; overflow: hidden; background: #111214; color: #f2f2f0;
+  position: fixed; inset: 0; z-index: 90; overflow: hidden; background: #111214; color: #f2f2f0;
   font-family: 'Source Sans 3 Variable', 'Segoe UI', sans-serif; user-select: none;
   animation: ops-in .22s ease-out;
 }
@@ -80,17 +80,13 @@
 .ops-grid.edit .cell:hover:not(.self) { border-color: #ffd23f; }
 .ops-classico { width: 60%; height: 60%; fill: #eee; }
 .ops-branch .ico .ops-classico { fill: #ccc; }
-.ops-btn.wide2 { min-width: 20vh; font-size: 2.4vh; margin-left: 3vh; }
-.ops-btn.on { background: #ffd23f; color: #18191c; }
 
 /* customize panel */
 .ops-edit {
-  position: absolute; left: 34%; top: 11vh; z-index: 5; width: 46vh; background: rgba(24, 25, 28, .97); border-top: .5vh solid #ffd23f;
+  position: fixed; z-index: 6; width: 46vh; background: rgba(24, 25, 28, .97); border-top: .5vh solid #ffd23f;
   padding: 1.6vh 2vh 2vh; display: flex; flex-direction: column; gap: 1vh; box-shadow: 0 1vh 4vh rgba(0, 0, 0, .55); font-size: 2.1vh;
   max-height: calc(100vh - 14vh); overflow-y: auto;
 }
-.ops-edit .hd { display: flex; align-items: center; justify-content: space-between; font-size: 2.6vh; }
-.ops-edit .hd button { border: none; background: none; color: #ccc; font-size: 2.6vh; cursor: pointer; }
 .ops-edit label { color: #ccc; margin-top: .6vh; }
 .ops-edit label small { color: #888; margin-left: .6vh; }
 .ops-edit .presets { display: flex; flex-wrap: wrap; gap: .6vh; }
@@ -155,9 +151,6 @@
 
 .ops-skill.has-icon { background-size: cover; background-position: center; }
 .ops-skill.has-icon .nm { text-shadow: 0 0 .5vh #000, 0 0 1vh #000; }
-.ops-edit .icons { display: flex; gap: 1.2vh; flex-wrap: wrap; }
-.ops-edit .icons > span { display: flex; flex-direction: column; align-items: center; gap: .4vh; width: 9vh; }
-.ops-edit .icons small { font-size: 1.6vh; color: #aaa; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
 .ops-edit .skill-icon-pick .sip { background-color: #2f3034; border-color: #555; color: #aaa; }
 
 /* faction emblem: faded into the top-left corner, behind the attributes */
@@ -167,3 +160,25 @@
   font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 3.4vh; letter-spacing: .3em; white-space: nowrap; max-width: 34vh; overflow: hidden; text-transform: uppercase; color: #3a3b3e;
   text-align: center; line-height: 1; margin-top: .5vh;
 }
+
+/* everything you can click to change */
+.opscreen button.ops-art, .opscreen button.ops-emblem, .opscreen button.ops-stars, .opscreen button.ops-tags {
+  border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: inherit;
+}
+.opscreen button.ops-art { background-color: transparent; }
+.opscreen button.ops-art.empty { color: #777; font-size: 2.4vh; }
+.opscreen button.ops-art.empty:hover { color: #ccc; }
+.opscreen button.ops-emblem { background: none; pointer-events: auto; }
+.opscreen button.ops-emblem:hover { opacity: .5; }
+.ops-emblem.empty { opacity: 0; height: 25vh; justify-content: center; }
+.ops-emblem.empty:hover { opacity: .6; }
+.ops-emblem em { font-style: normal; font-size: 2.4vh; color: #333; border: .3vh dashed #555; padding: 9vh 4vh; }
+.opscreen button.ops-stars { background: none; align-self: flex-start; }
+.opscreen button.ops-stars:hover, .opscreen button.ops-tags:hover span, .ops-range:hover { filter: brightness(1.25); }
+.opscreen button.ops-tags { background: none; }
+.ops-pop-catch { position: fixed; inset: 0; z-index: 5; }
+.ops-edit { width: 46vh; min-width: 320px; }
+.ops-edit .skillhd { display: flex; gap: 1.4vh; align-items: center; }
+.ops-edit .skillhd b { display: block; font-size: 2.5vh; }
+.ops-edit .skillhd small, .ops-edit .hint { color: #999; font-size: 1.8vh; }
+.ops-edit .presets button:disabled { opacity: .45; cursor: default; }

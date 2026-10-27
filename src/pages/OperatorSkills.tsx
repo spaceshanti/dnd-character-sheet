@@ -46,7 +46,7 @@ export function SpTracker({ onMsg }: { onMsg: (m: string) => void }) {
   )
 }
 
-/** Square picture for a skill: click to choose your own image, ✕ to remove it. */
+/** Square picture for a skill (operator view only): click to choose your own image, ✕ to remove it. */
 export function SkillIconPick({ s, size = 44 }: { s: OperatorSkill; size?: number }) {
   const patch = useStore((st) => st.patch)
   const input = useRef<HTMLInputElement>(null)
@@ -77,7 +77,6 @@ function OpCard({ s, onMsg }: { s: OperatorSkill; onMsg: (m: string) => void }) 
       {edit ? (
         <div className="col" style={{ gap: 6 }}>
           <div className="row">
-            <SkillIconPick s={s} />
             <input className="box-input grow" autoFocus placeholder="Skill name" value={s.name} onChange={(e) => up((x) => { x.name = e.target.value })} />
             <select value={s.tier} onChange={(e) => up((x) => { x.tier = e.target.value as SkillTier })}>
               {TIERS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -106,7 +105,6 @@ function OpCard({ s, onMsg }: { s: OperatorSkill; onMsg: (m: string) => void }) 
       ) : (
         <>
           <div className="op-head">
-            {s.icon && <span className="op-icon" style={{ backgroundImage: `url("${s.icon}")` }} />}
             <b className="op-name">{s.name || 'Unnamed skill'}</b>
             <span className="grow" />
             {isActive

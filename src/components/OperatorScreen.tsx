@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { activeEffects, attackInfo, damageReduction, itemAttacks, martialDc, profBonus, signed, spellStats, spLimits, statInfo } from '../calc'
 import { activateOp } from '../ak'
@@ -87,7 +87,8 @@ export function OperatorScreen() {
   const set = useUI((s) => s.set)
   useEffect(() => {
     if (!open) return
-    const k = (e: KeyboardEvent) => e.key === 'Escape' && set({ operatorOpen: false })
+    // Esc leaves the screen, unless a window opened from it (like the picture picker) is closing instead
+    const k = (e: KeyboardEvent) => e.key === 'Escape' && !document.querySelector('.backdrop, .lightbox') && set({ operatorOpen: false })
     window.addEventListener('keydown', k)
     return () => window.removeEventListener('keydown', k)
   }, [open, set])
@@ -117,7 +118,20 @@ function Screen({ onClose }: { onClose: () => void }) {
   const talents = c.features.filter((f) => f.category === 'class' || f.category === 'species').slice(0, 3)
   const tags = [position, ...(disp.tags.filter(Boolean).length ? disp.tags.filter(Boolean) : [c.className || 'Operator'])]
   const stars = disp.stars || levelStars(c.level)
-  const [editing, setEditing] = useState(false)
+  /** which part is being edited, and where to show its little editor */
+  const [pop, setPop] = useState<{ kind: PopKind; x: number; y: number } | null>(null)
+  const edit = (kind: PopKind) => (e: MouseEvent) => {
+    const b = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    setPop({ kind, x: b.left, y: b.bottom })
+  }
+  // Esc closes an open editor before it closes the screen
+  useEffect(() => {
+    if (!pop) return
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopImmediatePropagation(); setPop(null) } }
+    window.addEventListener('keydown', k, true)
+    return () => window.removeEventListener('keydown', k, true)
+  }, [pop])
+  const pick = (target: 'appearanceImage' | 'emblem') => set({ imagePick: target })
   // the Allies box's title doubles as the faction name when you've renamed it
   const faction = c.story.alliesTitle && c.story.alliesTitle !== 'Allies & Organizations' ? c.story.alliesTitle : ''
   const leave = (page?: Parameters<typeof go>[0]) => { onClose(); if (page) go(page) }
@@ -136,13 +150,13 @@ function Screen({ onClose }: { onClose: () => void }) {
   return (
     <div className="opscreen">
       <div className="ops-bg"><i className="s1" /><i className="s2" /><i className="s3" /><i className="s4" /></div>
-      {c.emblem && (
-        <div className="ops-emblem" title={faction || 'Faction emblem'}>
-          <i style={{ backgroundImage: `url("${c.emblem}")` }} />
-          {faction && <span>{faction}</span>}
-        </div>
-      )}
-      {art ? <div className="ops-art" style={{ backgroundImage: `url("${art}")` }} /> : <div className="ops-art empty">No art yet. Add a picture in the Appearance box.</div>}
+      <button className={`ops-emblem ${c.emblem ? '' : 'empty'}`} title={`${faction || 'Faction emblem'} · click to change`} onClick={() => pick('emblem')}>
+        {c.emblem ? <i style={{ backgroundImage: `url("${c.emblem}")` }} /> : <em>＋ Faction emblem</em>}
+        {c.emblem && faction && <span>{faction}</span>}
+      </button>
+      {art
+        ? <button className="ops-art" title="Click to change the picture" style={{ backgroundImage: `url("${art}")` }} onClick={() => pick('appearanceImage')} />
+        : <button className="ops-art empty" onClick={() => pick('appearanceImage')}>＋ Add the character's picture</button>}
 
       <div className="ops-top">
         <button className="ops-btn wide" title="Back (Esc)" onClick={onClose}>‹</button>
@@ -150,9 +164,13 @@ function Screen({ onClose }: { onClose: () => void }) {
         <button className="ops-btn" title="Operator Skills" onClick={() => leave('operator')}>⚡</button>
         <button className="ops-btn" title="Inventory" onClick={() => { onClose(); set({ inventoryOpen: true }) }}>⌒</button>
         <button className="ops-btn" title="Arts" onClick={() => leave('spells')}>ⓘ</button>
-        <button className={`ops-btn wide2 ${editing ? 'on' : ''}`} title="Range, position, tags and stars" onClick={() => setEditing(!editing)}>✎ Customize</button>
       </div>
-      {editing && <Customize range={range} onClose={() => setEditing(false)} />}
+      {pop && (
+        <>
+          <div className="ops-pop-catch" onMouseDown={() => setPop(null)} />
+          <EditPop kind={pop.kind} x={pop.x} y={pop.y} range={range} onMsg={(m) => m && toast.show(m)} onClose={() => setPop(null)} />
+        </>
+      )}
 
       <div className="ops-left">
         <div className="ops-attr-h">Attributes <span>»</span></div>
@@ -165,14 +183,14 @@ function Screen({ onClose }: { onClose: () => void }) {
           <span>SP</span><span className="grow" /><b>{c.ak.sp}{lim.max ? ` / ${lim.max}` : ''}</b>
           <i style={{ width: `${lim.max ? Math.min(100, (c.ak.sp / lim.max) * 100) : 0}%` }} />
         </div>
-        <div className="ops-stars" title={disp.stars ? 'Set by hand (Customize)' : 'Goes up with your level'}>{'★'.repeat(stars)}</div>
+        <button className="ops-stars" title={`${disp.stars ? 'Set by hand' : 'Goes up with your level'} · click to change`} onClick={edit('stars')}>{'★'.repeat(stars)}</button>
         <div className="ops-name" style={{ fontSize: `${Math.min(13, 92 / Math.max(5, (c.name || 'Operator').length))}vh` }}>{c.name || 'Operator'}</div>
         <div className="ops-class">
           <div className="ops-classbox" title={c.className}><ClassMark name={c.className} /></div>
-          <button className="ops-range" title={`Attack range${weaponRange ? ` · ${atk!.a.name}: ${weaponRange}` : ''}\nClick to change`} onClick={() => setEditing(true)}>
+          <button className="ops-range" title={`Attack range${weaponRange ? ` · ${atk!.a.name}: ${weaponRange}` : ''}\nClick to change`} onClick={edit('range')}>
             <div className="g"><RangeGrid range={range} /></div><span>Attack Range</span>
           </button>
-          <div className="ops-tags">{tags.slice(0, 3).map((t, i) => <span key={t + i}>{t}</span>)}</div>
+          <button className="ops-tags" title="Position and tags · click to change" onClick={edit('tags')}>{tags.slice(0, 3).map((t, i) => <span key={t + i}>{t}</span>)}</button>
         </div>
       </div>
 
@@ -194,8 +212,8 @@ function Screen({ onClose }: { onClose: () => void }) {
             return (
               <button key={t} className={`ops-skill ${s ? '' : 'none'} ${s?.icon ? 'has-icon' : ''} ${active ? 'active' : ''} ${locked ? 'locked' : ''}`}
                 style={s?.icon ? { backgroundImage: `url("${s.icon}")` } : undefined}
-                title={s ? `${s.name} · ${s.spCost} SP · ${s.activation} · ${s.duration}\nClick to activate` : `${t} skill (level ${[2, 7, 14][i]})`}
-                onClick={() => s && toast.show(activateOp(c, s.id))}>
+                title={s ? `${s.name} · ${s.spCost} SP · ${s.activation} · ${s.duration}` : `${t} skill (level ${[2, 7, 14][i]})`}
+                onClick={s ? edit(`skill:${s.id}`) : () => leave('operator')}>
                 <span className="nm">{s?.name || (locked ? `Lv ${[2, 7, 14][i]}` : '—')}</span>
                 {s && <span className="cost">⚡{s.spCost}</span>}
                 {active && <span className="chk">✓</span>}
@@ -222,50 +240,78 @@ function Screen({ onClose }: { onClose: () => void }) {
   )
 }
 
-/** Edit panel: attack range tiles, position, tags and stars. */
-function Customize({ range, onClose }: { range: Range; onClose: () => void }) {
+type PopKind = 'range' | 'tags' | 'stars' | `skill:${string}`
+
+/** Small editor that opens under whatever part of the screen you clicked. */
+function EditPop({ kind, x, y, range, onMsg, onClose }: { kind: PopKind; x: number; y: number; range: Range; onMsg: (m: string) => void; onClose: () => void }) {
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const d = c.ak.display
   const up = (fn: (x: OperatorDisplay) => void) => patch((ch) => { fn(ch.ak.display) })
-  const toggle = (x: number, y: number) => up((dd) => {
+  const toggle = (tx: number, ty: number) => up((dd) => {
     const cur: Range = dd.range.length ? dd.range : range.map(([a, b]) => [a, b])
-    dd.range = has(cur, x, y) ? cur.filter(([a, b]) => !(a === x && b === y)) : [...cur, [x, y]]
+    dd.range = has(cur, tx, ty) ? cur.filter(([a, b]) => !(a === tx && b === ty)) : [...cur, [tx, ty]]
   })
+  // keep it on screen: open upwards from the bottom half, leftwards near the right edge
+  const style = {
+    left: Math.min(x, window.innerWidth - 380),
+    ...(y > window.innerHeight * 0.55 ? { bottom: window.innerHeight - y + 70 } : { top: y + 8 }),
+  }
+  const skill = kind.startsWith('skill:') ? c.ak.opSkills.find((s) => s.id === kind.slice(6)) : undefined
   return (
-    <div className="ops-edit">
-      <div className="hd"><b>Customize</b><button onClick={onClose}>✕</button></div>
-      <label>Attack range <small>click tiles · facing right · the filled tile is you</small></label>
-      <RangeGrid range={range} onToggle={toggle} />
-      <div className="presets">
-        {PRESETS.map((p) => <button key={p.name} onClick={() => up((dd) => { dd.range = p.range })}>{p.name}</button>)}
-        <button onClick={() => up((dd) => { dd.range = [] })} title="Melee or ranged, from your best weapon">Auto</button>
-      </div>
-      <label>Position</label>
-      <div className="presets">
-        {(['', 'Melee', 'Ranged'] as const).map((p) => <button key={p} className={d.position === p ? 'on' : ''} onClick={() => up((dd) => { dd.position = p })}>{p || 'Auto'}</button>)}
-      </div>
-      <label>Tags</label>
-      <div className="tags">
-        {[0, 1].map((i) => (
-          <input key={i} list="ops-tag-ideas" placeholder={i === 0 ? 'e.g. DPS' : 'e.g. Crowd-Control'} value={d.tags[i] ?? ''}
-            onChange={(e) => up((dd) => { const t = [...dd.tags]; t[i] = e.target.value; dd.tags = t })} />
-        ))}
-        <datalist id="ops-tag-ideas">{TAG_IDEAS.map((t) => <option key={t} value={t} />)}</datalist>
-      </div>
-      {c.ak.opSkills.length > 0 && (
+    <div className="ops-edit" style={style}>
+      {kind === 'range' && (
         <>
-          <label>Skill icons <small>click to use your own picture</small></label>
-          <div className="icons">
-            {c.ak.opSkills.map((sk) => <span key={sk.id} title={sk.name}><SkillIconPick s={sk} size={48} /><small>{sk.name || sk.tier}</small></span>)}
+          <label>Attack range <small>click tiles · facing right · the filled tile is you</small></label>
+          <RangeGrid range={range} onToggle={toggle} />
+          <div className="presets">
+            {PRESETS.map((p) => <button key={p.name} onClick={() => up((dd) => { dd.range = p.range })}>{p.name}</button>)}
+            <button onClick={() => up((dd) => { dd.range = [] })} title="Melee or ranged, from your best weapon">Auto</button>
           </div>
         </>
       )}
-      <label>Rarity</label>
-      <div className="presets">
-        <button className={!d.stars ? 'on' : ''} onClick={() => up((dd) => { dd.stars = 0 })}>By level ({levelStars(c.level)}★)</button>
-        {[1, 2, 3, 4, 5, 6].map((n) => <button key={n} className={d.stars === n ? 'on' : ''} onClick={() => up((dd) => { dd.stars = n })}>{n}★</button>)}
-      </div>
+      {kind === 'tags' && (
+        <>
+          <label>Position</label>
+          <div className="presets">
+            {(['', 'Melee', 'Ranged'] as const).map((p) => <button key={p} className={d.position === p ? 'on' : ''} onClick={() => up((dd) => { dd.position = p })}>{p || 'Auto'}</button>)}
+          </div>
+          <label>Tags</label>
+          <div className="tags">
+            {[0, 1].map((i) => (
+              <input key={i} list="ops-tag-ideas" autoFocus={i === 0} placeholder={i === 0 ? 'e.g. DPS' : 'e.g. Crowd-Control'} value={d.tags[i] ?? ''}
+                onChange={(e) => up((dd) => { const t = [...dd.tags]; t[i] = e.target.value; dd.tags = t })} />
+            ))}
+            <datalist id="ops-tag-ideas">{TAG_IDEAS.map((t) => <option key={t} value={t} />)}</datalist>
+          </div>
+        </>
+      )}
+      {kind === 'stars' && (
+        <>
+          <label>Rarity</label>
+          <div className="presets">
+            <button className={!d.stars ? 'on' : ''} onClick={() => up((dd) => { dd.stars = 0 })}>By level ({levelStars(c.level)}★)</button>
+            {[1, 2, 3, 4, 5, 6].map((n) => <button key={n} className={d.stars === n ? 'on' : ''} onClick={() => up((dd) => { dd.stars = n })}>{n}★</button>)}
+          </div>
+        </>
+      )}
+      {skill && (
+        <>
+          <div className="skillhd">
+            <SkillIconPick s={skill} size={56} />
+            <div>
+              <b>{skill.name || 'Operator Skill'}</b>
+              <small>{skill.spCost} SP · {skill.activation} · {skill.duration || 'Instant'} · {skill.charging}</small>
+            </div>
+          </div>
+          <div className="presets">
+            {c.ak.activeSkill === skill.id
+              ? <button className="on" onClick={() => { patch((ch) => { ch.ak.activeSkill = '' }); onClose() }}>End skill</button>
+              : <button className="on" disabled={c.ak.sp < skill.spCost} onClick={() => { onMsg(activateOp(c, skill.id)); onClose() }}>Activate ({c.ak.sp}/{skill.spCost} SP)</button>}
+          </div>
+          <small className="hint">Click the square to use your own icon.</small>
+        </>
+      )}
     </div>
   )
 }
