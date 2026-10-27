@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { WeaponTags } from '../components/WeaponTags'
-import { attackInfo, itemAttacks, signed, spellActionType } from '../calc'
+import { attackInfo, itemAttacks, signed } from '../calc'
 import { useChar, useUI } from '../store'
 import { isAK } from '../systems'
 import { activateOp } from '../ak'
@@ -66,16 +66,7 @@ export function ActionsPage() {
       onUse: () => toast.show(activateOp(c, s.id)),
     })
   }
-  for (const s of c.spells) {
-    // AK5e: every Art you know is always prepared
-    if (!ak && s.level > 0 && !s.prepared && !s.alwaysPrepared) continue
-    put(spellActionType(s.castingTime), {
-      key: s.id, kind: s.level === 0 ? 'Cantrip' : `${ak ? 'Art' : 'Spell'} ${s.level}`, name: s.name,
-      right: [s.range, s.concentration ? 'Conc.' : '', s.ammoId ? ammoText(c, s.ammoId, s.ammoCost) : ''].filter(Boolean).join(' · '),
-      onClick: () => set({ drawer: { kind: 'spell', id: s.id } }),
-      onUse: s.ammoId ? () => toast.show(useItem(c, s.ammoId, s.ammoCost, s.name)) : undefined,
-    })
-  }
+  // spells / Arts live on their own page, not here
   for (const f of c.features) {
     const open = () => set({ drawer: { kind: 'feature', id: f.id } })
     if (f.actionType !== 'none') put(f.actionType, { key: f.id, kind: f.category, name: f.name, right: '', onClick: open })
@@ -100,8 +91,8 @@ export function ActionsPage() {
   return (
     <div className="col" style={{ gap: 14 }}>
       <div className="muted small">
-        {ak ? 'Built automatically from your attacks, Operator Skills, Arts (by casting time), and any feature or item you\'ve given an action type.'
-          : 'Built automatically from your attacks, prepared spells (by casting time), and any feature or item you\'ve given an action type.'}
+        {ak ? 'Built automatically from your attacks, Operator Skills, and any feature or item you\'ve given an action type. Arts are on the Arts page.'
+          : 'Built automatically from your attacks and any feature or item you\'ve given an action type. Spells are on the Spells page.'}
       </div>
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', alignItems: 'start' }}>
         {cols.map((col) => (
