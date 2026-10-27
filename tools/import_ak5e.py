@@ -7,6 +7,7 @@ Reads the book's markdown source and writes src/data/extra/ak5e.json with
   * every Arts pool (Flame Arts, Healing Arts, ...) as a class list, so the spell library can filter by pool
   * the full text of the new Arts the book adds
   * every Operator Skill table (Basic / Advanced / Elite, per class and branch)
+and src/data/book/ak5e.md, the whole book for the in-app sourcebook reader.
 The app merges the file into its libraries on the next start. Nothing is uploaded anywhere.
 """
 import html
@@ -20,6 +21,7 @@ SOURCE_URL = "https://homebrewery.naturalcrit.com/source/mt8mcG6iRDbv"
 BOOK = "Arknights 5e"
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "src", "data", "extra", "ak5e.json")
+BOOK_OUT = os.path.join(HERE, "..", "src", "data", "book", "ak5e.md")
 
 # pool spellings → the name the SRD library uses
 ALIASES = {
@@ -171,6 +173,11 @@ def main():
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump({"source": BOOK, "system": "ak5e", "spells": spells, "classLists": pools, "opSkills": skills}, f, ensure_ascii=False)
     print(f"{len(pools)} Arts pools, {len(spells)} new Arts, {len(skills)} Operator Skills -> {os.path.normpath(OUT)}")
+    # the whole book, for the in-app sourcebook reader
+    os.makedirs(os.path.dirname(BOOK_OUT), exist_ok=True)
+    with open(BOOK_OUT, "w", encoding="utf-8", newline="\n") as f:
+        f.write(src.replace("\r\n", "\n"))
+    print(f"book ({src.count(chr(92) + 'page') + 1} pages) -> {os.path.normpath(BOOK_OUT)}")
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ import { useChar, useStore } from '../store'
 import { Field, Frame } from '../components/ui'
 import { RichArea } from '../components/RichText'
 import { ImageBox } from '../components/ImageBox'
+import { isAK } from '../systems'
 
 export function CharacterPage() {
   const c = useChar()
@@ -19,6 +20,12 @@ export function CharacterPage() {
       {/* left: who they are */}
       <div className="col" style={{ gap: 12 }}>
         <Frame title="Appearance" tight>
+          {isAK(c) && (
+            <div style={{ marginBottom: 8 }}>
+              <Field label="Operator codename (shown on the operator view)" value={c.ak.codename} placeholder="not assigned yet"
+                onChange={(v) => patch((d) => { d.ak.codename = v })} />
+            </div>
+          )}
           <ImageBox target="appearanceImage" contain maxHeight={c.appearanceImage ? 420 : 160} placeholder="Click to choose a full-body / appearance image" />
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 8 }}>
             {(['age', 'height', 'weight', 'eyes', 'skin', 'hair'] as const).map((k) => (

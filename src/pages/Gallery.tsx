@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { uid } from '../blank'
 import { imageToDataUrl, useChar, useStore, useUI } from '../store'
 import { Frame } from '../components/ui'
+import { isAK } from '../systems'
 
 export function GalleryPage() {
   const c = useChar()
@@ -24,6 +25,7 @@ export function GalleryPage() {
       <div className="row">
         <button className="btn primary" onClick={() => file.current?.click()}>＋ Add art</button>
         <button className="btn" onClick={() => set({ charListOpen: true })}>👥 All characters</button>
+        {isAK(c) && <button className="btn" onClick={() => set({ operatorOpen: true })} title="The character shown like Arknights' operator screen">◈ Operator view</button>}
         <span className="muted small">You can also drop image files anywhere on this page.</span>
         <input ref={file} type="file" accept="image/*" multiple hidden onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = '' }} />
       </div>

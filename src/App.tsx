@@ -16,6 +16,7 @@ import { GalleryPage } from './pages/Gallery'
 import { SettingsPage } from './pages/Settings'
 import { OperatorSkillsPage } from './pages/OperatorSkills'
 import { OperatorScreen } from './components/OperatorScreen'
+import { BookViewer } from './components/BookViewer'
 import { systemOf } from './systems'
 
 export default function App() {
@@ -58,6 +59,15 @@ export default function App() {
         u.set({ themeOpen: !u.themeOpen })
         return
       }
+      // Ctrl+B: Arknights sourcebook (Ctrl+B in a text box is bold, so not there, except the book's own search)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b' && (!typing || t.closest('.book'))) {
+        const st = useStore.getState()
+        if (st.chars[st.activeId]?.system !== 'ak5e') return
+        e.preventDefault()
+        const u = useUI.getState()
+        u.set({ bookOpen: !u.bookOpen })
+        return
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i' && !typing) {
         e.preventDefault()
         const u = useUI.getState()
@@ -96,6 +106,7 @@ export default function App() {
       <ImagePicker />
       <DrawerHost />
       {system === 'ak5e' && <OperatorScreen />}
+      {system === 'ak5e' && <BookViewer />}
     </div>
   )
 }

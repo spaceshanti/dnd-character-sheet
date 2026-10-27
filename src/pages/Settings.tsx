@@ -115,6 +115,8 @@ const SHORTCUTS: [string, string][] = [
   ['Tab', 'Open / close abilities, saves & skills'],
   ['Ctrl + I', 'Open / close the inventory'],
   ['Ctrl + T', 'UI style menu'],
+  ['Ctrl + B', 'Open / close the Arknights 5e sourcebook (Arknights characters)'],
+  ['Ctrl + F', 'Sourcebook: search'],
   ['Esc', 'Close the open window, side panel or popup'],
   ['F11', 'Full screen on / off'],
   ['Enter', 'HP box: take damage'],
@@ -135,7 +137,7 @@ function ShortcutList() {
           ))}
         </tbody>
       </table>
-      <div className="muted small">Tab, Ctrl + I and Ctrl + T work whenever you're not typing in a box.</div>
+      <div className="muted small">Tab, Ctrl + I, Ctrl + T and Ctrl + B work whenever you're not typing in a box.</div>
     </div>
   )
 }

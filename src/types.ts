@@ -258,6 +258,8 @@ export interface AkData {
   /** flat Damage Reduction (applied before resistance) */
   dr: number
   drNote: string
+  /** operator codename, if one's been assigned; shown instead of the name on the operator view */
+  codename: string
   /** how the operator view shows this character */
   display: OperatorDisplay
 }

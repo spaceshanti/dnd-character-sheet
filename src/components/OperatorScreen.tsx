@@ -118,6 +118,7 @@ function Screen({ onClose }: { onClose: () => void }) {
   const talents = c.features.filter((f) => f.category === 'class' || f.category === 'species').slice(0, 3)
   const tags = [position, ...(disp.tags.filter(Boolean).length ? disp.tags.filter(Boolean) : [c.className || 'Operator'])]
   const stars = disp.stars || levelStars(c.level)
+  const codename = c.ak.codename.trim()
   /** which part is being edited, and where to show its little editor */
   const [pop, setPop] = useState<{ kind: PopKind; x: number; y: number } | null>(null)
   const edit = (kind: PopKind) => (e: MouseEvent) => {
@@ -184,7 +185,11 @@ function Screen({ onClose }: { onClose: () => void }) {
           <i style={{ width: `${lim.max ? Math.min(100, (c.ak.sp / lim.max) * 100) : 0}%` }} />
         </div>
         <button className="ops-stars" title={`${disp.stars ? 'Set by hand' : 'Goes up with your level'} · click to change`} onClick={edit('stars')}>{'★'.repeat(stars)}</button>
-        <div className="ops-name" style={{ fontSize: `${Math.min(13, 92 / Math.max(5, (c.name || 'Operator').length))}vh` }}>{c.name || 'Operator'}</div>
+        {/* an assigned codename takes the big spot; the real name sits small above it */}
+        <button className="ops-namebox" title="Click to set the operator codename" onClick={edit('codename')}>
+          {codename && <span className="ops-realname">{c.name}</span>}
+          <span className="ops-name" style={{ fontSize: `${Math.min(13, 92 / Math.max(5, (codename || c.name || 'Operator').length))}vh` }}>{codename || c.name || 'Operator'}</span>
+        </button>
         <div className="ops-class">
           <div className="ops-classbox" title={c.className}><ClassMark name={c.className} /></div>
           <button className="ops-range" title={`Attack range${weaponRange ? ` · ${atk!.a.name}: ${weaponRange}` : ''}\nClick to change`} onClick={edit('range')}>
@@ -240,7 +245,7 @@ function Screen({ onClose }: { onClose: () => void }) {
   )
 }
 
-type PopKind = 'range' | 'tags' | 'stars' | `skill:${string}`
+type PopKind = 'range' | 'tags' | 'stars' | 'codename' | `skill:${string}`
 
 /** Small editor that opens under whatever part of the screen you clicked. */
 function EditPop({ kind, x, y, range, onMsg, onClose }: { kind: PopKind; x: number; y: number; range: Range; onMsg: (m: string) => void; onClose: () => void }) {
@@ -283,6 +288,16 @@ function EditPop({ kind, x, y, range, onMsg, onClose }: { kind: PopKind; x: numb
                 onChange={(e) => up((dd) => { const t = [...dd.tags]; t[i] = e.target.value; dd.tags = t })} />
             ))}
             <datalist id="ops-tag-ideas">{TAG_IDEAS.map((t) => <option key={t} value={t} />)}</datalist>
+          </div>
+        </>
+      )}
+      {kind === 'codename' && (
+        <>
+          <label>Operator codename <small>leave empty to show the character's name</small></label>
+          <div className="tags">
+            <input autoFocus placeholder="e.g. Amiya" value={c.ak.codename}
+              onChange={(e) => patch((ch) => { ch.ak.codename = e.target.value })}
+              onKeyDown={(e) => { if (e.key === 'Enter') onClose() }} />
           </div>
         </>
       )}

@@ -49,7 +49,7 @@ export function newOpSkill(tier: SkillTier = 'basic'): OperatorSkill {
 export function blankAk(): AkData {
   return {
     lmd: 0, mettle: 0, sp: 0, activeSkill: '', opSkills: [], ap: { max: 0, used: 0, recharge: 'long' }, maxArtLevel: 0,
-    ninthUsed: false, infected: false, assimilation: 0, dr: 0, drNote: '',
+    ninthUsed: false, infected: false, assimilation: 0, dr: 0, drNote: '', codename: '',
     display: { range: [], position: '', tags: [], stars: 0 },
   }
 }

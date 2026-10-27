@@ -5,3 +5,4 @@ release/
 
 # Spells imported from PDFs you own (copyrighted text): regenerate with tools/import_ua_spells.py
 src/data/extra/*.json
+src/data/book/

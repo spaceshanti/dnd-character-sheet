@@ -266,6 +266,18 @@ export function FeatureDrawer({ id }: { id: string }) {
   if (!f) return null
   const up = (fn: (x: Feature) => void) => patch((d) => { const x = d.features.find((y) => y.id === id); if (x) fn(x) })
   const close = () => set({ drawer: null })
+  // offered while reading and while editing (new features open straight into editing)
+  const remove = (
+    <button className="btn danger" onClick={() => {
+      if (!window.confirm(`Remove ${f.name || 'this feature'}? Spells it grants are removed too; its resources stay under Class Resources.`)) return
+      close()
+      patch((d) => {
+        d.features = d.features.filter((y) => y.id !== id)
+        d.spells = d.spells.filter((s) => s.grantedBy !== id)
+        for (const r of d.resources) if (r.featureId === id) r.featureId = ''
+      })
+    }}>Delete feature</button>
+  )
   return (
     <Drawer title={f.name || 'New feature'} onClose={close}
       tools={<button className="btn sm" onClick={() => setEditing(!editing)}>{editing ? '✓ Done' : '✎ Edit'}</button>}>
@@ -289,15 +301,7 @@ export function FeatureDrawer({ id }: { id: string }) {
           )}
           <div className="row" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
             <span className="grow" />
-            <button className="btn danger" onClick={() => {
-              if (!window.confirm(`Remove ${f.name || 'this feature'}? Spells it grants are removed too; its resources stay under Class Resources.`)) return
-              close()
-              patch((d) => {
-                d.features = d.features.filter((y) => y.id !== id)
-                d.spells = d.spells.filter((s) => s.grantedBy !== id)
-                for (const r of d.resources) if (r.featureId === id) r.featureId = ''
-              })
-            }}>Delete</button>
+            {remove}
           </div>
         </div>
       ) : (
@@ -315,6 +319,10 @@ export function FeatureDrawer({ id }: { id: string }) {
           </div>
           <FeatureChangesEditor f={f} />
           <FeatureUsageEditor f={f} />
+          <div className="row" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+            <span className="grow" />
+            {remove}
+          </div>
         </div>
       )}
       <Toast msg={toast.msg} />

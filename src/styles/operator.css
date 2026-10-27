@@ -56,6 +56,13 @@
   color: #fafaf8; -webkit-text-stroke: .25vh #2b2c2f; text-shadow: .5vh .5vh 0 rgba(0, 0, 0, .35); white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; margin: .6vh 0;
 }
+.ops-namebox { display: flex; flex-direction: column; align-items: flex-start; border: none; background: none; padding: 0; color: inherit; cursor: pointer; text-align: left; max-width: 100%; }
+.ops-namebox .ops-name { display: block; max-width: 100%; }
+.ops-namebox:hover .ops-name { filter: brightness(1.1); -webkit-text-stroke-color: #ffd23f; }
+.ops-realname {
+  font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 2.6vh; letter-spacing: .2em; text-transform: uppercase;
+  color: #2b2c2f; background: rgba(250, 250, 248, .85); padding: .1vh 1vh; margin-top: .4vh;
+}
 .ops-class { display: flex; gap: 1vh; height: 14vh; }
 .ops-classbox {
   width: 14vh; flex: none; border: .3vh solid #ddd; background: rgba(30, 31, 34, .9); display: grid; place-items: center;
