@@ -19,6 +19,8 @@ declare global {
       addTemplate: (name: string, bytes: Uint8Array) => Promise<string>
       removeTemplate: (name: string) => Promise<void>
       saveFile: (name: string, bytes: Uint8Array) => Promise<string>
+      /** the imported sourcebook's page info, or null if it hasn't been imported */
+      bookInfo: (id: string) => Promise<{ title: string; pages: number; aspect: number; ext: string } | null>
     }
   }
 }

@@ -62,6 +62,18 @@ or the Current Standard CS v1.4) and export any D&D character onto it. For Arkni
 images from the book's [imgchest link](https://imgchest.com/p/qb4zpmejdyj); the export writes onto them. The sheets stay
 in the app's data folder and aren't part of this repository.
 
+## The Arknights 5e sourcebook reader
+
+Arknights characters get a **📖 Sourcebook** button (Ctrl + B). To read the real pages, art and all, add your PDF of the book once:
+
+```
+python tools/import_ak5e_pdf.py "C:/path/to/AK5e 1st Edition v1.3.1 - The Homebrewery.pdf"
+```
+
+That renders every page into the app's data folder (`%APPDATA%/Character Sheet/sourcebook/ak5e`, about 200 MB) with each
+page's words for search. The reader's contents, headings and search jump to the real pages; a Text mode shows the same
+book as plain text in your UI style.
+
 ## Importing the Arknights 5e book
 
 ```

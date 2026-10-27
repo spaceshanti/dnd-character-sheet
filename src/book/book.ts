@@ -18,7 +18,7 @@ export interface BookSection {
   lastPage: number
   md: string
   /** ### and #### headings inside, for the contents sidebar; slug is the id of the anchor placed before each */
-  subs: { title: string; slug: string; level: 3 | 4 }[]
+  subs: { title: string; slug: string; level: 3 | 4; page: number }[]
   /** plain text, and the same lower-cased for search (same length, so indexes line up) */
   plain: string
   text: string
@@ -80,7 +80,7 @@ function split(src: string): BookSection[] {
         const title = plainOf(sub[2]).trim()
         if (title) {
           const id = `bk-h-${out.length - 1}-${cur!.subs.length}`
-          cur!.subs.push({ title, slug: id, level: sub[1].length as 3 | 4 })
+          cur!.subs.push({ title, slug: id, level: sub[1].length as 3 | 4, page })
           cur!.md += `\n\n<a class="bk-anchor" id="${id}"></a>\n\n`
         }
       }

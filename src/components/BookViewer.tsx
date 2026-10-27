@@ -1,7 +1,9 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { hasBook, loadBook, renderSection, searchBook, type BookSection, type Hit } from '../book/book'
 import { useUI } from '../store'
+import { BookContents } from './BookContents'
+import { findPageBook, PageReader, type PageBook } from './PageReader'
 
 /*
  * In-app reader for the Arknights 5e sourcebook: contents on the left (chapters → sections → sub-headings),
@@ -16,14 +18,31 @@ export function BookViewer() {
   return createPortal(<Reader onClose={() => set({ bookOpen: false })} />, document.body)
 }
 
+/** The real pages when the PDF has been imported (tools/import_ak5e_pdf.py), the text otherwise; switchable. */
+function Reader({ onClose }: { onClose: () => void }) {
+  const [book, setBook] = useState<BookSection[] | null>(null)
+  const [pb, setPb] = useState<PageBook | null | undefined>(undefined)
+  const [mode, setModeState] = useState<'pages' | 'text'>(() => { try { return localStorage.getItem('book-mode') === 'text' ? 'text' : 'pages' } catch { return 'pages' } })
+  const setMode = (m: 'pages' | 'text') => { setModeState(m); try { localStorage.setItem('book-mode', m) } catch { /* private mode */ } }
+  useEffect(() => { loadBook().then(setBook); findPageBook().then(setPb) }, [])
+  if (pb === undefined || (hasBook() && !book)) return <div className="book"><div className="bk-empty muted">Opening the sourcebook…</div></div>
+  const switcher = pb && hasBook() ? (
+    <div className="seg bk-mode">
+      <button className={mode === 'pages' ? 'on' : ''} onClick={() => setMode('pages')} title="The book's real pages">Pages</button>
+      <button className={mode === 'text' ? 'on' : ''} onClick={() => setMode('text')} title="Plain text, follows your UI style">Text</button>
+    </div>
+  ) : null
+  if (pb && (mode === 'pages' || !hasBook())) return <PageReader book={book ?? []} pb={pb} onClose={onClose} extra={switcher} />
+  return <TextReader onClose={onClose} extra={switcher} />
+}
+
 const LAST = 'book-last'
 
-function Reader({ onClose }: { onClose: () => void }) {
+function TextReader({ onClose, extra }: { onClose: () => void; extra: ReactNode }) {
   const [book, setBook] = useState<BookSection[] | null>(null)
   const [cur, setCur] = useState(() => { try { return +(localStorage.getItem(LAST) || 0) } catch { return 0 } })
   const [q, setQ] = useState('')
   const [hitIdx, setHitIdx] = useState(-1)
-  const [open, setOpen] = useState<Set<number>>(new Set())
   const [scrollTo, setScrollTo] = useState<{ page?: number; slug?: string; nth?: number } | null>(null)
   const [pageInput, setPageInput] = useState('')
   const body = useRef<HTMLDivElement>(null)
@@ -37,17 +56,6 @@ function Reader({ onClose }: { onClose: () => void }) {
   const sec = book?.[cur]
   const html = useMemo(() => (sec ? renderSection(sec) : ''), [sec])
   const hits: Hit[] = useMemo(() => (book ? searchBook(book, q) : []), [book, q])
-  const chapters = useMemo(() => (book ?? []).filter((s) => s.level === 1), [book])
-
-  // sections whose headings are unfolded in the contents
-  const [subOpen, setSubOpen] = useState<Set<number>>(new Set())
-  const toggleSub = (id: number) => setSubOpen((o) => { const n = new Set(o); if (n.has(id)) n.delete(id); else n.add(id); return n })
-  // keep the current chapter, and the current section's headings, unfolded
-  useEffect(() => {
-    if (!sec) return
-    setOpen((o) => (o.has(sec.chapter) ? o : new Set(o).add(sec.chapter)))
-    if (sec.level === 2) setSubOpen((o) => (o.has(sec.id) ? o : new Set(o).add(sec.id)))
-  }, [sec])
 
   const go = (id: number, to?: { page?: number; slug?: string; nth?: number }) => {
     setCur(id)
@@ -121,9 +129,9 @@ function Reader({ onClose }: { onClose: () => void }) {
       <div className="book">
         <div className="bk-head"><b>Arknights 5e sourcebook</b><span className="grow" /><button className="btn sm" onClick={onClose}>✕ Close</button></div>
         <div className="bk-empty">
-          <p>The book isn't in this copy of the app yet. Import it once with</p>
-          <code>python tools/import_ak5e.py</code>
-          <p className="muted small">It downloads the book from Homebrewery into the project folder; rebuild afterwards.</p>
+          <p>The book isn't in this copy of the app yet. Add your PDF of it once with</p>
+          <code>python tools/import_ak5e_pdf.py "path/to/the book.pdf"</code>
+          <p className="muted small">That shows the real pages. For the text view and contents, also run <code>python tools/import_ak5e.py</code> and rebuild.</p>
         </div>
       </div>
     )
@@ -149,6 +157,7 @@ function Reader({ onClose }: { onClose: () => void }) {
         </form>
         <button className="btn sm" disabled={!sec || cur === 0} onClick={() => go(cur - 1)}>‹ Prev</button>
         <button className="btn sm" disabled={!book || cur >= book.length - 1} onClick={() => go(cur + 1)}>Next ›</button>
+        {extra}
         <button className="btn sm" onClick={onClose} title="Close (Esc)">✕</button>
       </div>
       <div className="bk-body">
@@ -169,44 +178,7 @@ function Reader({ onClose }: { onClose: () => void }) {
                 </div>
               ))}
             </div>
-          ) : chapters.map((ch) => {
-            const kids = book!.filter((s) => s.chapter === ch.id && s.level === 2)
-            const isOpen = open.has(ch.id)
-            /** a section's own headings (### and ####), each jumping straight to its spot */
-            const headings = (s: BookSection) => subOpen.has(s.id) && s.subs.map((h, i) => (
-              <div key={i} className={`bk-row ${h.level === 3 ? 'l3' : 'l4'}`}>
-                <button className="t" onClick={() => go(s.id, { slug: h.slug })}>{h.title}</button>
-              </div>
-            ))
-            const twisty = (s: BookSection) => s.subs.length > 0
-              ? <button className="tw" title="Headings" onClick={() => toggleSub(s.id)}>{subOpen.has(s.id) ? '▾' : '▸'}</button>
-              : <span className="tw" />
-            return (
-              <div key={ch.id} className="bk-ch">
-                <div className={`bk-row l1 ${cur === ch.id ? 'on' : ''}`}>
-                  {kids.length > 0 || ch.subs.length > 0
-                    ? <button className="tw" onClick={() => setOpen((o) => { const n = new Set(o); if (n.has(ch.id)) n.delete(ch.id); else n.add(ch.id); return n })}>{isOpen ? '▾' : '▸'}</button>
-                    : <span className="tw" />}
-                  <button className="t" onClick={() => go(ch.id)}>{ch.title}</button>
-                  <span className="pg">{ch.page}</span>
-                </div>
-                {isOpen && ch.subs.map((h, i) => (
-                  <div key={'h' + i} className={`bk-row ${h.level === 3 ? 'l2' : 'l3'}`}>
-                    <span className="tw" /><button className="t" onClick={() => go(ch.id, { slug: h.slug })}>{h.title}</button>
-                  </div>
-                ))}
-                {isOpen && kids.map((s) => (
-                  <div key={s.id}>
-                    <div className={`bk-row l2 ${cur === s.id ? 'on' : ''}`}>
-                      {twisty(s)}
-                      <button className="t" onClick={() => go(s.id)}>{s.title}</button><span className="pg">{s.page}</span>
-                    </div>
-                    {headings(s)}
-                  </div>
-                ))}
-              </div>
-            )
-          })}
+          ) : book && <BookContents book={book} current={cur} onSection={(s) => go(s.id)} onHeading={(s, h) => go(s.id, { slug: h.slug })} />}
         </nav>
         <article ref={body} className="bk-text" onClick={onClick}>
           {sec && <div className="bk-crumb">{book![sec.chapter].title}{sec.level === 2 ? ` › ${sec.title}` : ''}</div>}

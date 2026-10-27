@@ -1,6 +1,12 @@
-const { app, BrowserWindow, ipcMain, shell, Menu, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, shell, Menu, dialog, protocol, net } = require('electron')
 const fs = require('fs')
 const path = require('path')
+const { pathToFileURL } = require('url')
+
+// sheetbook://ak5e/pages/001.jpg → <userData>/sourcebook/ak5e/pages/001.jpg (the book pages you imported)
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'sheetbook', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } },
+])
 
 const dataFile = () => path.join(app.getPath('userData'), 'characters.json')
 
@@ -110,7 +116,25 @@ const { fetchSpell, fetchItem } = require('./spells.cjs')
 ipcMain.handle('spell:fetch', (_e, target) => fetchSpell(target))
 ipcMain.handle('item:fetch', (_e, target) => fetchItem(target))
 
+/* ---------- sourcebook pages (imported with tools/import_ak5e_pdf.py) ---------- */
+const bookRoot = () => path.join(app.getPath('userData'), 'sourcebook')
+ipcMain.handle('book:info', (_e, id) => {
+  try { return JSON.parse(fs.readFileSync(path.join(bookRoot(), String(id).replace(/[^\w-]/g, ''), 'book.json'), 'utf-8')) } catch { return null }
+})
+
 app.whenReady().then(() => {
+  protocol.handle('sheetbook', async (req) => {
+    const u = new URL(req.url)
+    const root = bookRoot()
+    const file = path.normalize(path.join(root, decodeURIComponent(u.hostname), decodeURIComponent(u.pathname)))
+    if (!file.startsWith(root + path.sep)) return new Response('', { status: 403 })
+    try {
+      const r = await net.fetch(pathToFileURL(file).toString())
+      return new Response(r.body, { status: r.status, headers: { 'content-type': r.headers.get('content-type') || 'application/octet-stream', 'access-control-allow-origin': '*', 'cache-control': 'max-age=31536000' } })
+    } catch {
+      return new Response('', { status: 404 })
+    }
+  })
   createWindow()
   app.on('activate', () => BrowserWindow.getAllWindows().length === 0 && createWindow())
 })

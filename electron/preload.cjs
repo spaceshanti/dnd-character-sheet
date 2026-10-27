@@ -12,4 +12,5 @@ contextBridge.exposeInMainWorld('sheetApi', {
   addTemplate: (name, bytes) => ipcRenderer.invoke('templates:add', name, bytes),
   removeTemplate: (name) => ipcRenderer.invoke('templates:remove', name),
   saveFile: (name, bytes) => ipcRenderer.invoke('file:save', name, bytes),
+  bookInfo: (id) => ipcRenderer.invoke('book:info', id),
 })
