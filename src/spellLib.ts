@@ -74,7 +74,27 @@ export const LIB = buildLibrary()
 const fromCustom = (c: CustomSpell): LibSpell => ({ ...c, e: 'Custom', src: 'My library' })
 /** Bundled spells plus the ones you've added yourself. */
 export function allLib(custom = useStore.getState().customSpells): LibSpell[] {
-  return custom.length ? [...LIB, ...custom.map(fromCustom)] : LIB
+  if (!custom.length) return LIB
+  // a name-only entry you've since filled in (by hand or fetched) shows once, as your entry
+  const mine = new Set(custom.map((x) => nameKey(x.n)))
+  return [...LIB.filter((s) => !(s.stub && mine.has(nameKey(s.n)))), ...custom.map(fromCustom)]
+}
+
+/**
+ * Fill a name-only entry (e.g. a 5e spell an Arts pool reuses that isn't in the SRD) with its regular D&D text
+ * from wikidot, and keep it in your own library so every character gets it. Desktop app only.
+ */
+export async function fetchStub(stub: LibSpell): Promise<CustomSpell | string> {
+  if (!window.sheetApi) return 'Fetching only works in the desktop app.'
+  const r = await window.sheetApi.fetchSpell(stub.n)
+  if (r.error || !r.description) return r.error || 'No description found.'
+  const entry: CustomSpell = {
+    id: uid(), n: stub.n, l: r.level ?? stub.l, s: r.school ? r.school[0].toUpperCase() + r.school.slice(1) : stub.s,
+    ct: r.castingTime || '', r: r.range || '', c: r.components || '', d: r.duration || '', co: !!r.concentration || stub.co,
+    ri: !!r.ritual || stub.ri, m: r.components ? isConsumed(r.components) : !!stub.m, cl: [...stub.cl], t: r.description, url: r.url,
+  }
+  useStore.getState().saveCustomSpell(entry)
+  return entry
 }
 
 /** Turn a spell from a character sheet into a library entry. */

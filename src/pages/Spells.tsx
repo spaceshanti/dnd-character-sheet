@@ -3,7 +3,7 @@ import { ABILITIES, SPELL_LEVEL_NAMES } from '../constants'
 import { activeEffects, martialDc, preparedCount, signed, spellStats } from '../calc'
 import { isAK } from '../systems'
 import { isConsumed, newSpell, uid } from '../blank'
-import { applyLib, bestLib, bundledLib, fromLib, isPool, LIB, LIB_DND_CLASSES, LIB_POOLS, LIB_SCHOOLS, libLabel, searchLib, type LibSpell } from '../spellLib'
+import { applyLib, bestLib, bundledLib, fetchStub, fromLib, isPool, nameKey, LIB, LIB_DND_CLASSES, LIB_POOLS, LIB_SCHOOLS, libLabel, searchLib, type LibSpell } from '../spellLib'
 import { useChar, useStore, useUI } from '../store'
 import { Frame, Modal, Num, Pips, Switch, Toast, useToast } from '../components/ui'
 import { RichArea } from '../components/RichText'
@@ -302,12 +302,32 @@ function Library() {
   const results = useMemo(() => searchLib(q, { level, cls, school, edition }), [q, level, cls, school, edition, customSpells])
   const have = (n: string) => c.spells.some((s) => s.name.toLowerCase() === n.toLowerCase())
 
+  /** put fetched text into this character's copies that have none yet */
+  const fillMine = (entry: CustomSpell) =>
+    patch((d) => {
+      for (const x of d.spells) if (!x.description.trim() && nameKey(x.name) === nameKey(entry.n)) Object.assign(x, applyLib(x, { ...entry, e: 'Custom' }), { level: x.level })
+    })
   const add = (l: LibSpell) => {
     const sp = fromLib(l)
     sp.prepared = l.l === 0 || ak
     patch((d) => { d.spells.push(sp) })
-    toast.show(`Added ${l.n} to your spells`)
+    toast.show(l.stub && window.sheetApi ? `Added ${l.n}, fetching its D&D description…` : `Added ${l.n} to your spells`)
+    if (l.stub && window.sheetApi) fetchStub(l).then((r) => { if (typeof r === 'string') toast.show(`${l.n}: ${r}`); else { fillMine(r); toast.show(`${l.n}: description filled in`) } })
     return sp
+  }
+  const stubs = results.filter((x) => x.stub)
+  const [filling, setFilling] = useState('')
+  const fillAll = async () => {
+    let ok = 0
+    const failed: string[] = []
+    for (const [i, x] of stubs.entries()) {
+      setFilling(`${i + 1} / ${stubs.length}`)
+      const r = await fetchStub(x)
+      if (typeof r === 'string') failed.push(x.n)
+      else { ok++; fillMine(r) }
+    }
+    setFilling('')
+    toast.show(`Filled in ${ok} spell${ok === 1 ? '' : 's'}${failed.length ? ` · not found: ${failed.slice(0, 4).join(', ')}${failed.length > 4 ? '…' : ''}` : ''}`)
   }
 
   return (
@@ -331,6 +351,10 @@ function Library() {
           <option value="2014">2014 SRD only</option><option value="all">Everything</option>
         </select>
         <span className="muted small">{results.length} spells</span>
+        {stubs.length > 0 && window.sheetApi && (
+          <button className="btn sm" disabled={!!filling} title="Fetch the regular D&D text from wikidot for every name-only entry shown, and keep it in your library"
+            onClick={fillAll}>{filling ? `Fetching ${filling}…` : `Get D&D text for ${stubs.length} name-only`}</button>
+        )}
         <span className="grow" />
         <button className="btn sm primary" onClick={() => setEditing(blankCustom())}>＋ Add spell to library</button>
       </div>
