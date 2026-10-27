@@ -50,6 +50,7 @@ export function blankAk(): AkData {
   return {
     lmd: 0, mettle: 0, sp: 0, activeSkill: '', opSkills: [], ap: { max: 0, used: 0, recharge: 'long' }, maxArtLevel: 0,
     ninthUsed: false, infected: false, assimilation: 0, dr: 0, drNote: '',
+    display: { range: [], position: '', tags: [], stars: 0 },
   }
 }
 
@@ -104,7 +105,7 @@ export function normalize(raw: Partial<Character>): Character {
   c.story = { ...b.story, ...raw.story }
   c.slots = { ...b.slots, ...raw.slots }
   c.system = raw.system === 'ak5e' ? 'ak5e' : 'dnd5e'
-  c.ak = { ...b.ak, ...raw.ak, ap: { ...b.ak.ap, ...raw.ak?.ap } }
+  c.ak = { ...b.ak, ...raw.ak, ap: { ...b.ak.ap, ...raw.ak?.ap }, display: { ...b.ak.display, ...raw.ak?.display } }
   // the three personality boxes became one
   if (c.story.trait2 || c.story.trait3) {
     c.story.trait1 = [c.story.trait1, c.story.trait2, c.story.trait3].filter((t) => t.trim()).join('\n\n')

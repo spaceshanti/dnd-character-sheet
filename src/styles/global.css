@@ -624,3 +624,13 @@ svg.ico { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14e
 .game-tag { align-self: flex-start; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; padding: 0 6px; border-radius: 3px; border: 1px solid var(--line); color: var(--ink2); margin: 1px 0 2px; }
 .game-tag.sys-ak5e { border-color: var(--accent); color: var(--accent); }
 .char-new.sys-ak5e { border-style: dashed; }
+
+.skill-icon-pick { position: relative; display: inline-block; flex: none; }
+.skill-icon-pick .sip {
+  width: 100%; height: 100%; border: 1.5px dashed var(--line); background: var(--panel2) center / cover no-repeat; color: var(--muted);
+  font-size: 18px; padding: 0; border-radius: 4px;
+}
+.skill-icon-pick .sip[style] { border-style: solid; }
+.skill-icon-pick .sip:hover { border-color: var(--accent); }
+.skill-icon-pick .sip-x { position: absolute; right: -6px; top: -6px; width: 16px; height: 16px; border-radius: 50%; border: none; padding: 0; font-size: 9px; background: var(--ink); color: var(--panel); }
+.op-icon { width: 26px; height: 26px; flex: none; background: center / cover no-repeat; border-radius: 3px; }

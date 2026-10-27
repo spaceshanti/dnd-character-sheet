@@ -61,12 +61,49 @@
   width: 14vh; flex: none; border: .3vh solid #ddd; background: rgba(30, 31, 34, .9); display: grid; place-items: center;
   font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 8vh; color: #eee;
 }
-.ops-range { width: 21vh; flex: none; background: rgba(40, 41, 44, .9); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 1vh; }
-.ops-range b { font-family: 'Rajdhani', sans-serif; font-size: 3.4vh; flex: 1; display: grid; place-items: center; }
+.ops-range {
+  width: 21vh; flex: none; border: none; color: inherit; cursor: pointer; background: rgba(40, 41, 44, .9);
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 1vh 1vh 1vh;
+}
+.ops-range:hover { background: rgba(58, 60, 64, .95); }
+.ops-range .g { flex: 1; display: grid; place-items: center; width: 100%; }
 .ops-range span { font-size: 2.4vh; color: #ccc; }
+.ops-norange { font-size: 3vh; color: #888; }
+.ops-grid { display: grid; gap: .35vh; }
+.ops-range .ops-grid { max-width: 18vh; max-height: 8.5vh; }
+.ops-grid .cell { display: block; width: 1.7vh; height: 1.7vh; border: .2vh solid #9a9b9e; background: transparent; padding: 0; }
+.ops-grid .cell.off { border-color: transparent; }
+.ops-grid .cell.self { background: #f2f2f0; border-color: #f2f2f0; }
+.ops-grid.edit { gap: .5vh; }
+.ops-grid.edit .cell { width: 3.6vh; height: 3.6vh; cursor: pointer; border-color: #555; }
+.ops-grid.edit .cell.on { border-color: #f2f2f0; background: rgba(255, 255, 255, .12); }
+.ops-grid.edit .cell:hover:not(.self) { border-color: #ffd23f; }
+.ops-classico { width: 60%; height: 60%; fill: #eee; }
+.ops-branch .ico .ops-classico { fill: #ccc; }
+.ops-btn.wide2 { min-width: 20vh; font-size: 2.4vh; margin-left: 3vh; }
+.ops-btn.on { background: #ffd23f; color: #18191c; }
+
+/* customize panel */
+.ops-edit {
+  position: absolute; left: 34%; top: 11vh; z-index: 5; width: 46vh; background: rgba(24, 25, 28, .97); border-top: .5vh solid #ffd23f;
+  padding: 1.6vh 2vh 2vh; display: flex; flex-direction: column; gap: 1vh; box-shadow: 0 1vh 4vh rgba(0, 0, 0, .55); font-size: 2.1vh;
+  max-height: calc(100vh - 14vh); overflow-y: auto;
+}
+.ops-edit .hd { display: flex; align-items: center; justify-content: space-between; font-size: 2.6vh; }
+.ops-edit .hd button { border: none; background: none; color: #ccc; font-size: 2.6vh; cursor: pointer; }
+.ops-edit label { color: #ccc; margin-top: .6vh; }
+.ops-edit label small { color: #888; margin-left: .6vh; }
+.ops-edit .presets { display: flex; flex-wrap: wrap; gap: .6vh; }
+.ops-edit .presets button {
+  border: none; background: #2f3034; color: #eee; font-size: 1.9vh; padding: .5vh 1.2vh; cursor: pointer;
+}
+.ops-edit .presets button:hover { background: #45474c; }
+.ops-edit .presets button.on { background: #f2f2f0; color: #18191c; }
+.ops-edit .tags { display: flex; gap: 1vh; }
+.ops-edit .tags input { flex: 1; min-width: 0; background: #2f3034; border: none; color: #fff; padding: .7vh 1vh; font-size: 2vh; }
 .ops-tags { flex: 1; display: flex; flex-direction: column; gap: .8vh; }
 .ops-tags span {
-  flex: 1; display: grid; place-items: center; font-size: 2.9vh; color: #f0f0ee;
+  flex: 1; min-height: 0; display: grid; place-items: center; font-size: 2.9vh; color: #f0f0ee;
   background: repeating-linear-gradient(45deg, rgba(60, 61, 64, .95) 0 3px, rgba(48, 49, 52, .95) 3px 6px);
 }
 
@@ -115,3 +152,10 @@
 .ops-branch .talent > div { display: flex; flex-wrap: wrap; gap: .8vh; }
 .chip-t { background: #f2f2f0; color: #18191c; font-size: 2.2vh; padding: .3vh 1vh; }
 .opscreen .muted { color: #888; }
+
+.ops-skill.has-icon { background-size: cover; background-position: center; }
+.ops-skill.has-icon .nm { text-shadow: 0 0 .5vh #000, 0 0 1vh #000; }
+.ops-edit .icons { display: flex; gap: 1.2vh; flex-wrap: wrap; }
+.ops-edit .icons > span { display: flex; flex-direction: column; align-items: center; gap: .4vh; width: 9vh; }
+.ops-edit .icons small { font-size: 1.6vh; color: #aaa; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
+.ops-edit .skill-icon-pick .sip { background-color: #2f3034; border-color: #555; color: #aaa; }

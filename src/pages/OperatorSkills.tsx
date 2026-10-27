@@ -1,9 +1,9 @@
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useMemo, useRef, useState } from 'react'
 import { spLimits } from '../calc'
 import { newOpSkill } from '../blank'
 import { activateOp, endOp, gainSp } from '../ak'
 import { CHARGING, fromOpLib, OP_CLASSES, OP_LIB, searchOp, TIERS, type LibOpSkill } from '../opSkillLib'
-import { useChar, useStore } from '../store'
+import { imageToDataUrl, useChar, useStore } from '../store'
 import { Frame, Modal, Num, Toast, useToast } from '../components/ui'
 import { RichArea, RichText } from '../components/RichText'
 import type { OperatorSkill, SkillTier } from '../types'
@@ -46,6 +46,25 @@ export function SpTracker({ onMsg }: { onMsg: (m: string) => void }) {
   )
 }
 
+/** Square picture for a skill: click to choose your own image, ✕ to remove it. */
+export function SkillIconPick({ s, size = 44 }: { s: OperatorSkill; size?: number }) {
+  const patch = useStore((st) => st.patch)
+  const input = useRef<HTMLInputElement>(null)
+  const set = (icon: string) => patch((d) => { const x = d.ak.opSkills.find((y) => y.id === s.id); if (x) x.icon = icon })
+  return (
+    <span className="skill-icon-pick" style={{ width: size, height: size }}>
+      <input ref={input} type="file" accept="image/*" hidden onChange={async (e) => {
+        const f = e.target.files?.[0]
+        e.target.value = ''
+        if (f) set(await imageToDataUrl(f, 256, true))
+      }} />
+      <button className="sip" title={s.icon ? 'Change icon' : 'Add your own icon'} onClick={() => input.current?.click()}
+        style={s.icon ? { backgroundImage: `url("${s.icon}")` } : undefined}>{s.icon ? '' : '＋'}</button>
+      {s.icon && <button className="sip-x" title="Remove icon" onClick={() => set('')}>✕</button>}
+    </span>
+  )
+}
+
 function OpCard({ s, onMsg }: { s: OperatorSkill; onMsg: (m: string) => void }) {
   const c = useChar()
   const patch = useStore((st) => st.patch)
@@ -58,6 +77,7 @@ function OpCard({ s, onMsg }: { s: OperatorSkill; onMsg: (m: string) => void }) 
       {edit ? (
         <div className="col" style={{ gap: 6 }}>
           <div className="row">
+            <SkillIconPick s={s} />
             <input className="box-input grow" autoFocus placeholder="Skill name" value={s.name} onChange={(e) => up((x) => { x.name = e.target.value })} />
             <select value={s.tier} onChange={(e) => up((x) => { x.tier = e.target.value as SkillTier })}>
               {TIERS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -86,6 +106,7 @@ function OpCard({ s, onMsg }: { s: OperatorSkill; onMsg: (m: string) => void }) 
       ) : (
         <>
           <div className="op-head">
+            {s.icon && <span className="op-icon" style={{ backgroundImage: `url("${s.icon}")` }} />}
             <b className="op-name">{s.name || 'Unnamed skill'}</b>
             <span className="grow" />
             {isActive

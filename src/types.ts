@@ -233,6 +233,8 @@ export interface OperatorSkill {
   activation: string
   duration: string
   effect: string
+  /** your own picture for the skill (data URL), shown on the operator view */
+  icon?: string
 }
 
 /** Everything only an Arknights 5e sheet has. */
@@ -256,6 +258,18 @@ export interface AkData {
   /** flat Damage Reduction (applied before resistance) */
   dr: number
   drNote: string
+  /** how the operator view shows this character */
+  display: OperatorDisplay
+}
+
+export interface OperatorDisplay {
+  /** attack range tiles as [forward, sideways] offsets from the operator's own tile (0, 0) */
+  range: [number, number][]
+  position: '' | 'Melee' | 'Ranged'
+  /** up to two tags, e.g. DPS, Healing */
+  tags: string[]
+  /** 0 = follow level */
+  stars: number
 }
 
 export interface Character {
