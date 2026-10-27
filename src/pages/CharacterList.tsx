@@ -1,4 +1,5 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
+import { SYSTEMS, systemName, systemOf, type SystemId } from '../systems'
 import { downloadJson, useStore, useUI } from '../store'
 import { Toast, useToast } from '../components/ui'
 import type { Character } from '../types'
@@ -21,7 +22,13 @@ export function CharacterList() {
   const current = chars[activeId]
 
   const open = (id: string) => { setActive(id); set({ charListOpen: false, page: 'overview' }) }
-  const create = () => { addChar(); set({ charListOpen: false, page: 'overview' }) }
+  const create = (sys: SystemId) => { addChar('New Character', sys); set({ charListOpen: false, page: 'overview' }) }
+  const [game, setGameState] = useState<SystemId | 'all'>(() => {
+    try { return (localStorage.getItem('list-game') as SystemId | 'all') || 'all' } catch { return 'all' }
+  })
+  const setGame = (g: SystemId | 'all') => { setGameState(g); try { localStorage.setItem('list-game', g) } catch { /* private mode */ } }
+  const count = (g: SystemId) => order.filter((id) => systemOf(chars[id]) === g).length
+  const shown = order.filter((id) => game === 'all' || systemOf(chars[id]) === game)
 
   const onImport = async (f: File) => {
     try {
@@ -41,6 +48,12 @@ export function CharacterList() {
       <header className="charlist-head">
         {current && <button className="btn" onClick={() => set({ charListOpen: false })}>← Back to {current.name || 'character'}</button>}
         <h1>Characters</h1>
+        {order.length > 0 && (
+          <div className="seg game-seg">
+            <button className={game === 'all' ? 'on' : ''} onClick={() => setGame('all')}>All games ({order.length})</button>
+            {SYSTEMS.map((s) => <button key={s.id} className={game === s.id ? 'on' : ''} onClick={() => setGame(s.id)}>{s.short} ({count(s.id)})</button>)}
+          </div>
+        )}
         <span className="grow" />
         <button className="btn" onClick={() => file.current?.click()}>Import…</button>
         {order.length > 0 && <button className="btn" onClick={() => downloadJson('all-characters.json', { version: 1, chars, order })}>Export all</button>}
@@ -55,15 +68,16 @@ export function CharacterList() {
       )}
 
       <div className="charlist-grid">
-        {order.map((id) => {
+        {shown.map((id) => {
           const c = chars[id]
           return (
-            <div key={id} className={`char-card frame ${id === activeId ? 'current' : ''}`}>
+            <div key={id} className={`char-card frame sys-${systemOf(c)} ${id === activeId ? 'current' : ''}`}>
               <div className="frame-in">
                 <button className="char-portrait" style={c.portrait ? { backgroundImage: `url("${c.portrait}")` } : undefined} onClick={() => open(id)} title={`Open ${c.name || 'character'}`}>
                   {!c.portrait && <span>{(c.name || '?').trim().charAt(0).toUpperCase()}</span>}
                 </button>
                 <div className="char-name">{c.name || 'Unnamed'}</div>
+                <span className={`game-tag sys-${systemOf(c)}`}>{systemName(systemOf(c))}</span>
                 <div className="muted small">{[c.level ? `Level ${c.level}` : '', c.className, c.species].filter(Boolean).join(' · ') || '—'}</div>
                 <div className="muted small">{id === activeId ? 'Last opened · ' : ''}edited {ago(c.updatedAt)}</div>
                 <div className="row" style={{ marginTop: 8, gap: 4, flexWrap: 'wrap' }}>
@@ -78,10 +92,13 @@ export function CharacterList() {
             </div>
           )
         })}
-        <button className="char-new" onClick={create}>
-          <span className="plus">＋</span>
-          <b>New character</b>
-        </button>
+        {SYSTEMS.filter((s) => game === 'all' || game === s.id).map((s) => (
+          <button key={s.id} className={`char-new sys-${s.id}`} onClick={() => create(s.id)} title={s.desc}>
+            <span className="plus">＋</span>
+            <b>New {s.short} character</b>
+            <span className="muted small">{s.name}</span>
+          </button>
+        ))}
       </div>
       <Toast msg={toast.msg} />
     </div>

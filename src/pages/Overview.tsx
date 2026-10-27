@@ -1,6 +1,9 @@
 import { Fragment, useState } from 'react'
 import { ABILITIES, RECHARGES, targetName } from '../constants'
-import { attackInfo, itemAttacks, itemIsActive, signed } from '../calc'
+import { attackInfo, itemAttacks, itemIsActive, martialDc, signed } from '../calc'
+import { isAK } from '../systems'
+import { activateOp } from '../ak'
+import { SpTracker } from './OperatorSkills'
 import { newAttack, newResource } from '../blank'
 import { useChar, useStore, useUI } from '../store'
 import { Frame, Num, Pips, Select, Switch, Toast, useToast } from '../components/ui'
@@ -31,6 +34,7 @@ export function Overview() {
       </div>
 
       <div className="col" style={{ gap: 14 }}>
+        {isAK(c) && <OperatorPanel />}
         <AttacksPanel />
         <ResourcesPanel />
         <Frame title="Battle State / Scratchpad" tight>
@@ -52,7 +56,9 @@ export function Overview() {
             </div>
           ))}
           <div className="row" style={{ marginTop: 8, flexWrap: 'wrap' }}>
-            {(['cp', 'sp', 'ep', 'gp', 'pp'] as const).map((k) => (
+            {isAK(c) ? (
+              <div className="coin lmd"><Num min={0} max={999999999} value={c.ak.lmd} onChange={(n) => patch((d) => { d.ak.lmd = n })} /><span>LMD</span></div>
+            ) : (['cp', 'sp', 'ep', 'gp', 'pp'] as const).map((k) => (
               <div key={k} className="coin"><Num min={0} value={c.coins[k]} onChange={(n) => patch((d) => { d.coins[k] = n })} /><span>{k.toUpperCase()}</span></div>
             ))}
           </div>
@@ -68,6 +74,34 @@ export function Overview() {
         </Frame>
       </div>
     </div>
+  )
+}
+
+/** AK5e: SP and the Operator Skills you can fire off from here. */
+function OperatorPanel() {
+  const c = useChar()
+  const go = useUI((s) => s.go)
+  const toast = useToast()
+  const msg = (m: string) => m && toast.show(m)
+  return (
+    <Frame title="Operator Skills" tools={<><span className="chip" title="8 + STR or DEX + proficiency">Martial DC {martialDc(c)}</span><button className="btn sm" onClick={() => go('operator')}>Open</button></>}>
+      <SpTracker onMsg={msg} />
+      {c.ak.opSkills.length === 0 && <div className="empty" style={{ marginTop: 8 }}>Pick your Basic skill at 2nd level on the Op. Skills page.</div>}
+      {c.ak.opSkills.map((s) => {
+        const active = c.ak.activeSkill === s.id
+        return (
+          <div key={s.id} className={`list-row op-row ${active ? 'active' : ''}`} onClick={() => go('operator')}>
+            <span className="op-tier-dot" title={s.tier}>{s.tier[0].toUpperCase()}</span>
+            <span className="grow"><b>{s.name || 'Unnamed'}</b> <span className="muted small">{s.activation} · {s.duration || '—'}</span></span>
+            <span className="small muted">{s.spCost} SP</span>
+            {active ? <span className="chip accent">active</span> : (
+              <button className="btn sm primary" disabled={c.ak.sp < s.spCost} onClick={(e) => { e.stopPropagation(); msg(activateOp(c, s.id)) }}>Activate</button>
+            )}
+          </div>
+        )
+      })}
+      <Toast msg={toast.msg} />
+    </Frame>
   )
 }
 

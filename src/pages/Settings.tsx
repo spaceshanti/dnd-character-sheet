@@ -3,6 +3,7 @@ import { profBonus } from '../calc'
 import { downloadJson, useChar, useStore } from '../store'
 import { Frame, Num, Switch } from '../components/ui'
 import { SkinPicker } from '../components/SkinPicker'
+import { convertSkills, isAK, SYSTEMS, systemName, systemOf, type SystemId } from '../systems'
 
 export function SettingsPage() {
   const c = useChar()
@@ -30,6 +31,41 @@ export function SettingsPage() {
             <span className="grow">Carrying capacity = STR score ×</span>
             <Num min={1} className="box-input" width={54} value={c.carryMultiplier} onChange={(n) => patch((d) => { d.carryMultiplier = n })} />
           </div>
+        </div>
+      </Frame>
+
+      <Frame title="Game">
+        <div className="col" style={{ gap: 12 }}>
+          <div className="row">
+            <span className="grow">This character is for</span>
+            <select value={systemOf(c)} onChange={(e) => {
+              const to = e.target.value as SystemId
+              if (!window.confirm(`Move ${c.name || 'this character'} to ${systemName(to)}? Skills are merged or split to match (e.g. History + Religion ↔ Lore); nothing else is deleted, and you can switch back.`)) return
+              patch((d) => { d.system = to; d.skillProf = convertSkills(d.skillProf, to) })
+            }}>
+              {SYSTEMS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          {isAK(c) && (
+            <>
+              <div className="row">
+                <Switch on={c.ak.infected} onChange={(b) => patch((d) => { d.ak.infected = b })} />
+                <span className="grow">Infected (Oripathy): can cast Arts without a Casting Unit</span>
+              </div>
+              {c.ak.infected && (
+                <div className="row">
+                  <span className="grow">Originium Assimilation (Oripathy Hardcore rule; you die above your CON score)</span>
+                  <Num min={0} className="box-input" width={54} value={c.ak.assimilation} onChange={(n) => patch((d) => { d.ak.assimilation = n })} />
+                  <b style={{ color: c.ak.assimilation > c.abilities.con ? 'var(--dis)' : undefined }}>/ {c.abilities.con}</b>
+                </div>
+              )}
+              <div className="row">
+                <span className="grow">Damage Reduction note (e.g. "Physical only")</span>
+                <input className="box-input" style={{ width: 160 }} value={c.ak.drNote} onChange={(e) => patch((d) => { d.ak.drNote = e.target.value })} />
+              </div>
+            </>
+          )}
+          <div className="muted small">Each game remembers its own UI style: pick one while a character of that game is open.</div>
         </div>
       </Frame>
 

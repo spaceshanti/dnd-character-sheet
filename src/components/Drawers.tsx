@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { ACTION_TYPES } from '../constants'
 import { isConsumed, newFeature, uid } from '../blank'
 import { ammoOptions, ammoText, useItem } from '../consume'
-import { toCustom } from '../spellLib'
+import { libLabel, toCustom } from '../spellLib'
+import { isAK } from '../systems'
+import { castArt } from '../ak'
 import { findLib, applyLib } from '../spellLib'
 import { useChar, useStore, useUI } from '../store'
 import { Drawer, EffectsEditor, Num, Select, Switch, useToast, Toast } from './ui'
@@ -76,9 +78,19 @@ export function SpellDrawer({ id }: { id: string }) {
     setFetchMsg('Fetched ✓')
   }
 
+  const ak = isAK(c)
   const cast = () => {
     const ammo = sp.ammoId ? c.items.find((i) => i.id === sp.ammoId) : undefined
     if (sp.ammoId && (!ammo || ammo.qty < sp.ammoCost)) { toast.show(ammo ? `Out of ${ammo.name}!` : 'Its linked item is gone. Pick another in Edit.'); return }
+    if (ak) {
+      const before = c.ak.ap.used
+      const m = castArt(c, sp, castLevel)
+      // castArt only spends AP when the cast goes through
+      if (sp.level > 0 && useStore.getState().chars[c.id].ak.ap.used === before) { toast.show(m); return }
+      const used = sp.ammoId ? useItem(c, sp.ammoId, sp.ammoCost, sp.name) : ''
+      toast.show(used ? `${m} · ${used}` : m)
+      return
+    }
     if (sp.level > 0) {
       const slot = c.slots[castLevel]
       if (!slot || slot.total - slot.used <= 0) { toast.show(`No level ${castLevel} slots left`); return }
@@ -108,8 +120,8 @@ export function SpellDrawer({ id }: { id: string }) {
             {sp.school && <span className="tag alt">{sp.school}</span>}
             {sp.concentration && <span className="tag alt">Concentration</span>}
             {sp.ritual && <span className="tag alt">Ritual</span>}
-            {sp.materialConsumed && <span className="tag alt">Material consumed</span>}
-            {sp.alwaysPrepared ? <span className="chip accent">Always prepared</span> : sp.prepared && <span className="chip accent">Prepared</span>}
+            {sp.materialConsumed && !ak && <span className="tag alt">Material consumed</span>}
+            {ak ? null : sp.alwaysPrepared ? <span className="chip accent">Always prepared</span> : sp.prepared && <span className="chip accent">Prepared</span>}
             {sp.grantedBy && <span className="chip">From {c.features.find((f) => f.id === sp.grantedBy)?.name || 'a feature'}</span>}
           </div>
           <div className="kv">
@@ -141,14 +153,23 @@ export function SpellDrawer({ id }: { id: string }) {
               <>
                 <button className="btn primary" onClick={cast}>Cast</button>
                 <span className="small">at level</span>
-                <select value={castLevel} onChange={(e) => setCastLevel(+e.target.value)}>
-                  {Array.from({ length: 9 - sp.level + 1 }, (_, i) => sp.level + i).map((l) => (
-                    <option key={l} value={l}>{l} ({Math.max(0, (c.slots[l]?.total ?? 0) - (c.slots[l]?.used ?? 0))} left)</option>
-                  ))}
-                </select>
+                {sp.level > 0 && (ak ? (
+                  <select value={castLevel} onChange={(e) => setCastLevel(+e.target.value)}>
+                    {Array.from({ length: Math.max(1, (c.ak.maxArtLevel || 9) - sp.level + 1) }, (_, i) => sp.level + i).map((l) => (
+                      <option key={l} value={l}>{l} ({l} AP)</option>
+                    ))}
+                  </select>
+                ) : (
+                  <select value={castLevel} onChange={(e) => setCastLevel(+e.target.value)}>
+                    {Array.from({ length: 9 - sp.level + 1 }, (_, i) => sp.level + i).map((l) => (
+                      <option key={l} value={l}>{l} ({Math.max(0, (c.slots[l]?.total ?? 0) - (c.slots[l]?.used ?? 0))} left)</option>
+                    ))}
+                  </select>
+                ))}
+                {ak && sp.level > 0 && <span className="muted small">{Math.max(0, c.ak.ap.max - c.ak.ap.used)} AP left</span>}
               </>
             )}
-            {sp.level > 0 && !sp.alwaysPrepared && (
+            {sp.level > 0 && !sp.alwaysPrepared && !ak && (
               <button className="btn" onClick={() => up((x) => { x.prepared = !x.prepared })}>{sp.prepared ? 'Unprepare' : 'Prepare'}</button>
             )}
             {sp.url && <button className="btn" onClick={() => window.sheetApi ? window.sheetApi.openExternal(sp.url) : window.open(sp.url, '_blank')}>Open page ↗</button>}
@@ -182,7 +203,7 @@ export function SpellDrawer({ id }: { id: string }) {
                   <button key={m.e + (m.src ?? '')} className="btn sm" onClick={() => {
                     if (sp.description.trim() && !window.confirm('Replace the stored description?')) return
                     up((x) => Object.assign(x, applyLib(x, m)))
-                  }}>Use {m.e === 'UA' ? 'UA' : `${m.e} SRD`} text</button>
+                  }}>Use {libLabel(m.e)} text</button>
                 ))}
               </div>
             )}
@@ -203,14 +224,14 @@ export function SpellDrawer({ id }: { id: string }) {
           <div className="row" style={{ flexWrap: 'wrap', gap: 16 }}>
             <label className="row small"><Switch on={sp.concentration} onChange={(b) => up((x) => { x.concentration = b })} /> Concentration</label>
             <label className="row small"><Switch on={sp.ritual} onChange={(b) => up((x) => { x.ritual = b })} /> Ritual</label>
-            <label className="row small"><Switch on={sp.materialConsumed} onChange={(b) => up((x) => { x.materialConsumed = b })} /> Material consumed</label>
+            {!ak && <label className="row small"><Switch on={sp.materialConsumed} onChange={(b) => up((x) => { x.materialConsumed = b })} /> Material consumed</label>}
           </div>
           <div className="row" style={{ flexWrap: 'wrap' }}>
             <span className="field-lbl">Uses up an item</span>
             <Select value={sp.ammoId} onChange={(v) => up((x) => { x.ammoId = v })} options={ammoOptions(c)} />
             {sp.ammoId && <><span className="small">×</span><Num min={1} max={20} className="box-input" width={36} value={sp.ammoCost} onChange={(n) => up((x) => { x.ammoCost = n })} /><span className="small">per cast</span></>}
-            <label className="row small"><Switch on={sp.prepared} onChange={(b) => up((x) => { x.prepared = b })} /> Prepared</label>
-            <label className="row small"><Switch on={sp.alwaysPrepared} onChange={(b) => up((x) => { x.alwaysPrepared = b })} /> Always prepared</label>
+            {!ak && <label className="row small"><Switch on={sp.prepared} onChange={(b) => up((x) => { x.prepared = b })} /> Prepared</label>}
+            {!ak && <label className="row small"><Switch on={sp.alwaysPrepared} onChange={(b) => up((x) => { x.alwaysPrepared = b })} /> Always prepared</label>}
           </div>
           <RichArea className="box-input" minRows={2} placeholder="My notes" value={sp.notes} onChange={(v) => up((x) => { x.notes = v })} />
           <div>

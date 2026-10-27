@@ -1,4 +1,5 @@
-import { SKILLS } from './constants'
+import { ALL_SKILLS } from './constants'
+import { isAK } from './systems'
 import type { AbilityKey, Attack, Character, Effect, Item, ProfLevel, SkillKey, Stat, WeaponStats } from './types'
 
 export interface Part {
@@ -119,7 +120,7 @@ export function save(c: Character, k: AbilityKey, effects = activeEffects(c)): R
 }
 
 export function skill(c: Character, key: SkillKey, effects = activeEffects(c)): RollInfo {
-  const def = SKILLS.find((s) => s.key === key)!
+  const def = ALL_SKILLS.find((s) => s.key === key)!
   const ab = ability(c, def.ability, effects)
   const col = collect(effects, [`skill:${key}`, 'skill:all'])
   const base: ProfLevel = c.skillProf[key]
@@ -205,6 +206,26 @@ export function spellStats(c: Character, effects = activeEffects(c)) {
   return { dc: 8 + pb + m + dcB, attack: pb + m + atB, mod: m }
 }
 
+/** AK5e: 8 + STR or DEX (the better one) + proficiency */
+export function martialDc(c: Character, effects = activeEffects(c)) {
+  const m = Math.max(ability(c, 'str', effects).mod, ability(c, 'dex', effects).mod)
+  return 8 + profBonus(c) + m + collect(effects, ['martialDc']).bonuses.reduce((s, p) => s + p.value, 0)
+}
+
+/** AK5e Damage Reduction: the base you set plus anything linked to it. */
+export function damageReduction(c: Character, effects = activeEffects(c)) {
+  const adds = collect(effects, ['dr']).bonuses
+  return { total: c.ak.dr + adds.reduce((s, p) => s + p.value, 0), adds }
+}
+
+/** AK5e: max SP is the highest SP cost among your Operator Skills; start SP the highest start value. */
+export function spLimits(c: Character) {
+  return {
+    max: c.ak.opSkills.reduce((m, s) => Math.max(m, s.spCost), 0),
+    start: c.ak.opSkills.reduce((m, s) => Math.max(m, s.startSp), 0),
+  }
+}
+
 export interface AttackInfo {
   bonus: number
   damage: string
@@ -226,7 +247,7 @@ export function attackInfo(c: Character, a: Attack, effects = activeEffects(c)):
 
 export function totalWeight(c: Character): number {
   const w = c.items.reduce((s, i) => s + i.qty * i.weight, 0)
-  const coins = Object.values(c.coins).reduce((s, n) => s + n, 0) / 50
+  const coins = isAK(c) ? 0 : Object.values(c.coins).reduce((s, n) => s + n, 0) / 50
   return Math.round((w + coins) * 100) / 100
 }
 

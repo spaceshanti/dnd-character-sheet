@@ -14,6 +14,8 @@ import { SpellsPage } from './pages/Spells'
 import { ActionsPage } from './pages/Actions'
 import { GalleryPage } from './pages/Gallery'
 import { SettingsPage } from './pages/Settings'
+import { OperatorSkillsPage } from './pages/OperatorSkills'
+import { systemOf } from './systems'
 
 export default function App() {
   const loaded = useStore((s) => s.loaded)
@@ -24,10 +26,19 @@ export default function App() {
   const page = useUI((s) => s.page)
   const listOpen = useUI((s) => s.charListOpen)
   const hasChar = useStore((s) => !!s.chars[s.activeId])
+  const system = useStore((s) => systemOf(s.chars[s.activeId]))
 
   useEffect(() => { load() }, [load])
   useEffect(() => { document.documentElement.dataset.theme = theme }, [theme])
   useEffect(() => { document.documentElement.dataset.skin = skin }, [skin])
+  // each game keeps its own UI style: opening an Arknights character switches to its look, and back
+  useEffect(() => {
+    const st = useStore.getState()
+    if (!st.loaded || !st.chars[st.activeId]) return
+    const want = st.skinBySystem[system] ?? (system === 'ak5e' ? 'arknights' : undefined)
+    if (want && want !== st.skin) useStore.setState({ skin: want, skinBySystem: { ...st.skinBySystem, [system]: want } })
+    document.documentElement.dataset.system = system
+  }, [system, loaded, activeId])
 
   // Ctrl+I opens the inventory, Tab opens / closes the abilities panel (both only while not typing in a box)
   useEffect(() => {
@@ -72,6 +83,7 @@ export default function App() {
           {page === 'overview' && <Overview />}
           {page === 'character' && <CharacterPage />}
           {page === 'features' && <FeaturesPage />}
+          {page === 'operator' && (system === 'ak5e' ? <OperatorSkillsPage /> : <Overview />)}
           {page === 'spells' && <SpellsPage />}
           {page === 'actions' && <ActionsPage />}
           {page === 'gallery' && <GalleryPage />}

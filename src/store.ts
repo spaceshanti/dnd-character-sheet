@@ -3,6 +3,7 @@ import { produce } from 'immer'
 import type { AppData, Character, CustomSpell } from './types'
 import { blankCharacter, normalize, uid } from './blank'
 import { SKINS, type SkinId } from './skins'
+import { systemOf, type SystemId } from './systems'
 
 declare global {
   interface Window {
@@ -54,8 +55,9 @@ async function writeStore(json: string) {
   else try { localStorage.setItem(LS_KEY, json) } catch { /* quota */ }
 }
 
-interface State extends Omit<AppData, 'skin' | 'customSpells'> {
+interface State extends Omit<AppData, 'skin' | 'customSpells' | 'skinBySystem'> {
   skin: SkinId
+  skinBySystem: Partial<Record<SystemId, SkinId>>
   customSpells: CustomSpell[]
   saveCustomSpell: (s: CustomSpell) => void
   deleteCustomSpell: (id: string) => void
@@ -65,7 +67,7 @@ interface State extends Omit<AppData, 'skin' | 'customSpells'> {
   /** edit the active character with an immer-style mutator */
   patch: (fn: (c: Character) => void) => void
   setActive: (id: string) => void
-  addChar: (name?: string) => string
+  addChar: (name?: string, system?: SystemId) => string
   dupChar: (id: string) => void
   deleteChar: (id: string) => void
   importChars: (chars: Character[]) => void
@@ -74,7 +76,7 @@ interface State extends Omit<AppData, 'skin' | 'customSpells'> {
 }
 
 export const useStore = create<State>((set, get) => ({
-  version: 1, chars: {}, order: [], activeId: '', theme: 'light', skin: 'standard', customSpells: [], loaded: false, saveError: '',
+  version: 1, chars: {}, order: [], activeId: '', theme: 'light', skin: 'standard', skinBySystem: {}, customSpells: [], loaded: false, saveError: '',
 
   async load() {
     let data: Partial<AppData> | null = null
@@ -91,7 +93,11 @@ export const useStore = create<State>((set, get) => ({
     // no character, or the last one opened is gone → the character list is shown instead
     const activeId = data?.activeId && chars[data.activeId] ? data.activeId : ''
     const skin = (SKINS.find((k) => k.id === data?.skin)?.id ?? 'standard') as SkinId
-    set({ chars, order, activeId, theme: data?.theme === 'dark' ? 'dark' : 'light', skin, customSpells: data?.customSpells ?? [], loaded: true })
+    const skinBySystem: State['skinBySystem'] = {}
+    for (const [sys, id] of Object.entries(data?.skinBySystem ?? {})) if (SKINS.some((k) => k.id === id)) skinBySystem[sys as SystemId] = id as SkinId
+    // saves from before games existed: the style in use becomes the D&D one
+    if (!skinBySystem.dnd5e) skinBySystem.dnd5e = skin
+    set({ chars, order, activeId, theme: data?.theme === 'dark' ? 'dark' : 'light', skin, skinBySystem, customSpells: data?.customSpells ?? [], loaded: true })
   },
 
   patch(fn) {
@@ -104,8 +110,8 @@ export const useStore = create<State>((set, get) => ({
 
   setActive: (id) => set({ activeId: id }),
 
-  addChar(name = 'New Character') {
-    const c = blankCharacter(name)
+  addChar(name = 'New Character', system: SystemId = 'dnd5e') {
+    const c = blankCharacter(name, system)
     set((s) => ({ chars: { ...s.chars, [c.id]: c }, order: [...s.order, c.id], activeId: c.id }))
     return c.id
   },
@@ -145,7 +151,8 @@ export const useStore = create<State>((set, get) => ({
   },
 
   setTheme: (theme) => set({ theme }),
-  setSkin: (skin) => set({ skin }),
+  // remembered per game: the style you pick applies to every character of the open character's game
+  setSkin: (skin) => set((s) => ({ skin, skinBySystem: { ...s.skinBySystem, [systemOf(s.chars[s.activeId])]: skin } })),
   saveCustomSpell: (sp) => set((s) => ({ customSpells: s.customSpells.some((x) => x.id === sp.id) ? s.customSpells.map((x) => (x.id === sp.id ? sp : x)) : [...s.customSpells, sp] })),
   deleteCustomSpell: (id) => set((s) => ({ customSpells: s.customSpells.filter((x) => x.id !== id) })),
 }))
@@ -155,12 +162,12 @@ let timer: ReturnType<typeof setTimeout> | undefined
 useStore.subscribe((s, prev) => {
   // nothing to save for the load itself, only for changes after it (keeps the .bak a real previous version)
   if (!s.loaded || !prev.loaded) return
-  if (s.chars === prev.chars && s.order === prev.order && s.activeId === prev.activeId && s.theme === prev.theme && s.skin === prev.skin && s.customSpells === prev.customSpells) return
+  if (s.chars === prev.chars && s.order === prev.order && s.activeId === prev.activeId && s.theme === prev.theme && s.skin === prev.skin && s.skinBySystem === prev.skinBySystem && s.customSpells === prev.customSpells) return
   clearTimeout(timer)
   timer = setTimeout(async () => {
-    const { chars, order, activeId, theme, skin, customSpells } = useStore.getState()
+    const { chars, order, activeId, theme, skin, skinBySystem, customSpells } = useStore.getState()
     try {
-      await writeStore(JSON.stringify({ version: 1, chars, order, activeId, theme, skin, customSpells } satisfies AppData))
+      await writeStore(JSON.stringify({ version: 1, chars, order, activeId, theme, skin, skinBySystem, customSpells } satisfies AppData))
       useStore.setState({ saveError: '' })
     } catch (e) {
       useStore.setState({ saveError: String(e) })
@@ -176,7 +183,7 @@ export const useChar = (): Character => {
 /* ---------------- transient UI state ---------------- */
 export type ImageTarget = 'portrait' | 'appearanceImage' | 'emblem'
 
-export type PageId = 'overview' | 'character' | 'features' | 'spells' | 'actions' | 'gallery' | 'settings'
+export type PageId = 'overview' | 'character' | 'features' | 'operator' | 'spells' | 'actions' | 'gallery' | 'settings'
 
 export type Drawer =
   | { kind: 'spell'; id: string }

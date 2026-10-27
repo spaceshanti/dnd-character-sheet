@@ -1,6 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { ALIGNMENTS, CONDITIONS } from '../constants'
-import { activeEffects, netAdvantage, signed, statInfo, type StatKey } from '../calc'
+import { ALIGNMENTS, conditionsFor } from '../constants'
+import { isAK, systemOf } from '../systems'
+import { DEATHS_DOOR } from '../ak'
+import { activeEffects, damageReduction, netAdvantage, signed, spLimits, statInfo, type StatKey } from '../calc'
 import { uid } from '../blank'
 import { useChar, useStore, useUI, type PageId } from '../store'
 import { Field, FitInput, Num, Pips, Popover, Toast, useToast } from './ui'
@@ -15,6 +17,17 @@ const TABS: { id: PageId; name: string }[] = [
   { id: 'character', name: 'Character' },
   { id: 'features', name: 'Features' },
   { id: 'spells', name: 'Spells' },
+  { id: 'actions', name: 'Actions' },
+  { id: 'gallery', name: 'Gallery' },
+  { id: 'settings', name: 'Settings' },
+]
+/** Arknights 5e: Operator Skills get their own page and spells are called Arts */
+const AK_TABS: { id: PageId; name: string }[] = [
+  { id: 'overview', name: 'Overview' },
+  { id: 'character', name: 'Character' },
+  { id: 'features', name: 'Features' },
+  { id: 'operator', name: 'Op. Skills' },
+  { id: 'spells', name: 'Arts' },
   { id: 'actions', name: 'Actions' },
   { id: 'gallery', name: 'Gallery' },
   { id: 'settings', name: 'Settings' },
@@ -52,14 +65,25 @@ export function TopBar() {
   }
   const report = (rest: string, done: string[]) => toast.show(done.length ? `${rest} rest · ${done.join(' · ')}` : `${rest} rest taken`)
 
+  const ak = isAK(c)
   const longRest = () => {
-    if (!window.confirm('Take a long rest? This refills HP, spell slots, hit dice (half), resources and clears death saves.')) return
+    if (!window.confirm(ak
+      ? 'Take a long rest? This refills HP, Arts Points, hit dice (half) and resources, tops SP up to your start SP, and removes one failed death save.'
+      : 'Take a long rest? This refills HP, spell slots, hit dice (half), resources and clears death saves.')) return
     let done: string[] = []
     patch((d) => {
       const max = statInfo(d as typeof c, 'hpMax', activeEffects(d as typeof c)).total
       d.hp.current = max
       d.hp.temp = 0
-      d.deathSaves = { successes: 0, failures: 0 }
+      if (ak) {
+        // AK5e: failed death saves only go away one per long rest
+        d.deathSaves = { successes: 0, failures: Math.max(0, d.deathSaves.failures - 1) }
+        d.ak.mettle = 0
+        d.ak.ap.used = 0
+        d.ak.ninthUsed = false
+        d.ak.activeSkill = ''
+        d.ak.sp = Math.max(d.ak.sp, spLimits(d as typeof c).start)
+      } else d.deathSaves = { successes: 0, failures: 0 }
       for (const k of Object.keys(d.slots)) d.slots[+k].used = 0
       let regain = Math.max(1, Math.floor(d.hitDice.reduce((s, h) => s + h.total, 0) / 2))
       for (const h of d.hitDice) { const r = Math.min(h.spent, regain); h.spent -= r; regain -= r }
@@ -72,6 +96,7 @@ export function TopBar() {
     if (!window.confirm('Take a short rest? Resources that recharge on a short rest are refilled.')) return
     let done: string[] = []
     patch((d) => {
+      if (ak && d.ak.ap.recharge === 'short') d.ak.ap.used = 0
       for (const r of d.resources) {
         if (r.recharge === 'short') r.used = 0
         else if (r.recharge === 'shortOne') r.used = Math.max(0, r.used - 1)
@@ -93,7 +118,7 @@ export function TopBar() {
           </div>
           <div className="details">
             <Field label="Class" value={c.className} onChange={(v) => patch((d) => { d.className = v })} />
-            <Field label="Subclass" value={c.subclass} onChange={(v) => patch((d) => { d.subclass = v })} />
+            <Field label={ak ? 'Branch' : 'Subclass'} value={c.subclass} onChange={(v) => patch((d) => { d.subclass = v })} />
             <Field label="Species / Race" value={c.species} onChange={(v) => patch((d) => { d.species = v })} />
             <div className="field">
               <div className="row" style={{ gap: 4 }}>
@@ -103,10 +128,12 @@ export function TopBar() {
               <label>Level · Experience</label>
             </div>
             <Field label="Background" value={c.background} onChange={(v) => patch((d) => { d.background = v })} />
-            <div className="field">
-              <FitInput list="aligns" value={c.alignment} onChange={(e) => patch((d) => { d.alignment = e.target.value })} />
-              <label>Alignment</label>
-            </div>
+            {ak ? <Field label="Nationality" value={c.nationality} onChange={(v) => patch((d) => { d.nationality = v })} /> : (
+              <div className="field">
+                <FitInput list="aligns" value={c.alignment} onChange={(e) => patch((d) => { d.alignment = e.target.value })} />
+                <label>Alignment</label>
+              </div>
+            )}
             <Field label="Player" value={c.player} onChange={(v) => patch((d) => { d.player = v })} />
             <datalist id="aligns">{ALIGNMENTS.filter(Boolean).map((a) => <option key={a} value={a} />)}</datalist>
           </div>
@@ -115,7 +142,7 @@ export function TopBar() {
       </div>
 
       <nav className="nav">
-        {TABS.map((t) => (
+        {(ak ? AK_TABS : TABS).map((t) => (
           <button key={t.id} className={`tab ${page === t.id ? 'active' : ''}`} onClick={() => go(t.id)}>{t.name}</button>
         ))}
         <span className="spacer" />
@@ -181,12 +208,17 @@ function Vitals() {
         d.hp.current = Math.max(0, d.hp.current - dmg)
       } else {
         d.hp.current = Math.min(hpm.total, d.hp.current + n)
-        if (d.hp.current > 0) d.deathSaves = { successes: 0, failures: 0 }
+        // AK5e: you stop Dying (and lose your Mettle), but failed saves stay until a long rest
+        if (d.hp.current > 0 && ak) d.ak.mettle = 0
+        else if (d.hp.current > 0) d.deathSaves = { successes: 0, failures: 0 }
       }
     })
     setAmt('')
   }
   const totalHd = c.hitDice.reduce((s, h) => s + h.total - h.spent, 0)
+  const ak = isAK(c)
+  const conditions = conditionsFor(systemOf(c))
+  const dr = damageReduction(c, fx)
 
   return (
     <div className="vitals">
@@ -205,14 +237,24 @@ function Vitals() {
         <div className="v">{spd.total}<span style={{ fontSize: 11 }}>ft</span></div>
         <div className="sub">{addsText(spd)}</div>
       </div>
-      <div className="vbox" style={{ cursor: 'default' }}>
-        <div className="l">Size</div>
-        <select className="size-select" value={c.size} onChange={(e) => patch((d) => { d.size = e.target.value })}>
-          {SIZES.includes(c.size) ? null : <option value={c.size}>{c.size}</option>}
-          {SIZES.map((x) => <option key={x}>{x}</option>)}
-        </select>
-        <div className="sub" />
-      </div>
+      {ak ? (
+        <div className="vbox" style={{ cursor: 'default' }} title={'Damage Reduction: a flat cut to damage taken, before resistance (never below 1).' + (dr.adds.length ? '\n' + dr.adds.map((a) => `${a.label} ${signed(a.value)}`).join('\n') : '')}>
+          <div className="l">Dmg Red.</div>
+          <div className="v dr-v">
+            <Num min={0} max={99} value={c.ak.dr} onChange={(n) => patch((d) => { d.ak.dr = n })} />
+          </div>
+          <div className="sub">{dr.adds.length ? `= ${dr.total}` : ''}</div>
+        </div>
+      ) : (
+        <div className="vbox" style={{ cursor: 'default' }}>
+          <div className="l">Size</div>
+          <select className="size-select" value={c.size} onChange={(e) => patch((d) => { d.size = e.target.value })}>
+            {SIZES.includes(c.size) ? null : <option value={c.size}>{c.size}</option>}
+            {SIZES.map((x) => <option key={x}>{x}</option>)}
+          </select>
+          <div className="sub" />
+        </div>
+      )}
 
       <div className="vbox hp-box">
         <div style={{ minWidth: 104 }}>
@@ -248,6 +290,20 @@ function Vitals() {
         <div className="sub">{c.hitDice.length ? `${totalHd} left` : 'set up'}</div>
       </div>
 
+      {ak ? (
+        <div className={`vbox ${c.hp.current <= 0 ? 'dying' : ''}`} style={{ cursor: 'default', minWidth: 118 }}
+          title={"Dying at 0 HP: death save at the start of each turn (+2 Mettle on a success, +1 on a fail). Three failures and you die.\n\nDeath's Door actions:\n" + DEATHS_DOOR.map(([n, m, t]) => `${n} (${m} Mettle): ${t}`).join('\n')}>
+          <div className="l">{c.hp.current <= 0 ? 'Dying' : 'Mettle · Fails'}</div>
+          <div className="row" style={{ gap: 6, marginTop: 3 }}>
+            <span className="small muted" style={{ width: 14 }} title="Mettle">◆</span>
+            <Pips kind="mettle" total={6} used={6 - c.ak.mettle} onChange={(u) => patch((d) => { d.ak.mettle = 6 - u })} />
+          </div>
+          <div className="row" style={{ gap: 6, marginTop: 3, marginBottom: 3 }}>
+            <span className="small muted" style={{ width: 14 }}>✗</span>
+            <Pips kind="fail" total={3} used={3 - c.deathSaves.failures} onChange={(u) => patch((d) => { d.deathSaves.failures = 3 - u })} />
+          </div>
+        </div>
+      ) : (
       <div className="vbox" style={{ cursor: 'default', minWidth: 118 }}>
         <div className="l">Death Saves</div>
         <div className="row" style={{ gap: 6, marginTop: 3 }}>
@@ -259,6 +315,7 @@ function Vitals() {
           <Pips kind="fail" total={3} used={3 - c.deathSaves.failures} onChange={(u) => patch((d) => { d.deathSaves.failures = 3 - u })} />
         </div>
       </div>
+      )}
 
       <div className="vbox" ref={(el) => (refs.current.cond = el)} style={{ minWidth: 150, maxWidth: 260, alignItems: 'flex-start' }} onClick={() => setCondOpen(!condOpen)}>
         <div className="l" style={{ alignSelf: 'center' }}>Conditions</div>
@@ -278,7 +335,7 @@ function Vitals() {
       {condOpen && (
         <Popover anchor={refs.current.cond} onClose={() => setCondOpen(false)} width={300}>
           <div className="row" style={{ flexWrap: 'wrap', gap: 5 }}>
-            {CONDITIONS.map((x) => {
+            {conditions.map((x) => {
               const on = c.conditions.includes(x)
               return (
                 <button key={x} className={`chip ${on ? 'accent' : ''}`} style={{ cursor: 'pointer' }}
@@ -287,7 +344,7 @@ function Vitals() {
                 </button>
               )
             })}
-            {c.conditions.filter((x) => !CONDITIONS.includes(x)).map((x) => (
+            {c.conditions.filter((x) => !conditions.includes(x)).map((x) => (
               <button key={x} className="chip accent" style={{ cursor: 'pointer' }} onClick={() => patch((d) => { d.conditions = d.conditions.filter((y) => y !== x) })}>{x} ✕</button>
             ))}
           </div>

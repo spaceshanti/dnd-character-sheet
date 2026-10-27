@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { WeaponTags } from '../components/WeaponTags'
 import { attackInfo, itemAttacks, signed, spellActionType } from '../calc'
 import { useChar, useUI } from '../store'
+import { isAK } from '../systems'
+import { activateOp } from '../ak'
 import { Frame, Toast, useToast } from '../components/ui'
 import { costText, modsFor, spendAction } from '../components/FeatureParts'
 import { ammoText, useItem } from '../consume'
@@ -52,10 +54,23 @@ export function ActionsPage() {
     const i = attackInfo(c, a)
     rows.action.push({ key: a.id, kind: 'Attack', name: a.name || 'Attack', right: `${signed(i.bonus)} · ${i.damage} ${a.damageType}`, onClick: () => go('overview') })
   }
+  const ak = isAK(c)
+  for (const s of c.ak.opSkills) {
+    if (!ak) break
+    const a = s.activation.toLowerCase()
+    const t: ActionType = a.includes('bonus') ? 'bonus' : a.includes('reaction') ? 'reaction' : /^\s*(1\s*)?action/.test(a) ? 'action' : 'free'
+    put(t, {
+      key: s.id, kind: 'Op. Skill', name: s.name || 'Operator Skill',
+      right: `${s.spCost} SP · ${s.duration || 'instant'}${c.ak.activeSkill === s.id ? ' · ACTIVE' : ''}`,
+      onClick: () => go('operator'),
+      onUse: () => toast.show(activateOp(c, s.id)),
+    })
+  }
   for (const s of c.spells) {
-    if (s.level > 0 && !s.prepared && !s.alwaysPrepared) continue
+    // AK5e: every Art you know is always prepared
+    if (!ak && s.level > 0 && !s.prepared && !s.alwaysPrepared) continue
     put(spellActionType(s.castingTime), {
-      key: s.id, kind: s.level === 0 ? 'Cantrip' : `Spell ${s.level}`, name: s.name,
+      key: s.id, kind: s.level === 0 ? 'Cantrip' : `${ak ? 'Art' : 'Spell'} ${s.level}`, name: s.name,
       right: [s.range, s.concentration ? 'Conc.' : '', s.ammoId ? ammoText(c, s.ammoId, s.ammoCost) : ''].filter(Boolean).join(' · '),
       onClick: () => set({ drawer: { kind: 'spell', id: s.id } }),
       onUse: s.ammoId ? () => toast.show(useItem(c, s.ammoId, s.ammoCost, s.name)) : undefined,
@@ -85,7 +100,8 @@ export function ActionsPage() {
   return (
     <div className="col" style={{ gap: 14 }}>
       <div className="muted small">
-        Built automatically from your attacks, prepared spells (by casting time), and any feature or item you've given an action type.
+        {ak ? 'Built automatically from your attacks, Operator Skills, Arts (by casting time), and any feature or item you\'ve given an action type.'
+          : 'Built automatically from your attacks, prepared spells (by casting time), and any feature or item you\'ve given an action type.'}
       </div>
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', alignItems: 'start' }}>
         {cols.map((col) => (

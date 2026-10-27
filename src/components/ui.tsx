@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type InputHTMLAttributes, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { ACTION_TYPES, EFFECT_TARGETS, EFFECT_TYPES } from '../constants'
+import { ACTION_TYPES, EFFECT_TYPES, effectTargets } from '../constants'
+import { systemOf } from '../systems'
+import { useStore } from '../store'
 import { newEffect } from '../blank'
 import type { Effect, EffectType } from '../types'
 
@@ -243,6 +245,8 @@ function allowedTypes(target: string): EffectType[] {
 
 /** Lets any feature / item / spell be linked to the things it changes. */
 export function EffectsEditor({ effects, onChange, bare = false }: { effects: Effect[]; onChange: (e: Effect[]) => void; bare?: boolean }) {
+  const sys = useStore((s) => systemOf(s.chars[s.activeId]))
+  const targets = effectTargets(sys)
   const set = (id: string, patch: Partial<Effect>) => onChange(effects.map((e) => (e.id === id ? { ...e, ...patch } : e)))
   return (
     <div className={bare ? 'fx-bare' : 'fx'}>
@@ -259,7 +263,7 @@ export function EffectsEditor({ effects, onChange, bare = false }: { effects: Ef
                 set(e.id, { target: t, type: ok.includes(e.type) ? e.type : ok[0] })
               }}
             >
-              {EFFECT_TARGETS.map((g) => (
+              {targets.map((g) => (
                 <optgroup key={g.label} label={g.label}>
                   {g.options.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
                 </optgroup>

@@ -582,3 +582,45 @@ svg.ico { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14e
 /* additions from other features shown under an action */
 .act-mod { display: block; font-size: 11.5px; margin-top: 3px; padding-left: 7px; border-left: 2px solid var(--accent); color: var(--ink2); }
 .act-mod b { color: var(--accent); font-weight: 700; }
+
+/* ---------- Arknights 5e parts ---------- */
+.sp-tracker, .ap-panel { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ap-panel { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; background: var(--panel); }
+.sp-num, .ap-num { display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; width: 118px; }
+.sp-num input, .ap-num input { width: 46px; font-size: 24px; font-weight: 700; font-family: var(--font-num, var(--font-head)); text-align: right; border-bottom: 1px solid var(--line); }
+.ap-num b { font-size: 24px; font-family: var(--font-num, var(--font-head)); min-width: 36px; text-align: right; }
+.ap-num input { font-size: 15px; width: 38px; text-align: left; color: var(--ink2); }
+.sp-num span, .ap-num span { color: var(--ink2); font-weight: 600; }
+.sp-num label, .ap-num label { width: 100%; font-size: 8px; font-family: var(--font-head); letter-spacing: .12em; text-transform: uppercase; color: var(--ink2); }
+.sp-bar { height: 7px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.sp-bar > i { display: block; height: 100%; background: var(--accent); transition: width .2s; }
+.sp-bar.full > i { background: var(--good); }
+.sp-active { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 4px 10px; border-left: 3px solid var(--accent); }
+.op-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 14px; align-items: start; }
+.op-card { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--panel); margin-bottom: 8px; }
+.op-card.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.op-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.op-name { font-family: var(--font-head); font-size: 14px; }
+.op-stats { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; margin-bottom: 4px; }
+.op-stats span { display: inline-flex; gap: 4px; align-items: baseline; font-weight: 600; }
+.op-stats i { font-style: normal; font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); font-family: var(--font-head); }
+.op-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
+.op-grid label { display: flex; flex-direction: column; gap: 2px; }
+.op-grid .box-input, .op-grid select { width: 100%; }
+.op-pick-list { max-height: 62vh; overflow-y: auto; padding-right: 4px; min-width: min(760px, 80vw); }
+.small-prose { font-size: 12.5px; line-height: 1.45; }
+.op-row.active { background: var(--accent-soft); }
+.op-tier-dot { width: 18px; height: 18px; flex: none; display: grid; place-items: center; font-size: 10px; font-weight: 700; border: 1px solid var(--ink2); border-radius: 3px; color: var(--ink2); }
+.ap-cost { font-family: var(--font-num, var(--font-head)); font-size: 11px; font-weight: 700; padding: 0 6px; border: 1px solid var(--accent); color: var(--accent); border-radius: 3px; }
+.spell-sec.locked { opacity: .55; }
+.coin.lmd { width: auto; }
+.coin.lmd input { width: 120px; }
+.pip.mettle { border-radius: 2px; transform: rotate(45deg) scale(0.8); }
+.pip.mettle.on { background: var(--accent); border-color: var(--accent); }
+.vbox.dying { border-color: var(--dis); box-shadow: 0 0 0 2px color-mix(in srgb, var(--dis) 30%, transparent); }
+.vbox.dying .l { color: var(--dis); }
+.dr-v input { width: 40px; text-align: center; font: inherit; color: inherit; }
+.game-seg button { white-space: nowrap; }
+.game-tag { align-self: flex-start; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; padding: 0 6px; border-radius: 3px; border: 1px solid var(--line); color: var(--ink2); margin: 1px 0 2px; }
+.game-tag.sys-ak5e { border-color: var(--accent); color: var(--accent); }
+.char-new.sys-ak5e { border-style: dashed; }

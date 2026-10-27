@@ -1,4 +1,5 @@
 import type { AbilityKey, ActionType, EffectType, Rarity, Recharge, SkillKey } from './types'
+import type { SystemId } from './systems'
 
 export const ABILITIES: { key: AbilityKey; name: string; short: string }[] = [
   { key: 'str', name: 'Strength', short: 'STR' },
@@ -30,11 +31,39 @@ export const SKILLS: { key: SkillKey; name: string; ability: AbilityKey }[] = [
   { key: 'persuasion', name: 'Persuasion', ability: 'cha' },
 ]
 
+/** Arknights 5e skill list (as on its character sheet). */
+export const AK_SKILLS: { key: SkillKey; name: string; ability: AbilityKey }[] = [
+  { key: 'athletics', name: 'Athletics', ability: 'str' },
+  { key: 'acrobatics', name: 'Acrobatics', ability: 'dex' },
+  { key: 'sleightOfHand', name: 'Sleight of Hand', ability: 'dex' },
+  { key: 'stealth', name: 'Stealth', ability: 'dex' },
+  { key: 'arts', name: 'Arts', ability: 'int' },
+  { key: 'investigation', name: 'Investigation', ability: 'int' },
+  { key: 'lore', name: 'Lore', ability: 'int' },
+  { key: 'technology', name: 'Technology', ability: 'int' },
+  { key: 'animalHandling', name: 'Animal Handling', ability: 'wis' },
+  { key: 'insight', name: 'Insight', ability: 'wis' },
+  { key: 'medicine', name: 'Medicine', ability: 'wis' },
+  { key: 'perception', name: 'Perception', ability: 'wis' },
+  { key: 'wilderness', name: 'Wilderness', ability: 'wis' },
+  { key: 'deception', name: 'Deception', ability: 'cha' },
+  { key: 'intimidation', name: 'Intimidation', ability: 'cha' },
+  { key: 'performance', name: 'Performance', ability: 'cha' },
+  { key: 'persuasion', name: 'Persuasion', ability: 'cha' },
+]
+
+export const ALL_SKILLS = [...SKILLS, ...AK_SKILLS.filter((s) => !SKILLS.some((d) => d.key === s.key))]
+export const skillsFor = (sys: SystemId) => (sys === 'ak5e' ? AK_SKILLS : SKILLS)
+
 export const CONDITIONS = [
   'Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated',
   'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious',
   'Concentrating',
 ]
+
+/** Arknights 5e's new conditions */
+export const AK_CONDITIONS = ['Bleeding', 'Burning', 'Corroded', 'Dazed', 'Frozen', 'Necrotised', 'Nervous Impairment', 'Silenced', 'Dying']
+export const conditionsFor = (sys: SystemId) => (sys === 'ak5e' ? [...CONDITIONS, ...AK_CONDITIONS] : CONDITIONS)
 
 export const ALIGNMENTS = [
   '', 'Lawful Good', 'Neutral Good', 'Chaotic Good', 'Lawful Neutral', 'True Neutral',
@@ -107,6 +136,15 @@ export interface TargetGroup {
   options: { id: string; name: string }[]
 }
 
+export function effectTargets(sys: SystemId): TargetGroup[] {
+  const skills = skillsFor(sys)
+  return EFFECT_TARGETS.map((g) => {
+    if (g.label === 'Skills') return { ...g, options: [g.options[0], ...skills.map((s) => ({ id: `skill:${s.key}`, name: s.name }))] }
+    if (g.label === 'Stats' && sys === 'ak5e') return { ...g, options: [...g.options, { id: 'dr', name: 'Damage Reduction' }, { id: 'martialDc', name: 'Martial DC' }] }
+    return g
+  })
+}
+
 export const EFFECT_TARGETS: TargetGroup[] = [
   {
     label: 'Stats',
@@ -127,11 +165,13 @@ export const EFFECT_TARGETS: TargetGroup[] = [
   },
   {
     label: 'Skills',
-    options: [{ id: 'skill:all', name: 'All skill checks' }, ...SKILLS.map((s) => ({ id: `skill:${s.key}`, name: s.name }))],
+    options: [{ id: 'skill:all', name: 'All skill checks' }, ...ALL_SKILLS.map((s) => ({ id: `skill:${s.key}`, name: s.name }))],
   },
 ]
 
 export function targetName(id: string): string {
+  if (id === 'dr') return 'Damage Reduction'
+  if (id === 'martialDc') return 'Martial DC'
   for (const g of EFFECT_TARGETS) {
     const o = g.options.find((x) => x.id === id)
     if (o) return o.name

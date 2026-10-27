@@ -1,7 +1,8 @@
-import { SKILLS } from './constants'
+import { ALL_SKILLS } from './constants'
 import { EMOJI_TO_ICON } from './components/Icon'
 import { lookupWeapon } from './data/gear'
-import type { Attack, Character, Effect, Feature, FeatureAction, Item, Mod, Resource, Spell } from './types'
+import type { AkData, Attack, Character, Effect, Feature, FeatureAction, Item, Mod, OperatorSkill, Resource, SkillTier, Spell } from './types'
+import type { SystemId } from './systems'
 
 export const uid = () =>
   (globalThis.crypto && 'randomUUID' in globalThis.crypto ? globalThis.crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36))
@@ -42,12 +43,22 @@ export function newFeatureAction(): FeatureAction {
   return { id: uid(), name: '', actionType: 'action', description: '', resourceId: '', cost: 1 }
 }
 
-export function blankCharacter(name = 'New Character'): Character {
-  const skillProf = Object.fromEntries(SKILLS.map((s) => [s.key, 0])) as Character['skillProf']
+export function newOpSkill(tier: SkillTier = 'basic'): OperatorSkill {
+  return { id: uid(), tier, name: '', spCost: 10, startSp: 0, charging: 'Automatic', activation: 'Bonus Action', duration: '', effect: '' }
+}
+export function blankAk(): AkData {
+  return {
+    lmd: 0, mettle: 0, sp: 0, activeSkill: '', opSkills: [], ap: { max: 0, used: 0, recharge: 'long' }, maxArtLevel: 0,
+    ninthUsed: false, infected: false, assimilation: 0, dr: 0, drNote: '',
+  }
+}
+
+export function blankCharacter(name = 'New Character', system: SystemId = 'dnd5e'): Character {
+  const skillProf = Object.fromEntries(ALL_SKILLS.map((s) => [s.key, 0])) as Character['skillProf']
   const slots: Character['slots'] = {}
   for (let i = 1; i <= 9; i++) slots[i] = { total: 0, used: 0 }
   return {
-    id: uid(), name, className: '', subclass: '', level: 1, species: '', background: '', alignment: '',
+    id: uid(), system, name, className: '', subclass: '', level: 1, species: '', background: '', alignment: '', nationality: '',
     player: '', xp: '', portrait: '', appearanceImage: '', emblem: '',
     appearance: { age: '', height: '', weight: '', eyes: '', skin: '', hair: '' },
     abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
@@ -70,7 +81,7 @@ export function blankCharacter(name = 'New Character'): Character {
       backstory: '', trait1: '', trait2: '', trait3: '', ideals: '', bonds: '', flaws: '', allies: '',
       alliesTitle: 'Allies & Organizations', roleplay: '', expression: '',
     },
-    extraNotes: [], battleState: '', gallery: [], updatedAt: Date.now(),
+    extraNotes: [], battleState: '', gallery: [], ak: blankAk(), updatedAt: Date.now(),
   }
 }
 
@@ -92,6 +103,8 @@ export function normalize(raw: Partial<Character>): Character {
   c.proficiencies = { ...b.proficiencies, ...raw.proficiencies }
   c.story = { ...b.story, ...raw.story }
   c.slots = { ...b.slots, ...raw.slots }
+  c.system = raw.system === 'ak5e' ? 'ak5e' : 'dnd5e'
+  c.ak = { ...b.ak, ...raw.ak, ap: { ...b.ak.ap, ...raw.ak?.ap } }
   // the three personality boxes became one
   if (c.story.trait2 || c.story.trait3) {
     c.story.trait1 = [c.story.trait1, c.story.trait2, c.story.trait3].filter((t) => t.trim()).join('\n\n')

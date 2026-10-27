@@ -4,6 +4,8 @@ export type SkillKey =
   | 'acrobatics' | 'animalHandling' | 'arcana' | 'athletics' | 'deception' | 'history'
   | 'insight' | 'intimidation' | 'investigation' | 'medicine' | 'nature' | 'perception'
   | 'performance' | 'persuasion' | 'religion' | 'sleightOfHand' | 'stealth' | 'survival'
+  // Arknights 5e: History + Religion → Lore, Nature + Survival → Wilderness, Arcana → Arts, plus Technology
+  | 'arts' | 'lore' | 'wilderness' | 'technology'
 
 /** 0 none, 1 proficient, 2 expertise */
 export type ProfLevel = 0 | 1 | 2
@@ -216,8 +218,50 @@ export interface ExtraNote {
   text: string
 }
 
+/** Arknights 5e: Basic (2nd), Advanced (7th) and Elite (14th level) Operator Skills */
+export type SkillTier = 'basic' | 'advanced' | 'elite' | 'other'
+
+export interface OperatorSkill {
+  id: string
+  tier: SkillTier
+  name: string
+  spCost: number
+  startSp: number
+  /** Automatic / Offensive / Defensive */
+  charging: string
+  /** Action, Bonus Action, Reaction, No Action… */
+  activation: string
+  duration: string
+  effect: string
+}
+
+/** Everything only an Arknights 5e sheet has. */
+export interface AkData {
+  /** Lungmen Dollars */
+  lmd: number
+  /** spent on Death's Door actions while Dying, max 6 */
+  mettle: number
+  /** current Skill Points */
+  sp: number
+  /** the Operator Skill that's running right now ('' = none) */
+  activeSkill: string
+  opSkills: OperatorSkill[]
+  ap: { max: number; used: number; recharge: 'long' | 'short' }
+  maxArtLevel: number
+  /** a 9th-level Art can only be cast once per long rest */
+  ninthUsed: boolean
+  infected: boolean
+  /** Oripathy Hardcore: Originium Assimilation Value */
+  assimilation: number
+  /** flat Damage Reduction (applied before resistance) */
+  dr: number
+  drNote: string
+}
+
 export interface Character {
   id: string
+  /** which game this sheet is for; older saves are D&D 5e */
+  system: 'dnd5e' | 'ak5e'
   name: string
   className: string
   subclass: string
@@ -225,6 +269,7 @@ export interface Character {
   species: string
   background: string
   alignment: string
+  nationality: string
   player: string
   xp: string
   /** small square image in the top-left corner */
@@ -281,6 +326,7 @@ export interface Character {
   extraNotes: ExtraNote[]
   battleState: string
   gallery: GalleryImage[]
+  ak: AkData
   updatedAt: number
 }
 
@@ -312,6 +358,8 @@ export interface AppData {
   activeId: string
   theme: 'light' | 'dark'
   skin?: string
+  /** the UI style last used for each game, so switching characters switches the look too */
+  skinBySystem?: Record<string, string>
   /** your own spells, available to every character */
   customSpells?: CustomSpell[]
 }

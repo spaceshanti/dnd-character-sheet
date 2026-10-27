@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { ABILITIES, ACTION_TYPES, ITEM_CATEGORIES, RARITIES, SLOT_IDS } from '../constants'
 import { attackInfo, carryCapacity, itemAttacks, masterySource, signed, totalWeight } from '../calc'
 import { newItem } from '../blank'
+import { isAK } from '../systems'
 import { bestItem } from '../itemLib'
 import { ammoOptions, ammoText } from '../consume'
 import { MASTERIES, MASTERY_INFO, WEAPON_NAMES, lookupArmor, lookupWeapon } from '../data/gear'
@@ -186,6 +187,15 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
             <div className="muted small" style={{ marginTop: 6 }}>Standard weapons and armor fill in their stats automatically. Click a line to add more detail.</div>
           </div>
 
+          {isAK(c) ? (
+            <div className="row">
+              <div className="coin lmd">
+                <Num min={0} max={999999999} value={c.ak.lmd} onChange={(n) => patch((d) => { d.ak.lmd = n })} />
+                <span>LMD</span>
+              </div>
+              <span className="muted small" style={{ marginLeft: 8 }}>Lungmen Dollars</span>
+            </div>
+          ) : (
           <div className="row" style={{ flexWrap: 'wrap' }}>
             {(['cp', 'sp', 'ep', 'gp', 'pp'] as const).map((k) => (
               <div className="coin" key={k}>
@@ -195,6 +205,7 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
             ))}
             <span className="muted small" style={{ marginLeft: 8 }}>Coins weigh 1 lb per 50.</span>
           </div>
+          )}
         </div>
 
         {/* details */}

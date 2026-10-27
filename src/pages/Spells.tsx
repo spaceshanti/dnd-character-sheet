@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { ABILITIES, SPELL_LEVEL_NAMES } from '../constants'
-import { activeEffects, preparedCount, signed, spellStats } from '../calc'
+import { activeEffects, martialDc, preparedCount, signed, spellStats } from '../calc'
+import { isAK } from '../systems'
 import { isConsumed, newSpell, uid } from '../blank'
-import { applyLib, bestLib, bundledLib, fromLib, LIB, LIB_CLASSES, LIB_SCHOOLS, searchLib, type LibSpell } from '../spellLib'
+import { applyLib, bestLib, bundledLib, fromLib, isPool, LIB, LIB_DND_CLASSES, LIB_POOLS, LIB_SCHOOLS, libLabel, searchLib, type LibSpell } from '../spellLib'
 import { useChar, useStore, useUI } from '../store'
 import { Frame, Modal, Num, Pips, Switch, Toast, useToast } from '../components/ui'
 import { RichArea } from '../components/RichText'
@@ -21,13 +22,14 @@ export function SpellsPage() {
   const fx = activeEffects(c)
   const ss = spellStats(c, fx)
   const others = order.filter((id) => id !== activeId)
+  const ak = isAK(c)
 
   return (
     <div className="col" style={{ gap: 12 }}>
       <div className="row" style={{ flexWrap: 'wrap', gap: 10 }}>
         <div className="seg">
-          <button className={view === 'mine' ? 'on' : ''} onClick={() => setView('mine')}>My spells</button>
-          <button className={view === 'library' ? 'on' : ''} onClick={() => setView('library')}>Spell library ({LIB.length})</button>
+          <button className={view === 'mine' ? 'on' : ''} onClick={() => setView('mine')}>{ak ? 'My Arts' : 'My spells'}</button>
+          <button className={view === 'library' ? 'on' : ''} onClick={() => setView('library')}>{ak ? 'Arts library' : `Spell library (${LIB.length})`}</button>
         </div>
         {others.length > 0 && (
           <select value={others.includes(view) ? view : ''} onChange={(e) => e.target.value && setView(e.target.value)}>
@@ -47,10 +49,13 @@ export function SpellsPage() {
             </div>
             <div className="spell-stat"><b>{ss.dc ?? '—'}</b><span className="field-lbl">Spell save DC</span></div>
             <div className="spell-stat"><b>{ss.attack == null ? '—' : signed(ss.attack)}</b><span className="field-lbl">Spell attack</span></div>
-            <div className="spell-stat"><b>{preparedCount(c)}</b><span className="field-lbl">Prepared</span></div>
+            {ak
+              ? <div className="spell-stat" title="8 + STR or DEX (better) + proficiency"><b>{martialDc(c, fx)}</b><span className="field-lbl">Martial DC</span></div>
+              : <div className="spell-stat"><b>{preparedCount(c)}</b><span className="field-lbl">Prepared</span></div>}
           </>
         )}
       </div>
+      {view === 'mine' && ak && <ArtsPoints />}
 
       {view === 'mine' && <MySpells />}
       {view === 'library' && <Library />}
@@ -60,6 +65,48 @@ export function SpellsPage() {
 }
 
 /* ------------------------------------------------------------- my spells */
+
+/** AK5e: one pool of Arts Points instead of spell slots, and a maximum Art level. */
+function ArtsPoints() {
+  const c = useChar()
+  const patch = useStore((s) => s.patch)
+  const ap = c.ak.ap
+  const left = Math.max(0, ap.max - ap.used)
+  return (
+    <div className="ap-panel">
+      <div className="ap-num">
+        <b>{left}</b><span>/</span>
+        <Num min={0} max={999} value={ap.max} onChange={(n) => patch((d) => { d.ak.ap.max = n; d.ak.ap.used = Math.min(d.ak.ap.used, n) })} />
+        <label>Arts Points left / max</label>
+      </div>
+      <div className="grow col" style={{ gap: 4, minWidth: 0 }}>
+        <div className="sp-bar ap"><i style={{ width: (ap.max ? (left / ap.max) * 100 : 0) + '%' }} /></div>
+        <div className="row" style={{ gap: 4, flexWrap: 'wrap' }}>
+          <button className="btn sm" onClick={() => patch((d) => { d.ak.ap.used = Math.min(d.ak.ap.max, d.ak.ap.used + 1) })}>−1 AP</button>
+          <button className="btn sm" onClick={() => patch((d) => { d.ak.ap.used = Math.max(0, d.ak.ap.used - 1) })}>+1 AP</button>
+          <button className="btn sm ghost" onClick={() => patch((d) => { d.ak.ap.used = 0 })}>Refill</button>
+          <span className="muted small">Casting an Art costs AP equal to the level you cast it at.</span>
+        </div>
+      </div>
+      <div className="spell-stat">
+        <Num min={0} max={9} value={c.ak.maxArtLevel} onChange={(n) => patch((d) => { d.ak.maxArtLevel = n })} />
+        <span className="field-lbl">Max Art level</span>
+      </div>
+      <div className="spell-stat">
+        <select value={ap.recharge} onChange={(e) => patch((d) => { d.ak.ap.recharge = e.target.value as 'long' | 'short' })}>
+          <option value="long">Long rest</option><option value="short">Short rest</option>
+        </select>
+        <span className="field-lbl">AP come back on</span>
+      </div>
+      {c.ak.maxArtLevel >= 9 && (
+        <label className="spell-stat" title="Only one 9th-level Art per long rest">
+          <Switch on={c.ak.ninthUsed} onChange={(b) => patch((d) => { d.ak.ninthUsed = b })} />
+          <span className="field-lbl">9th used</span>
+        </label>
+      )}
+    </div>
+  )
+}
 
 /** How many ruled lines a section shows before it starts growing. */
 const MIN_LINES = (l: number) => (l === 0 ? 6 : l <= 5 ? 7 : 5)
@@ -92,15 +139,23 @@ function SpellSection({ level, spells, editable, filtering, onOpen, onToggle, on
   const patch = useStore((s) => s.patch)
   const [adding, setAdding] = useState(false)
   const slot = c.slots[level] ?? { total: 0, used: 0 }
+  const ak = isAK(c)
+  const locked = ak && level > 0 && c.ak.maxArtLevel > 0 && level > c.ak.maxArtLevel
   const list = [...spells].sort((a, b) => a.name.localeCompare(b.name))
   const blanks = !editable || filtering ? 0 : Math.max(MIN_LINES(level) - list.length, 1)
 
   return (
-    <div className="spell-sec">
+    <div className={`spell-sec ${locked ? 'locked' : ''}`}>
       <div className="sec-head">
         <div className="lvl-badge">{level}</div>
         <div className="sec-banner">
-          {level === 0 ? <b className="caps sec-title">Cantrips</b> : editable ? (
+          {level === 0 ? <b className="caps sec-title">Cantrips</b> : ak ? (
+            <>
+              <b className="caps sec-title">Level {level}</b>
+              <span className="ap-cost" title="Arts Points spent to cast at this level">{level} AP</span>
+              {locked && <span className="muted small">above your max Art level</span>}
+            </>
+          ) : editable ? (
             <>
               <div className="slot-total">
                 <Num min={0} max={9} value={slot.total}
@@ -120,7 +175,7 @@ function SpellSection({ level, spells, editable, filtering, onOpen, onToggle, on
       <div className="sec-lines">
         {list.map((s) => (
           <div key={s.id} className="sline" onClick={() => onOpen(s)}>
-            {level > 0 ? (
+            {level > 0 && !ak ? (
               <button
                 className={`pip ${s.prepared || s.alwaysPrepared ? 'on' : ''} ${s.alwaysPrepared ? 'always' : ''}`}
                 title={s.grantedBy ? `Always prepared · from ${c.features.find((f) => f.id === s.grantedBy)?.name || 'a feature'}` : s.alwaysPrepared ? 'Always prepared' : s.prepared ? 'Prepared (click to unprepare)' : 'Not prepared (click to prepare)'}
@@ -135,10 +190,10 @@ function SpellSection({ level, spells, editable, filtering, onOpen, onToggle, on
         ))}
         {Array.from({ length: blanks }, (_, i) => (
           <div key={'b' + i} className="sline blank" onClick={() => !adding && setAdding(true)} title="Click to add a spell">
-            {level > 0 ? <span className="pip" /> : <span className="pip-dot" />}
+            {level > 0 && !ak ? <span className="pip" /> : <span className="pip-dot" />}
             {adding && i === 0 ? (
               <input
-                autoFocus className="nm" placeholder="Spell name, Enter to add"
+                autoFocus className="nm" placeholder={ak ? 'Art name, Enter to add' : 'Spell name, Enter to add'}
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => {
                   const el = e.target as HTMLInputElement
@@ -168,9 +223,9 @@ function MySpells() {
     const lib = bestLib(name)
     let sp = newSpell(level, name)
     if (lib) sp = { ...applyLib(sp, lib), level }
-    sp.prepared = level === 0
+    sp.prepared = level === 0 || isAK(c)
     patch((d) => { d.spells.push(sp) })
-    toast.show(lib ? `Added ${sp.name}, description filled in from ${lib.e === 'Custom' ? 'your library' : lib.e === 'UA' ? 'the imported UA' : `the ${lib.e} SRD`}` : `Added ${name}. Click it to add a description`)
+    toast.show(lib ? `Added ${sp.name}, description filled in from ${lib.e === 'Custom' ? 'your library' : lib.e === 'UA' ? 'the imported UA' : lib.e === 'AK5e' ? 'the AK5e book' : `the ${lib.e} SRD`}` : `Added ${name}. Click it to add a description`)
   }
 
   return (
@@ -178,7 +233,9 @@ function MySpells() {
       <div className="row" style={{ flexWrap: 'wrap' }}>
         <input className="box-input" style={{ width: 200 }} placeholder="search my spells…" value={q} onChange={(e) => setQ(e.target.value)} />
         <span className="muted small">
-          Click an empty line to add · click a spell to read it · click its circle to prepare · ◆C concentration · ◆R ritual · ◆M material consumed
+          {isAK(c)
+            ? 'Click an empty line to add · click an Art to read and cast it · Arts you know are always prepared and need no material components · ◆C concentration · ◆R ritual'
+            : 'Click an empty line to add · click a spell to read it · click its circle to prepare · ◆C concentration · ◆R ritual · ◆M material consumed'}
         </span>
       </div>
       <div className="spell-book">
@@ -235,7 +292,8 @@ function Library() {
   const [level, setLevel] = useState<number | 'all'>('all')
   const [cls, setCls] = useState('')
   const [school, setSchool] = useState('')
-  const [edition, setEdition] = useState('modern')
+  const ak = isAK(c)
+  const [edition, setEdition] = useState(ak ? 'ak' : 'modern')
   const [sel, setSel] = useState<LibSpell | null>(null)
   const [limit, setLimit] = useState(80)
   const customSpells = useStore((s) => s.customSpells)
@@ -246,14 +304,14 @@ function Library() {
 
   const add = (l: LibSpell) => {
     const sp = fromLib(l)
-    sp.prepared = l.l === 0
+    sp.prepared = l.l === 0 || ak
     patch((d) => { d.spells.push(sp) })
     toast.show(`Added ${l.n} to your spells`)
     return sp
   }
 
   return (
-    <Frame title="Spell Library · SRD">
+    <Frame title={ak ? 'Arts Library · AK5e pools' : 'Spell Library · SRD'}>
       <div className="row" style={{ flexWrap: 'wrap', marginBottom: 10 }}>
         <input className="box-input" style={{ width: 240 }} autoFocus placeholder="search spells by name…" value={q} onChange={(e) => { setQ(e.target.value); setLimit(80) }} />
         <select value={String(level)} onChange={(e) => setLevel(e.target.value === 'all' ? 'all' : +e.target.value)}>
@@ -261,12 +319,14 @@ function Library() {
           {SPELL_LEVEL_NAMES.map((n, i) => <option key={i} value={i}>{i === 0 ? 'Cantrip' : `Level ${i}`}</option>)}
         </select>
         <select value={cls} onChange={(e) => setCls(e.target.value)}>
-          <option value="">Any class</option>{LIB_CLASSES.map((x) => <option key={x}>{x}</option>)}
+          <option value="">{ak ? 'Any Arts pool' : 'Any class'}</option>{(ak ? LIB_POOLS : LIB_DND_CLASSES).map((x) => <option key={x}>{x}</option>)}
         </select>
         <select value={school} onChange={(e) => setSchool(e.target.value)}>
           <option value="">Any school</option>{LIB_SCHOOLS.map((x) => <option key={x}>{x}</option>)}
         </select>
         <select value={edition} onChange={(e) => setEdition(e.target.value)}>
+          {(ak || LIB_POOLS.length > 0) && <option value="ak">AK5e Arts pools + mine</option>}
+          {LIB_POOLS.length > 0 && <option value="AK5e">AK5e new Arts only</option>}
           <option value="modern">2024 + UA + mine</option><option value="Custom">My spells only</option><option value="2024">2024 SRD only</option><option value="UA">UA / imported only</option>
           <option value="2014">2014 SRD only</option><option value="all">Everything</option>
         </select>
@@ -275,21 +335,23 @@ function Library() {
         <button className="btn sm primary" onClick={() => setEditing(blankCustom())}>＋ Add spell to library</button>
       </div>
       <div className="muted small" style={{ marginBottom: 8 }}>
-        The free SRD set plus anything imported from your own PDFs (<code>tools/import_ua_spells.py</code>). Entries marked <i>name only</i> come from a class list
-        without their full text. Add them, then paste the description or use Fetch.
+        {ak ? <>The Arts pools and new Arts from the AK5e book (<code>tools/import_ak5e.py</code>), linked to the SRD text where the book reuses a 5e spell.
+          Entries marked <i>name only</i> are 5e spells outside the SRD: add them, then paste the description or use Fetch.</>
+          : <>The free SRD set plus anything imported from your own PDFs (<code>tools/import_ua_spells.py</code>). Entries marked <i>name only</i> come from a class list
+          without their full text. Add them, then paste the description or use Fetch.</>}
       </div>
       <table className="t">
-        <thead><tr><th>Name</th><th style={{ width: 70 }}>Level</th><th>School</th><th>Time</th><th>Classes</th><th style={{ width: 52 }}>Rules</th><th style={{ width: 70 }} /></tr></thead>
+        <thead><tr><th>Name</th><th style={{ width: 70 }}>Level</th><th>School</th><th>Time</th><th>{ak ? 'Pools' : 'Classes'}</th><th style={{ width: 52 }}>Rules</th><th style={{ width: 70 }} /></tr></thead>
         <tbody>
           {results.slice(0, limit).map((s) => (
             <tr key={s.n + s.e} className="hov" onClick={() => setSel(s)}>
               <td>
                 <b style={s.stub ? { fontWeight: 600, opacity: 0.8 } : undefined}>{s.n}</b>{' '}
-                {s.co && <span className="badge">C</span>} {s.ri && <span className="badge">R</span>} {s.m && <span className="badge">M</span>}
+                {s.co && <span className="badge">C</span>} {s.ri && <span className="badge">R</span>} {s.m && !ak && <span className="badge">M</span>}
                 {s.stub && <span className="muted small"> · name only</span>}
               </td>
               <td>{s.l === 0 ? 'Cantrip' : s.l}</td><td>{s.s}</td><td className="small">{s.ct}</td>
-              <td className="small muted">{s.cl.join(', ')}</td><td><span className="tag alt">{s.e === 'Custom' ? 'mine' : s.e}</span></td>
+              <td className="small muted">{s.cl.filter((x) => isPool(x) === ak).join(', ')}</td><td><span className="tag alt">{s.e === 'Custom' ? 'mine' : s.e}</span></td>
               <td onClick={(e) => e.stopPropagation()}>
                 {have(s.n) ? <span className="muted small">added ✓</span> : <button className="btn sm" onClick={() => add(s)}>Add</button>}
               </td>
@@ -300,7 +362,7 @@ function Library() {
       {results.length > limit && <div style={{ textAlign: 'center', marginTop: 10 }}><button className="btn" onClick={() => setLimit(limit + 120)}>Show more</button></div>}
       {results.length === 0 && <div className="empty">No spells match.</div>}
       {sel && (
-        <SpellPreview spell={fromLib(sel)} subtitle={`${sel.src ?? `${sel.e} SRD`} · ${sel.cl.join(', ')}`} onClose={() => setSel(null)}
+        <SpellPreview spell={fromLib(sel)} subtitle={`${sel.src ?? `${sel.e} SRD`} · ${sel.cl.filter((x) => isPool(x) === ak).join(', ')}`} onClose={() => setSel(null)}
           footer={<>
             {sel.stub && <span className="muted small grow">This entry is from the class list only. Add it, then paste the description or Fetch it.</span>}
             {sel.e === 'Custom' && sel.id && (
@@ -371,7 +433,7 @@ function CustomSpellForm({ initial, onClose, onSaved }: { initial: CustomSpell; 
             <div className="row small" style={{ gap: 4, marginTop: 5 }}>
               <span className="muted">Built-in library has it:</span>
               <button className="btn sm" onClick={() => upd({ l: srd.l, s: srd.s, ct: srd.ct, r: srd.r, c: srd.c, d: srd.d, co: srd.co, ri: srd.ri, m: srd.m ?? isConsumed(srd.c), cl: srd.cl, t: srd.t })}>
-                Use {srd.e === 'UA' ? 'UA' : `${srd.e} SRD`} text
+                Use {libLabel(srd.e)} text
               </button>
             </div>
           )}

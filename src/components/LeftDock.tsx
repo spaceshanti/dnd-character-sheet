@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ABILITIES, SKILLS } from '../constants'
+import { ABILITIES, skillsFor } from '../constants'
+import { systemOf } from '../systems'
 import {
   ability, activeEffects, inactiveEffects, netAdvantage, passivePerception, profBonus, save, signed, skill, type RollInfo,
 } from '../calc'
@@ -89,7 +90,7 @@ export function LeftDock() {
           const ai = ability(c, a.key as AbilityKey, fx)
           const sv = save(c, a.key, fx)
           const svKey = 'save:' + a.key
-          const skills = SKILLS.filter((s) => s.ability === a.key)
+          const skills = skillsFor(systemOf(c)).filter((s) => s.ability === a.key)
           return (
             <div className="ab-card" key={a.key}>
               <div className="ab-box">
