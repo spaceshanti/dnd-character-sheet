@@ -159,3 +159,11 @@
 .ops-edit .icons > span { display: flex; flex-direction: column; align-items: center; gap: .4vh; width: 9vh; }
 .ops-edit .icons small { font-size: 1.6vh; color: #aaa; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
 .ops-edit .skill-icon-pick .sip { background-color: #2f3034; border-color: #555; color: #aaa; }
+
+/* faction emblem: faded into the top-left corner, behind the attributes */
+.ops-emblem { position: absolute; left: 2%; top: 7.5vh; width: 34vh; z-index: 2; pointer-events: none; display: flex; flex-direction: column; align-items: center; opacity: .32; }
+.ops-emblem i { display: block; width: 25vh; height: 25vh; background: center / contain no-repeat; filter: grayscale(1) contrast(1.1); }
+.ops-emblem span {
+  font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 3.4vh; letter-spacing: .3em; white-space: nowrap; max-width: 34vh; overflow: hidden; text-transform: uppercase; color: #3a3b3e;
+  text-align: center; line-height: 1; margin-top: .5vh;
+}

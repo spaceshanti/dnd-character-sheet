@@ -118,6 +118,8 @@ function Screen({ onClose }: { onClose: () => void }) {
   const tags = [position, ...(disp.tags.filter(Boolean).length ? disp.tags.filter(Boolean) : [c.className || 'Operator'])]
   const stars = disp.stars || levelStars(c.level)
   const [editing, setEditing] = useState(false)
+  // the Allies box's title doubles as the faction name when you've renamed it
+  const faction = c.story.alliesTitle && c.story.alliesTitle !== 'Allies & Organizations' ? c.story.alliesTitle : ''
   const leave = (page?: Parameters<typeof go>[0]) => { onClose(); if (page) go(page) }
 
   const attrs: [string, string, ReactNode][] = [
@@ -134,6 +136,12 @@ function Screen({ onClose }: { onClose: () => void }) {
   return (
     <div className="opscreen">
       <div className="ops-bg"><i className="s1" /><i className="s2" /><i className="s3" /><i className="s4" /></div>
+      {c.emblem && (
+        <div className="ops-emblem" title={faction || 'Faction emblem'}>
+          <i style={{ backgroundImage: `url("${c.emblem}")` }} />
+          {faction && <span>{faction}</span>}
+        </div>
+      )}
       {art ? <div className="ops-art" style={{ backgroundImage: `url("${art}")` }} /> : <div className="ops-art empty">No art yet. Add a picture in the Appearance box.</div>}
 
       <div className="ops-top">
