@@ -116,6 +116,47 @@ const { fetchSpell, fetchItem } = require('./spells.cjs')
 ipcMain.handle('spell:fetch', (_e, target) => fetchSpell(target))
 ipcMain.handle('item:fetch', (_e, target) => fetchItem(target))
 
+/* ---------- official Arknights class & branch icons, downloaded on request from the Arknights wiki ---------- */
+// They're Hypergryph's artwork: kept on this computer only (<userData>/symbols/ak), never bundled with the app.
+const symDir = () => path.join(app.getPath('userData'), 'symbols', 'ak')
+const WIKI = 'https://arknights.wiki.gg/api.php'
+const UA = { 'user-agent': 'CharacterSheetApp (personal desktop character sheet)' }
+const AK_CLASSES = ['Vanguard', 'Guard', 'Defender', 'Sniper', 'Caster', 'Medic', 'Supporter', 'Specialist']
+const wiki = async (params) => (await net.fetch(`${WIKI}?${new URLSearchParams({ format: 'json', ...params })}`, { headers: UA })).json()
+
+ipcMain.handle('symbols:list', () => {
+  try {
+    const index = JSON.parse(fs.readFileSync(path.join(symDir(), 'index.json'), 'utf-8'))
+    return index.map((s) => {
+      try { return { ...s, url: `data:image/png;base64,${fs.readFileSync(path.join(symDir(), s.file)).toString('base64')}` } } catch { return null }
+    }).filter(Boolean)
+  } catch { return [] }
+})
+ipcMain.handle('symbols:download', async () => {
+  fs.mkdirSync(symDir(), { recursive: true })
+  // class marks: "Vanguard B.png" etc.; branch marks: everything in Category:Branch icons ("Pioneer Vanguard.png")
+  const branch = await wiki({ action: 'query', list: 'categorymembers', cmtitle: 'Category:Branch icons', cmlimit: '500', cmtype: 'file' })
+  const titles = [...AK_CLASSES.map((c) => `File:${c} B.png`), ...branch.query.categorymembers.map((m) => m.title)]
+  const urls = {}
+  for (let i = 0; i < titles.length; i += 40) {
+    const info = await wiki({ action: 'query', prop: 'imageinfo', iiprop: 'url', titles: titles.slice(i, i + 40).join('|') })
+    for (const p of Object.values(info.query.pages)) if (p.imageinfo?.[0]?.url) urls[p.title] = p.imageinfo[0].url
+  }
+  const index = []
+  for (const [title, url] of Object.entries(urls)) {
+    const name = title.replace(/^File:/, '').replace(/\.png$/i, '')
+    const isClass = / B$/.test(name)
+    const file = name.replace(/[^\w-]+/g, '_') + '.png'
+    const r = await net.fetch(url, { headers: UA })
+    if (!r.ok) continue
+    fs.writeFileSync(path.join(symDir(), file), Buffer.from(await r.arrayBuffer()))
+    const cls = isClass ? name.replace(/ B$/, '') : AK_CLASSES.find((c) => name.endsWith(` ${c}`)) || ''
+    index.push({ id: `ak:${file.replace(/\.png$/, '')}`, name: isClass ? cls : name, kind: isClass ? 'class' : 'branch', cls, file })
+  }
+  fs.writeFileSync(path.join(symDir(), 'index.json'), JSON.stringify(index))
+  return index.length
+})
+
 /* ---------- sourcebook pages (imported with tools/import_ak5e_pdf.py) ---------- */
 const bookRoot = () => path.join(app.getPath('userData'), 'sourcebook')
 ipcMain.handle('book:list', () => {

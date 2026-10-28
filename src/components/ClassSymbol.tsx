@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react'
+import { create } from 'zustand'
 import { imageToDataUrl } from '../store'
 import { Popover } from './ui'
 
 /*
- * Class / subclass symbols: an original set of simple marks (not any game's official icons), picked per character,
- * or your own picture. With nothing picked, a class gets its matching mark from its name.
+ * Class / subclass symbols: an original set of simple marks, the official Arknights class / branch icons (downloaded on
+ * request onto this computer, for Arknights sheets), or your own picture. With nothing picked, a class gets its
+ * matching mark from its name.
  */
 
 export const SYMBOLS: { id: string; name: string; d: string }[] = [
@@ -59,12 +61,89 @@ export const SYMBOLS: { id: string; name: string; d: string }[] = [
 
 const BY_ID = Object.fromEntries(SYMBOLS.map((s) => [s.id, s]))
 
+/* ---------- official Arknights icons: downloaded on request into the app's data folder (never bundled) ---------- */
+
+export interface AkIcon { id: string; name: string; kind: 'class' | 'branch'; cls: string; url: string }
+
+export const useAkIcons = create<{
+  list: AkIcon[]; loaded: boolean; busy: boolean; error: string; tried: boolean
+  load: () => Promise<void>; download: () => Promise<void>
+  /** for Arknights sheets: load them, and fetch them the first time if they aren't on this computer yet */
+  ensure: () => Promise<void>
+}>((set, get) => ({
+  list: [], loaded: false, busy: false, error: '', tried: false,
+  async ensure() {
+    await get().load()
+    if (get().list.length || get().tried || get().busy || !window.sheetApi?.symbolDownload) return
+    set({ tried: true })
+    await get().download()
+  },
+  async load() {
+    if (get().loaded) return
+    let list: AkIcon[] = []
+    if (window.sheetApi?.symbolList) list = await window.sheetApi.symbolList()
+    else {
+      // browser preview: a dev copy under public/sym-dev (never part of a build)
+      try { list = await (await fetch('/sym-dev/index.json')).json() } catch { /* none */ }
+    }
+    set({ list, loaded: true })
+  },
+  async download() {
+    if (!window.sheetApi?.symbolDownload) { set({ error: 'Downloading only works in the desktop app.' }); return }
+    set({ busy: true, error: '' })
+    try {
+      await window.sheetApi.symbolDownload()
+      set({ list: await window.sheetApi.symbolList(), loaded: true })
+    } catch (e) { set({ error: `Couldn't download them: ${String(e)}` }) }
+    set({ busy: false })
+  },
+}))
+
+/** AK5e class names → the game's classes (AK5e's Marksman is the game's Sniper) */
+const AK_CLASS: [RegExp, string][] = [
+  [/caster/i, 'Caster'], [/defender|protector/i, 'Defender'], [/\bguard|slayer/i, 'Guard'], [/marksman|sniper|slinger/i, 'Sniper'],
+  [/medic/i, 'Medic'], [/specialist/i, 'Specialist'], [/supporter/i, 'Supporter'], [/vanguard/i, 'Vanguard'],
+]
+export const akClassOf = (className: string) => AK_CLASS.find(([re]) => re.test(className))?.[1] ?? ''
+
+/** AK5e branches the book names differently from the game → the game branch whose icon fits best */
+const AK_BRANCH_ALIAS: Record<string, string> = {
+  artshield: 'Arts Protector Defender', artsblade: 'Arts Fighter Guard', brawler: 'Fighter Guard', duellist: 'Duelist Defender',
+  musha: 'Soloblade Guard', weaponmaster: 'Swordmaster Guard', 'anti-air': 'Marksman Sniper', heavyshot: 'Heavyshooter Sniper',
+  spreadshot: 'Spreadshooter Sniper', physician: 'Medic Medic', triage: 'Multi-target Medic', ward: 'Watchman Medic',
+  witchcraft: 'Incantation Medic', infuser: 'Alchemist Specialist', inventor: 'Geek Specialist',
+}
+
+/** The automatic mark for a class / branch: the official Arknights icon on Arknights sheets (once downloaded), else ours. */
+export function autoSymbolFor(name: string, opts: { ak: boolean; branchOf?: string; icons: AkIcon[] }): string {
+  if (opts.ak && opts.icons.length && name.trim()) {
+    if (opts.branchOf === undefined) {
+      const cls = akClassOf(name)
+      const icon = opts.icons.find((i) => i.kind === 'class' && i.cls === cls)
+      if (icon) return icon.id
+    } else {
+      // "Core Caster", "Pioneer", "Artsblade (Arts Fighter)": match the branch's name, preferring the character's class
+      const cls = akClassOf(opts.branchOf)
+      const n = name.toLowerCase()
+      const words = n.split(/[^a-z-]+/).filter((w) => w.length > 2)
+      const branches = opts.icons.filter((i) => i.kind === 'branch').sort((a, b) => Number(b.cls === cls) - Number(a.cls === cls))
+      const alias = words.map((w) => AK_BRANCH_ALIAS[w]).find(Boolean)
+      const hit = (alias && branches.find((i) => i.name === alias))
+        ?? branches.find((i) => i.name.toLowerCase() === n)
+        ?? branches.find((i) => n.includes(i.name.toLowerCase().replace(` ${i.cls.toLowerCase()}`, '')))
+        ?? branches.find((i) => words.some((w) => i.name.toLowerCase().startsWith(w)))
+      if (hit) return hit.id
+    }
+  }
+  return autoSymbol(name)
+}
+
 /** class / branch name → mark, when nothing has been picked */
 const AUTO: [RegExp, string][] = [
   [/barbarian/i, 'axe'], [/bard/i, 'lute'], [/cleric/i, 'sun'], [/druid/i, 'leaf'], [/fighter/i, 'swordshield'],
   [/monk/i, 'fist'], [/paladin/i, 'holyshield'], [/ranger/i, 'bow'], [/rogue/i, 'dagger'], [/sorcer/i, 'flame'],
   [/warlock/i, 'eye'], [/wizard/i, 'hat'], [/artificer/i, 'gear'], [/psion|psionic|psykinetic/i, 'mind'],
-  [/caster/i, 'caster'], [/defender|protector/i, 'defender'], [/guard|slayer/i, 'guard'], [/marksman|sniper|slinger/i, 'marksman'],
+  [/caster/i, 'caster'], [/defender|protector/i, 'defender'], [/\bguard|slayer/i, 'guard'], [/marksman|sniper|slinger/i, 'marksman'],
   [/medic|healer/i, 'medic'], [/specialist/i, 'specialist'], [/supporter/i, 'supporter'], [/vanguard/i, 'vanguard'],
   [/doll|drone|arts master/i, 'construct'],
 ]
@@ -72,18 +151,42 @@ export const autoSymbol = (name: string) => AUTO.find(([re]) => re.test(name))?.
 
 /** A symbol: one of the built-in marks (by id), or your own picture (data URL). */
 export function SymbolMark({ value, size = 22, title }: { value: string; size?: number; title?: string }) {
+  const icons = useAkIcons((s) => s.list)
   if (value.startsWith('data:')) return <img className="sym-img" src={value} alt="" title={title} style={{ width: size, height: size }} />
+  if (value.startsWith('ak:')) {
+    // drawn as a stencil in the current colour, so the game's white / black icons suit every UI style
+    const icon = icons.find((i) => i.id === value)
+    if (!icon) return null
+    const mask = `url("${icon.url}") center / contain no-repeat`
+    return <span className="sym-ak" title={title ?? icon.name} style={{ width: size, height: size, WebkitMask: mask, mask }} />
+  }
   const s = BY_ID[value]
   if (!s) return null
   return <svg className="sym-svg" viewBox="0 0 24 24" width={size} height={size} aria-label={title ?? s.name}><title>{title ?? s.name}</title><path d={s.d} fillRule="evenodd" /></svg>
 }
 
 /** The little symbol button beside the Class / Subclass fields; click to pick another, or your own picture. */
-export function SymbolPicker({ value, auto, label, onChange }: { value: string; auto: string; label: string; onChange: (v: string) => void }) {
+export function SymbolPicker({ value, auto, label, onChange, ak = false, akClass = '' }: {
+  value: string; auto: string; label: string; onChange: (v: string) => void
+  /** Arknights sheet: offer the official class & branch icons first */
+  ak?: boolean
+  /** the character's game class (e.g. Sniper), to list its branches first */
+  akClass?: string
+}) {
   const [open, setOpen] = useState(false)
   const btn = useRef<HTMLButtonElement>(null)
   const file = useRef<HTMLInputElement>(null)
+  const { list: icons, busy, error, download } = useAkIcons()
   const shown = value || auto
+  const autoName = auto.startsWith('ak:') ? icons.find((i) => i.id === auto)?.name : BY_ID[auto]?.name
+  const classIcons = icons.filter((i) => i.kind === 'class')
+  const branchGroups = [...new Set(icons.filter((i) => i.kind === 'branch').map((i) => i.cls))]
+    .sort((a, b) => Number(b === akClass) - Number(a === akClass) || a.localeCompare(b))
+  const cell = (id: string, title: string) => (
+    <button key={id} className={`sym-cell ${value === id ? 'on' : ''}`} title={title} onClick={() => { onChange(id); setOpen(false) }}>
+      <SymbolMark value={id} size={22} />
+    </button>
+  )
   return (
     <>
       <button ref={btn} className={`sym-btn ${shown ? '' : 'empty'}`} title={`${label} symbol: click to choose`} onClick={() => setOpen(!open)}>
@@ -95,21 +198,43 @@ export function SymbolPicker({ value, auto, label, onChange }: { value: string; 
         if (f) { onChange(await imageToDataUrl(f, 128, true)); setOpen(false) }
       }} />
       {open && (
-        <Popover anchor={btn.current} onClose={() => setOpen(false)} width={340}>
+        <Popover anchor={btn.current} onClose={() => setOpen(false)} width={360}>
           <div className="row" style={{ marginBottom: 6 }}>
             <b className="grow">{label} symbol</b>
             <button className="btn sm" onClick={() => file.current?.click()}>Use my own picture…</button>
           </div>
-          <div className="sym-grid">
-            <button className={`sym-cell ${!value ? 'on' : ''}`} title={auto ? `Automatic (${BY_ID[auto]?.name ?? 'from the name'})` : 'None'} onClick={() => { onChange(''); setOpen(false) }}>
-              {auto ? <><SymbolMark value={auto} size={22} /><i>auto</i></> : <span className="muted small">none</span>}
-            </button>
-            {SYMBOLS.map((s) => (
-              <button key={s.id} className={`sym-cell ${value === s.id ? 'on' : ''}`} title={s.name} onClick={() => { onChange(s.id); setOpen(false) }}>
-                <SymbolMark value={s.id} size={22} />
+          <div className="sym-scroll">
+            <div className="sym-grid">
+              <button className={`sym-cell ${!value ? 'on' : ''}`} title={auto ? `Automatic (${autoName ?? 'from the name'})` : 'None'} onClick={() => { onChange(''); setOpen(false) }}>
+                {auto ? <><SymbolMark value={auto} size={22} /><i>auto</i></> : <span className="muted small">none</span>}
               </button>
-            ))}
-            {value.startsWith('data:') && <button className="sym-cell on" title="Your picture"><SymbolMark value={value} size={22} /></button>}
+              {value.startsWith('data:') && <button className="sym-cell on" title="Your picture"><SymbolMark value={value} size={22} /></button>}
+            </div>
+            {ak && (
+              <>
+                <div className="sym-h">Arknights · official icons</div>
+                {icons.length === 0 ? (
+                  <div className="sym-dl">
+                    <span className="muted small">The game's class and branch icons, downloaded from the Arknights wiki onto this computer (not part of the app).</span>
+                    <button className="btn sm primary" disabled={busy} onClick={download}>{busy ? 'Downloading…' : 'Download them'}</button>
+                    {error && <span className="small" style={{ color: 'var(--dis)' }}>{error}</span>}
+                  </div>
+                ) : (
+                  <>
+                    <div className="sym-sub">Classes</div>
+                    <div className="sym-grid">{classIcons.map((i) => cell(i.id, i.name))}</div>
+                    {branchGroups.map((g) => (
+                      <div key={g}>
+                        <div className="sym-sub">{g} branches</div>
+                        <div className="sym-grid">{icons.filter((i) => i.kind === 'branch' && i.cls === g).map((i) => cell(i.id, i.name))}</div>
+                      </div>
+                    ))}
+                  </>
+                )}
+                <div className="sym-h">Other symbols</div>
+              </>
+            )}
+            <div className="sym-grid">{SYMBOLS.map((s) => cell(s.id, s.name))}</div>
           </div>
         </Popover>
       )}

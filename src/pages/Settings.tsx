@@ -4,6 +4,7 @@ import { downloadJson, useChar, useStore } from '../store'
 import { Frame, Num, Switch } from '../components/ui'
 import { SkinPicker } from '../components/SkinPicker'
 import { PdfExport } from '../components/PdfExport'
+import { ago, undoRest } from '../rest'
 import { convertSkills, isAK, SYSTEMS, systemName, systemOf, type SystemId } from '../systems'
 
 export function SettingsPage() {
@@ -32,6 +33,23 @@ export function SettingsPage() {
             <span className="grow">Carrying capacity = STR score ×</span>
             <Num min={1} className="box-input" width={54} value={c.carryMultiplier} onChange={(n) => patch((d) => { d.carryMultiplier = n })} />
           </div>
+        </div>
+      </Frame>
+
+      <Frame title="Rests">
+        <div className="col" style={{ gap: 8 }}>
+          {(['long', 'short'] as const).map((kind) => {
+            const u = c.restUndo?.[kind]
+            return (
+              <div key={kind} className="row">
+                <span className="grow">{kind === 'long' ? 'Long rest' : 'Short rest'}{u ? <span className="muted small"> · taken {ago(u.at)}</span> : <span className="muted small"> · nothing to undo</span>}</span>
+                <button className="btn sm" disabled={!u} onClick={() => {
+                  if (!window.confirm(`Undo the last ${kind} rest? HP, hit dice, spell slots / Arts Points, resources, death saves and inspiration go back to how they were just before it (anything you changed in those since is lost).`)) return
+                  patch((d) => undoRest(d, kind))
+                }}>↶ Undo {kind} rest</button>
+              </div>
+            )
+          })}
         </div>
       </Frame>
 

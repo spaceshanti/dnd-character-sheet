@@ -4,7 +4,7 @@ import { WEAPON_NAMES } from '../data/gear'
 import { newEffect, newFeatureAction, newResource, newSpell, uid } from '../blank'
 import { useChar, useStore, useUI } from '../store'
 import { applyLib, bestLib } from '../spellLib'
-import { EffectsEditor, Num, Pips, Select, Switch } from './ui'
+import { EffectsEditor, Num, Pips, Select, Switch, DieSlot } from './ui'
 import type { ActionMod, Character, Feature, FeatureAction, RestEffect, Resource } from '../types'
 
 export const actionTypeName = (t: string) => ACTION_TYPES.find((a) => a.id === t)?.name ?? ''
@@ -141,7 +141,7 @@ export function FeatureUsageEditor({ f }: { f: Feature }) {
             <input className="box-input grow" style={{ minWidth: 120 }} placeholder="Resource name" value={r.name} onChange={(e) => upR(r.id, (x) => { x.name = e.target.value })} />
             <span className="small">max</span>
             <Num min={0} max={999} className="box-input" width={44} value={r.max} onChange={(n) => upR(r.id, (x) => { x.max = n; x.used = Math.min(x.used, n) })} />
-            <input className="box-input" style={{ width: 52 }} placeholder="die" title="Optional die size, e.g. d8" value={r.die} onChange={(e) => upR(r.id, (x) => { x.die = e.target.value })} />
+            <DieSlot value={r.die} width={52} onChange={(v) => upR(r.id, (x) => { x.die = v })} />
             <Select value={r.recharge} onChange={(v) => upR(r.id, (x) => { x.recharge = v })} options={RECHARGES} />
             <button className="btn icon sm" title="Remove resource" onClick={() => patch((d) => {
               d.resources = d.resources.filter((y) => y.id !== r.id)

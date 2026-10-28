@@ -1,12 +1,13 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ALIGNMENTS, conditionsFor } from '../constants'
 import { isAK, systemOf } from '../systems'
 import { DEATHS_DOOR } from '../ak'
+import { rememberRest, restSnapshot } from '../rest'
 import { activeEffects, damageReduction, netAdvantage, signed, spLimits, statInfo, type StatKey } from '../calc'
 import { uid } from '../blank'
 import { useChar, useStore, useUI, type PageId } from '../store'
 import { Field, FitInput, Num, Pips, Popover, Toast, useToast } from './ui'
-import { autoSymbol, SymbolPicker } from './ClassSymbol'
+import { akClassOf, autoSymbolFor, SymbolPicker, useAkIcons } from './ClassSymbol'
 import { dropImagesOn, Lightbox } from './ImagePicker'
 import { StatEditor } from './StatEditor'
 import { Icon } from './Icon'
@@ -66,13 +67,19 @@ export function TopBar() {
   }
   const report = (rest: string, done: string[]) => toast.show(done.length ? `${rest} rest · ${done.join(' · ')}` : `${rest} rest taken`)
 
+  const akIcons = useAkIcons((st) => st.list)
+  const ensureIcons = useAkIcons((st) => st.ensure)
   const ak = isAK(c)
+  // Arknights sheets show the game's class / branch icons automatically (downloaded once onto this computer)
+  useEffect(() => { if (ak) ensureIcons() }, [ak, ensureIcons])
   const longRest = () => {
     if (!window.confirm(ak
       ? 'Take a long rest? This refills HP, Arts Points, hit dice (half) and resources, tops SP up to your start SP, and removes one failed death save.'
       : 'Take a long rest? This refills HP, spell slots, hit dice (half), resources and clears death saves.')) return
     let done: string[] = []
+    const before = restSnapshot(c)
     patch((d) => {
+      rememberRest(d, 'long', before)
       const max = statInfo(d as typeof c, 'hpMax', activeEffects(d as typeof c)).total
       d.hp.current = max
       d.hp.temp = 0
@@ -96,7 +103,9 @@ export function TopBar() {
   const shortRest = () => {
     if (!window.confirm('Take a short rest? Resources that recharge on a short rest are refilled.')) return
     let done: string[] = []
+    const before = restSnapshot(c)
     patch((d) => {
+      rememberRest(d, 'short', before)
       if (ak && d.ak.ap.recharge === 'short') d.ak.ap.used = 0
       for (const r of d.resources) {
         if (r.recharge === 'short') r.used = 0
@@ -120,14 +129,14 @@ export function TopBar() {
           <div className="details">
             <div className="field sym-field">
               <div className="row">
-                <SymbolPicker label="Class" value={c.classSymbol} auto={autoSymbol(c.className)} onChange={(v) => patch((d) => { d.classSymbol = v })} />
+                <SymbolPicker label="Class" ak={ak} akClass={akClassOf(c.className)} value={c.classSymbol} auto={autoSymbolFor(c.className, { ak, icons: akIcons })} onChange={(v) => patch((d) => { d.classSymbol = v })} />
                 <FitInput value={c.className} onChange={(e) => patch((d) => { d.className = e.target.value })} />
               </div>
               <label>Class</label>
             </div>
             <div className="field sym-field">
               <div className="row">
-                <SymbolPicker label={ak ? 'Branch' : 'Subclass'} value={c.subclassSymbol} auto={autoSymbol(c.subclass)} onChange={(v) => patch((d) => { d.subclassSymbol = v })} />
+                <SymbolPicker label={ak ? 'Branch' : 'Subclass'} ak={ak} akClass={akClassOf(c.className)} value={c.subclassSymbol} auto={autoSymbolFor(c.subclass, { ak, branchOf: c.className, icons: akIcons })} onChange={(v) => patch((d) => { d.subclassSymbol = v })} />
                 <FitInput value={c.subclass} onChange={(e) => patch((d) => { d.subclass = e.target.value })} />
               </div>
               <label>{ak ? 'Branch' : 'Subclass'}</label>

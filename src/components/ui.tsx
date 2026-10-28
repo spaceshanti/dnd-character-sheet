@@ -285,6 +285,18 @@ export function EffectsEditor({ effects, onChange, bare = false }: { effects: Ef
   )
 }
 
+/** A resource's die (d6, d8…): a box only once it has one; otherwise a small "+ die" button to add it. */
+export function DieSlot({ value, onChange, width = 44 }: { value: string; onChange: (v: string) => void; width?: number }) {
+  const [adding, setAdding] = useState(false)
+  if (!value && !adding) {
+    return <button className="btn sm ghost die-add" title="Give this resource a die (e.g. Psionic Energy Dice: d6)" onClick={() => setAdding(true)}>＋ die</button>
+  }
+  return (
+    <input className="box-input" style={{ width }} placeholder="d6" title="Die size, e.g. d8 (clear it to remove)" value={value} autoFocus={adding}
+      onChange={(e) => onChange(e.target.value)} onBlur={() => setAdding(false)} />
+  )
+}
+
 export function Toast({ msg }: { msg: string }) {
   return msg ? createPortal(<div className="toast">{msg}</div>, document.body) : null
 }

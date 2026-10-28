@@ -14,4 +14,6 @@ contextBridge.exposeInMainWorld('sheetApi', {
   saveFile: (name, bytes) => ipcRenderer.invoke('file:save', name, bytes),
   bookInfo: (id) => ipcRenderer.invoke('book:info', id),
   bookList: () => ipcRenderer.invoke('book:list'),
+  symbolList: () => ipcRenderer.invoke('symbols:list'),
+  symbolDownload: () => ipcRenderer.invoke('symbols:download'),
 })

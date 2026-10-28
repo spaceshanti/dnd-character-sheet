@@ -77,6 +77,12 @@ The last argument before the file says which characters see the book (`dnd5e`, `
 switch books from the reader's header. The free SRD 5.2.1 PDF (the 2024 rules, CC-BY-4.0) is at
 https://media.dndbeyond.com/compendium-images/srd/5.2/SRD_CC_v5.2.1.pdf
 
+## Class symbols
+
+Each character has a symbol beside its Class and Subclass / Branch in the top bar (click to change; an original set, or your
+own picture). On Arknights sheets the game's official class and branch icons are used automatically: they're downloaded
+once from the Arknights wiki into the app's data folder (`%APPDATA%/Character Sheet/symbols/ak`) and never bundled.
+
 ## Importing the Arknights 5e book
 
 ```

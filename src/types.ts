@@ -263,6 +263,9 @@ export interface AkData {
 }
 
 
+/** the parts of a character a rest changes */
+export type RestSnapshot = Pick<Character, 'hp' | 'deathSaves' | 'slots' | 'hitDice' | 'resources' | 'inspiration' | 'ak'>
+
 export interface Character {
   id: string
   /** which game this sheet is for; older saves are D&D 5e */
@@ -335,6 +338,8 @@ export interface Character {
   battleState: string
   gallery: GalleryImage[]
   ak: AkData
+  /** how things were just before the last long / short rest, so it can be undone */
+  restUndo?: { long?: { at: number; before: RestSnapshot }; short?: { at: number; before: RestSnapshot } }
   updatedAt: number
 }
 

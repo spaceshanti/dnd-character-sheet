@@ -6,7 +6,7 @@ import { activateOp } from '../ak'
 import { SpTracker } from './OperatorSkills'
 import { newAttack, newResource } from '../blank'
 import { useChar, useStore, useUI } from '../store'
-import { Frame, Num, Pips, Select, Switch, Toast, useToast } from '../components/ui'
+import { Frame, Num, Pips, Select, Switch, Toast, useToast, DieSlot } from '../components/ui'
 import { ammoText, useItem } from '../consume'
 import { RichArea } from '../components/RichText'
 import { Icon, itemIcon } from '../components/Icon'
@@ -182,6 +182,7 @@ function ResourcesPanel() {
   const patch = useStore((s) => s.patch)
   const set = useUI((s) => s.set)
   const feat = (id: string) => (id ? c.features.find((f) => f.id === id)?.name || 'a feature' : '')
+  const [gear, setGear] = useState('')
   return (
     <Frame title="Class Resources, Ammo & Charges" tools={<button className="btn sm" onClick={() => patch((d) => { d.resources.push(newResource()) })}>＋ Add</button>}>
       {c.resources.length === 0 && <div className="empty">Track things like Rage, Ki, Psionic Dice, Channel Divinity or ammo. Each one has its own max.</div>}
@@ -194,11 +195,14 @@ function ResourcesPanel() {
               {feat(r.featureId) && <button className="res-feat" onClick={() => set({ drawer: { kind: 'feature', id: r.featureId } })}>from {feat(r.featureId)}</button>}
             </span>
             <Pips total={r.max} used={r.used} onChange={(u) => up((x) => { x.used = u })} />
-            <input className="box-input" style={{ width: 42 }} placeholder="die" title="Optional die size, e.g. d8" value={r.die} onChange={(e) => up((x) => { x.die = e.target.value })} />
+            <DieSlot value={r.die} width={42} onChange={(v) => up((x) => { x.die = v })} />
             <span className="grow" />
             <span className="small muted">max</span>
             <Num min={0} max={999} className="box-input" width={48} style={{ textAlign: 'center' }} value={r.max} onChange={(n) => up((x) => { x.max = n; x.used = Math.min(x.used, n) })} />
-            <Select value={r.recharge} onChange={(v) => up((x) => { x.recharge = v })} options={RECHARGES} />
+            {/* when it comes back: tucked away behind ⚙ to keep the list simple */}
+            {gear === r.id && <Select value={r.recharge} onChange={(v) => up((x) => { x.recharge = v })} options={RECHARGES} />}
+            <button className={`btn icon sm ghost ${gear === r.id ? 'on' : ''}`} title={`Comes back: ${RECHARGES.find((x) => x.id === r.recharge)?.name ?? r.recharge} (click to change)`}
+              onClick={() => setGear(gear === r.id ? '' : r.id)}>⚙</button>
             <button className="btn icon sm ghost" onClick={() => patch((d) => { d.resources = d.resources.filter((y) => y.id !== r.id) })}>✕</button>
           </div>
         )
