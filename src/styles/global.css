@@ -472,6 +472,10 @@ table.t tr.hov:hover td { background: var(--panel2); cursor: pointer; }
 svg.ico { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14em; flex: none; stroke-width: var(--icon-stroke); }
 .eq-slot svg.ico, .tile svg.ico { width: 0.95em; height: 0.95em; vertical-align: 0; margin-bottom: 8px; }
 .eq-slot .ph svg.ico { width: 0.85em; height: 0.85em; margin-bottom: 10px; }
+img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14em; flex: none; object-fit: contain; border-radius: 3px; }
+.eq-slot img.ico-img, .tile img.ico-img { width: 1.1em; height: 1.1em; vertical-align: 0; margin-bottom: 6px; }
+.icon-pick-btn img.ico-img { width: 34px; height: 34px; vertical-align: 0; }
+.icon-own { display: flex; gap: 6px; align-items: center; padding: 6px 6px 0; }
 .inv-btn .inv-ico { font-size: 24px; }
 .list-ico { color: var(--ink2); }
 .icon-pick-btn { width: 42px; height: 42px; flex: none; border-radius: 8px; background: var(--slot); color: var(--slot-ink); border: 2px solid var(--slot-border); font-size: 24px; display: grid; place-items: center; padding: 0; }

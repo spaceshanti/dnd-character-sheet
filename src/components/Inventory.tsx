@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { ABILITIES, ACTION_TYPES, ITEM_CATEGORIES, RARITIES, SLOT_IDS } from '../constants'
 import { attackInfo, carryCapacity, itemAttacks, masterySource, signed, totalWeight } from '../calc'
 import { newItem } from '../blank'
@@ -8,7 +8,7 @@ import { systemOf, type SystemId } from '../systems'
 import { ammoOptions, ammoText } from '../consume'
 import { MASTERIES, MASTERY_INFO, akGearExtras, lookupArmor, lookupWeapon, weaponNames } from '../data/gear'
 import { PropertyEditor, WeaponTags } from './WeaponTags'
-import { useChar, useStore, useUI } from '../store'
+import { imageToDataUrl, useChar, useStore, useUI } from '../store'
 import { EffectsEditor, Modal, Num, Select, Switch } from './ui'
 import { RichArea } from './RichText'
 import { Icon, ICONS, itemIcon } from './Icon'
@@ -250,6 +250,14 @@ function ItemEditor({ item }: { item: Item }) {
     const x = d.items.find((y) => y.id === item.id)
     if (x) x.slot = v
   })
+  // a picture of your own for this item (kept small; transparent PNGs stay transparent)
+  const pictureFile = useRef<HTMLInputElement>(null)
+  const ownPicture = async (f?: File) => {
+    if (!f || !f.type.startsWith('image/')) return
+    const url = await imageToDataUrl(f, 256, true)
+    up((x) => { x.icon = url })
+    setPicking(false)
+  }
   const atk = item.weapon ? itemAttacks(c).find((a) => a.itemId === item.id) : undefined
   const atkInfo = atk ? attackInfo(c, atk) : null
   const armorSlot = item.armor?.kind === 'shield' ? 'off' : 'body'
@@ -259,16 +267,27 @@ function ItemEditor({ item }: { item: Item }) {
   return (
     <div className="col" style={{ gap: 8 }}>
       <div className="row">
-        <button className={`icon-pick-btn ${rarityClass(item)}`} title="Change icon" onClick={() => setPicking(!picking)}><Icon name={itemIcon(item)} /></button>
+        <button className={`icon-pick-btn ${rarityClass(item)}`} title="Change icon (or drop a picture here)" onClick={() => setPicking(!picking)}
+          onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); ownPicture(e.dataTransfer.files[0]) }}>
+          <Icon name={itemIcon(item)} />
+        </button>
+        <input ref={pictureFile} type="file" accept="image/*" hidden onChange={(e) => { ownPicture(e.target.files?.[0]); e.target.value = '' }} />
         <input className="box-input grow" placeholder="Item name" value={item.name} onChange={(e) => up((x) => { x.name = e.target.value })} />
       </div>
       {picking && (
+        <div>
+        <div className="icon-own">
+          <button className="btn sm" onClick={() => pictureFile.current?.click()}>Use my own picture…</button>
+          {item.icon.startsWith('data:') && <button className="btn sm ghost" onClick={() => up((x) => { x.icon = 'box' })}>Remove picture</button>}
+          <span className="muted small">or drop one on the icon</span>
+        </div>
         <div className="icon-grid">
           {Object.entries(ICONS).map(([key, ic]) => (
             <button key={key} className={itemIcon(item) === key ? 'on' : ''} title={ic.name} onClick={() => { up((x) => { x.icon = key }); setPicking(false) }}>
               <Icon name={key} />
             </button>
           ))}
+        </div>
         </div>
       )}
       <div className="row" style={{ flexWrap: 'wrap' }}>

@@ -73,6 +73,8 @@ export const EMOJI_TO_ICON: Record<string, string> = {
 }
 
 export function Icon({ name, className = '' }: { name: string; className?: string }) {
+  // your own picture for an item (a data URL)
+  if (name.startsWith('data:')) return <img className={`ico ico-img ${className}`} src={name} alt="" draggable={false} />
   const icon = ICONS[name]
   if (!icon) return <span className={`ico-text ${className}`}>{name}</span>
   return (
