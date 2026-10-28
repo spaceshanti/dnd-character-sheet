@@ -84,6 +84,15 @@ an original set, or your own picture; the faction falls back to your emblem pict
 official class, branch, nation and faction icons are picked automatically from the names: they're downloaded once from the
 Arknights wiki into the app's data folder (`%APPDATA%/Character Sheet/symbols/ak`) and never bundled.
 
+## Filling in features
+
+Type a class, subclass / branch, species, background or (Arknights) nationality in the top bar and, if the character has no
+features of that kind yet, the sheet offers to fill them in up to your level: features with their resources (maximums from
+the class table, recharge from the text), the actions that spend them, spell slots / Arts Points and max Art level,
+always-prepared spells, hit dice and HP, saving throws and proficiencies. Undo is offered right after. D&D uses
+`src/data/srd52.json` (built from the SRD 5.2.1 PDF with `python tools/build_srd_data.py SRD_CC_v5.2.1.pdf`); Arknights uses
+the classes, branches, species, nationalities and backgrounds from the imported book (`tools/ak_rules.py`).
+
 ## Importing the Arknights 5e book
 
 ```
@@ -98,5 +107,7 @@ Arknights sheet fills it in), so the Arts library can filter by pool and the Op.
 
 Spell and item library data includes content from the System Reference Document 5.1 and 5.2 by Wizards of the Coast LLC,
 licensed under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/), via [5e-bits/5e-database](https://github.com/5e-bits/5e-database).
+The class, species, background and feat data used to fill in features is from the System Reference Document 5.2.1 by
+Wizards of the Coast LLC, licensed under CC-BY-4.0.
 This is unofficial fan software, not affiliated with Wizards of the Coast, Hypergryph or Yostar.
 Arknights 5e is a fan homebrew by its own authors; its text is imported locally from your own copy and is not part of this repository.

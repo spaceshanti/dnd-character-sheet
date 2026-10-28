@@ -100,6 +100,8 @@ export interface Feature {
   actionMods: ActionMod[]
   /** also shown on the Spells / Arts page (for features about spellcasting or certain kinds of spells) */
   onSpellPage: boolean
+  /** filled in from the rules for the character's class / subclass / species / background / nationality */
+  auto?: 'class' | 'subclass' | 'species' | 'background' | 'nationality'
 }
 
 /** e.g. Telekinetic Techniques adds Boost / Disorient / Telekinetic Bolt to Psionic Power's Telekinetic Propel */

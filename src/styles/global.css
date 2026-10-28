@@ -166,8 +166,16 @@ input[type='number']::-webkit-inner-spin-button { display: none; }
   display: grid; grid-template-columns: auto auto minmax(0, 1fr);
 }
 /* the column of marks beside the portrait: class, subclass / branch, nationality, faction */
-.sym-col { grid-row: 1 / 2; align-self: center; display: flex; flex-direction: column; justify-content: center; gap: 3px; margin-left: 6px; }
-.sym-col .sym-btn { width: 26px; height: 26px; border: 1px solid var(--line); background: var(--panel2); border-radius: 5px; }
+.sym-col { grid-row: 1 / 2; align-self: center; display: flex; flex-direction: column; justify-content: space-between; gap: 3px; margin-left: 6px; }
+.sym-col .sym-btn { border: 1px solid var(--line); background: var(--panel2); border-radius: 5px; }
+/* a small mark at the right end of a top-bar field (class, branch, nationality) */
+.field.has-after { position: relative; }
+.field.has-after > input { padding-right: 19px; }
+.field-after { position: absolute; right: 1px; top: 2px; display: grid; place-items: center; pointer-events: none; color: var(--accent); opacity: .85; }
+.field-after .sym-img { border-radius: 2px; object-fit: contain; }
+.fill-list { margin: 0; padding-left: 18px; max-height: 240px; overflow: auto; font-size: 12.5px; }
+.fill-list li { margin: 2px 0; }
+.fill-list .chip { margin-left: 6px; font-size: 10.5px; padding: 0 5px; }
 .sym-col .sym-btn:hover { border-color: var(--accent); }
 .sym-col .sym-btn.empty { border-style: dashed; background: transparent; }
 .sym-col .sym-img { border-radius: 3px; }

@@ -166,7 +166,7 @@ export const autoSymbol = (name: string) => AUTO.find(([re]) => re.test(name))?.
 /** A symbol: one of the built-in marks (by id), or your own picture (data URL). */
 export function SymbolMark({ value, size = 22, title }: { value: string; size?: number; title?: string }) {
   const icons = useAkIcons((s) => s.list)
-  if (value.startsWith('data:')) return <img className="sym-img" src={value} alt="" title={title} style={{ width: size, height: size }} />
+  if (/^(data:|https?:|blob:)/.test(value)) return <img className="sym-img" src={value} alt="" title={title} style={{ width: size, height: size }} />
   if (value.startsWith('ak:')) {
     // drawn as a stencil in the current colour, so the game's white / black icons suit every UI style
     const icon = icons.find((i) => i.id === value)
@@ -179,8 +179,8 @@ export function SymbolMark({ value, size = 22, title }: { value: string; size?: 
   return <svg className="sym-svg" viewBox="0 0 24 24" width={size} height={size} aria-label={title ?? s.name}><title>{title ?? s.name}</title><path d={s.d} fillRule="evenodd" /></svg>
 }
 
-/** One badge in the row under the character's name; click to pick another mark, or your own picture. */
-export function SymbolPicker({ value, auto, label, onChange, official, akClass = '', fallback = '' }: {
+/** One badge beside the portrait; click to pick another mark, the Character page's emblem, or your own picture. */
+export function SymbolPicker({ value, auto, label, onChange, official, akClass = '', fallback = '', emblem = '', size = 26 }: {
   value: string; auto: string; label: string; onChange: (v: string) => void
   /** Arknights sheet: offer the game's class & branch icons, or its nation & faction icons, first */
   official?: 'class' | 'faction'
@@ -188,12 +188,18 @@ export function SymbolPicker({ value, auto, label, onChange, official, akClass =
   fallback?: string
   /** the character's game class (e.g. Sniper), to list its branches first */
   akClass?: string
+  /** the emblem picture from the Character page, offered as a choice ('emblem') */
+  emblem?: string
+  /** badge size in px */
+  size?: number
 }) {
   const [open, setOpen] = useState(false)
   const btn = useRef<HTMLButtonElement>(null)
   const file = useRef<HTMLInputElement>(null)
   const { list: icons, busy, error, download } = useAkIcons()
-  const shown = value || auto || fallback
+  const resolve = (v: string) => (v === 'emblem' ? emblem : v)
+  const shown = resolve(value) || auto || fallback
+  const mark = Math.max(14, size - 6)
   const autoName = auto.startsWith('ak:') ? icons.find((i) => i.id === auto)?.name : BY_ID[auto]?.name
   const classIcons = icons.filter((i) => i.kind === 'class')
   const branchGroups = [...new Set(icons.filter((i) => i.kind === 'branch').map((i) => i.cls))]
@@ -205,8 +211,8 @@ export function SymbolPicker({ value, auto, label, onChange, official, akClass =
   )
   return (
     <>
-      <button ref={btn} className={`sym-btn ${shown ? '' : 'empty'}`} title={`${label}${shown ? '' : ' (none yet)'}: click to choose`} onClick={() => setOpen(!open)}>
-        {shown ? <SymbolMark value={shown} size={22} /> : <span>＋</span>}
+      <button ref={btn} className={`sym-btn ${shown ? '' : 'empty'}`} style={{ width: size, height: size }} title={`${label}${shown ? '' : ' (none yet)'}: click to choose`} onClick={() => setOpen(!open)}>
+        {shown ? <SymbolMark value={shown} size={mark} /> : <span>＋</span>}
       </button>
       <input ref={file} type="file" accept="image/*" hidden onChange={async (e) => {
         const f = e.target.files?.[0]
@@ -224,6 +230,11 @@ export function SymbolPicker({ value, auto, label, onChange, official, akClass =
               <button className={`sym-cell ${!value ? 'on' : ''}`} title={auto ? `Automatic (${autoName ?? 'from the name'})` : 'None'} onClick={() => { onChange(''); setOpen(false) }}>
                 {auto ? <><SymbolMark value={auto} size={22} /><i>auto</i></> : <span className="muted small">none</span>}
               </button>
+              {emblem && (
+                <button className={`sym-cell ${value === 'emblem' ? 'on' : ''}`} title="The emblem from the Character page" onClick={() => { onChange('emblem'); setOpen(false) }}>
+                  <SymbolMark value={emblem} size={22} /><i>emblem</i>
+                </button>
+              )}
               {value.startsWith('data:') && <button className="sym-cell on" title="Your picture"><SymbolMark value={value} size={22} /></button>}
             </div>
             {official && (

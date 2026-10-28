@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type InputHTMLAttributes, type ReactNode, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type FocusEvent, type InputHTMLAttributes, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { ACTION_TYPES, EFFECT_TYPES, effectTargets } from '../constants'
 import { systemOf } from '../systems'
@@ -88,10 +88,16 @@ export function FitInput({ minSize = 9, ...props }: InputHTMLAttributes<HTMLInpu
   return <input ref={ref} {...props} />
 }
 
-export function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (s: string) => void; placeholder?: string }) {
+export function Field({ label, value, onChange, placeholder, onFocus, onBlur, after }: {
+  label: string; value: string; onChange: (s: string) => void; placeholder?: string
+  onFocus?: (e: FocusEvent<HTMLInputElement>) => void; onBlur?: (e: FocusEvent<HTMLInputElement>) => void
+  /** shown at the right end of the line (e.g. a symbol) */
+  after?: ReactNode
+}) {
   return (
-    <div className="field">
-      <FitInput value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+    <div className={`field ${after ? 'has-after' : ''}`}>
+      <FitInput value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} onFocus={onFocus} onBlur={onBlur} />
+      {after && <span className="field-after">{after}</span>}
       <label>{label}</label>
     </div>
   )

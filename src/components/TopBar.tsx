@@ -7,7 +7,8 @@ import { activeEffects, damageReduction, netAdvantage, signed, spLimits, statInf
 import { uid } from '../blank'
 import { useChar, useStore, useUI, type PageId } from '../store'
 import { Field, FitInput, Num, Pips, Popover, Toast, useToast } from './ui'
-import { akClassOf, autoFactionFor, autoSymbolFor, SymbolPicker, useAkIcons } from './ClassSymbol'
+import { akClassOf, autoFactionFor, autoSymbolFor, SymbolMark, SymbolPicker, useAkIcons } from './ClassSymbol'
+import { useAutoFill } from './AutoFill'
 import { dropImagesOn, Lightbox } from './ImagePicker'
 import { StatEditor } from './StatEditor'
 import { Icon } from './Icon'
@@ -117,17 +118,28 @@ export function TopBar() {
   }
 
   const lineStyle = { fontWeight: 600 }
+  const fill = useAutoFill()
+  // the marks beside the portrait share its height
+  const portrait = Math.max(60, mainH - 12)
+  const symCount = ak ? 4 : 3
+  const symSize = Math.max(18, Math.min(44, Math.floor((portrait - 3 * (symCount - 1)) / symCount)))
+  const sym = {
+    cls: c.classSymbol || autoSymbolFor(c.className, { ak, icons: akIcons }),
+    sub: c.subclassSymbol || autoSymbolFor(c.subclass, { ak, branchOf: c.className, icons: akIcons }),
+    nat: c.nationSymbol === 'emblem' ? c.emblem : c.nationSymbol || autoFactionFor(c.nationality, akIcons),
+  }
+  const inline = (v: string, what: string) => (v ? <SymbolMark value={v} size={15} title={what} /> : undefined)
   return (
     <header className="topbar">
-      <Portrait size={Math.max(60, mainH - 12)} />
+      <Portrait size={portrait} />
       {/* class, subclass / branch, nationality and faction marks, stacked beside the portrait */}
-      <div className="sym-col">
-        <SymbolPicker label="Class" official={ak ? 'class' : undefined} akClass={akClassOf(c.className)} value={c.classSymbol}
+      <div className="sym-col" style={{ height: portrait }}>
+        <SymbolPicker size={symSize} label="Class" official={ak ? 'class' : undefined} akClass={akClassOf(c.className)} value={c.classSymbol}
           auto={autoSymbolFor(c.className, { ak, icons: akIcons })} onChange={(v) => patch((d) => { d.classSymbol = v })} />
-        <SymbolPicker label={ak ? 'Branch' : 'Subclass'} official={ak ? 'class' : undefined} akClass={akClassOf(c.className)} value={c.subclassSymbol}
+        <SymbolPicker size={symSize} label={ak ? 'Branch' : 'Subclass'} official={ak ? 'class' : undefined} akClass={akClassOf(c.className)} value={c.subclassSymbol}
           auto={autoSymbolFor(c.subclass, { ak, branchOf: c.className, icons: akIcons })} onChange={(v) => patch((d) => { d.subclassSymbol = v })} />
-        {ak && <SymbolPicker label="Nationality" official="faction" value={c.nationSymbol} auto={autoFactionFor(c.nationality, akIcons)} onChange={(v) => patch((d) => { d.nationSymbol = v })} />}
-        <SymbolPicker label="Faction" official={ak ? 'faction' : undefined} value={c.factionSymbol} fallback={c.emblem}
+        {ak && <SymbolPicker size={symSize} label="Nationality" official="faction" value={c.nationSymbol} emblem={c.emblem} auto={autoFactionFor(c.nationality, akIcons)} onChange={(v) => patch((d) => { d.nationSymbol = v })} />}
+        <SymbolPicker size={symSize} label="Faction" official={ak ? 'faction' : undefined} value={c.factionSymbol} fallback={c.emblem} emblem={c.emblem}
           auto={ak && c.story.alliesTitle !== 'Allies & Organizations' ? autoFactionFor(c.story.alliesTitle, akIcons) : ''} onChange={(v) => patch((d) => { d.factionSymbol = v })} />
       </div>
       <div className="top-main" ref={mainRef}>
@@ -137,9 +149,12 @@ export function TopBar() {
             <label>Character Name</label>
           </div>
           <div className="details">
-            <Field label="Class" value={c.className} onChange={(v) => patch((d) => { d.className = v })} />
-            <Field label={ak ? 'Branch' : 'Subclass'} value={c.subclass} onChange={(v) => patch((d) => { d.subclass = v })} />
-            <Field label="Species / Race" value={c.species} onChange={(v) => patch((d) => { d.species = v })} />
+            <Field label="Class" value={c.className} onChange={(v) => patch((d) => { d.className = v })}
+              onFocus={fill.focus('class')} onBlur={fill.blur('class', 'Class')} after={inline(sym.cls, 'Class symbol')} />
+            <Field label={ak ? 'Branch' : 'Subclass'} value={c.subclass} onChange={(v) => patch((d) => { d.subclass = v })}
+              onFocus={fill.focus('subclass')} onBlur={fill.blur('subclass', ak ? 'Branch' : 'Subclass')} after={inline(sym.sub, ak ? 'Branch symbol' : 'Subclass symbol')} />
+            <Field label="Species / Race" value={c.species} onChange={(v) => patch((d) => { d.species = v })}
+              onFocus={fill.focus('species')} onBlur={fill.blur('species', 'Species')} />
             <div className="field">
               <div className="row" style={{ gap: 4 }}>
                 <Num min={1} max={20} width={34} className="line-input" style={lineStyle} value={c.level} onChange={(n) => patch((d) => { d.level = n })} />
@@ -147,8 +162,12 @@ export function TopBar() {
               </div>
               <label>Level · Experience</label>
             </div>
-            <Field label="Background" value={c.background} onChange={(v) => patch((d) => { d.background = v })} />
-            {ak ? <Field label="Nationality" value={c.nationality} onChange={(v) => patch((d) => { d.nationality = v })} /> : (
+            <Field label="Background" value={c.background} onChange={(v) => patch((d) => { d.background = v })}
+              onFocus={fill.focus('background')} onBlur={fill.blur('background', 'Background')} />
+            {ak ? (
+              <Field label="Nationality" value={c.nationality} onChange={(v) => patch((d) => { d.nationality = v })}
+                onFocus={fill.focus('nationality')} onBlur={fill.blur('nationality', 'Nationality')} after={inline(sym.nat, 'Nationality symbol')} />
+            ) : (
               <div className="field">
                 <FitInput list="aligns" value={c.alignment} onChange={(e) => patch((d) => { d.alignment = e.target.value })} />
                 <label>Alignment</label>
@@ -173,6 +192,7 @@ export function TopBar() {
         <button className="btn sm ghost" onClick={() => set({ themeOpen: true })} title="UI style (Ctrl + T)">◐</button>
       </nav>
       <Toast msg={toast.msg} />
+      {fill.popover}
     </header>
   )
 }

@@ -7,6 +7,7 @@ Reads the book's markdown source and writes src/data/extra/ak5e.json with
   * every Arts pool (Flame Arts, Healing Arts, ...) as a class list, so the spell library can filter by pool
   * the full text of the new Arts the book adds
   * every Operator Skill table (Basic / Advanced / Elite, per class and branch)
+  * classes, branches, species, nationalities and backgrounds (tools/ak_rules.py), for filling in features
 and src/data/book/ak5e.md, the whole book for the in-app sourcebook reader.
 The app merges the file into its libraries on the next start. Nothing is uploaded anywhere.
 """
@@ -281,6 +282,8 @@ def main():
     spells = new_arts(ch5)
     skills = operator_skills(src)
     gear = equipment(src)
+    from ak_rules import rules
+    char_rules = rules(src)
     print(f"{len(gear['weapons'])} weapons, {len(gear['armour'])} armour, {len(gear['properties'])} properties, {len(gear['items'])} items")
     known = {s["n"].lower() for s in spells}
     for pool, levels in pools.items():
@@ -290,7 +293,7 @@ def main():
                     print("  no description found for new Art:", r["n"])
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
-        json.dump({"source": BOOK, "system": "ak5e", "spells": spells, "classLists": pools, "opSkills": skills, "gear": gear}, f, ensure_ascii=False)
+        json.dump({"source": BOOK, "system": "ak5e", "spells": spells, "classLists": pools, "opSkills": skills, "gear": gear, "rules": char_rules}, f, ensure_ascii=False)
     print(f"{len(pools)} Arts pools, {len(spells)} new Arts, {len(skills)} Operator Skills -> {os.path.normpath(OUT)}")
     # the whole book, for the in-app sourcebook reader
     os.makedirs(os.path.dirname(BOOK_OUT), exist_ok=True)
