@@ -59,14 +59,33 @@ function split(src: string): BookSection[] {
     if (level === 1) chapter = out.length
     out.push(cur)
   }
+  // stat blocks ({{monster … }}) are ## headings too. In the bestiary they're sections of their own; anywhere else (a summon
+  // under a species or class: Earthen Golem, Flowing Shape, Slayer Creation…) they stay inside the section they belong
+  // to, listed under its last ### heading, so the species / branches after them don't end up under the stat block.
+  let depth = 0
+  let monsterAt = -1
+  const bestiary = () => /dwellers|bestiary|creatures|monsters/i.test(out[chapter]?.title ?? '')
   pages.forEach((pg, i) => {
     const page = i + 1
     if (!cur) start('Cover', 1, page)
     // page marker so links to a page (#p357) can scroll to it
     cur!.md += `\n\n<a class="bk-page" data-page="${page}"></a>\n\n`
     for (const line of pg.split('\n')) {
+      if (/^\s*\{\{/.test(line) && !line.includes('}}')) {
+        depth++
+        if (/^\s*\{\{monster/.test(line)) monsterAt = depth
+      } else if (/^\s*\}\}\s*$/.test(line)) {
+        if (depth === monsterAt) monsterAt = -1
+        depth = Math.max(0, depth - 1)
+      }
+      const inStatBlock = monsterAt > 0 && !bestiary()
       const h = /^(#{1,2}) (.+)$/.exec(line)
-      if (h && !/^Version /.test(h[2])) {
+      if (h && h[1] === '##' && inStatBlock) {
+        const title = plainOf(h[2]).trim()
+        const id = `bk-h-${out.length - 1}-${cur!.subs.length}`
+        cur!.subs.push({ title, slug: id, level: 4, page })
+        cur!.md += `\n\n<a class="bk-anchor" id="${id}"></a>\n\n`
+      } else if (h && !/^Version /.test(h[2])) {
         // a {{monster / {{wide frame opened just before the heading belongs with it, not the previous section
         const prev: BookSection = cur!
         const tail = /((?:\{\{[^\n}]*\n|[ \t]*\n)*\{\{[^\n}]*\n[\s]*)$/.exec(prev.md)
@@ -76,7 +95,8 @@ function split(src: string): BookSection[] {
       }
       // every ### / #### heading gets its own anchor, so the contents can jump straight to it
       const sub = /^(#{3,4}) (.+)$/.exec(line)
-      if (sub) {
+      // a summon stat block's own Actions / Reactions headings aren't worth a line in the contents
+      if (sub && !inStatBlock) {
         const title = plainOf(sub[2]).trim()
         if (title) {
           const id = `bk-h-${out.length - 1}-${cur!.subs.length}`
