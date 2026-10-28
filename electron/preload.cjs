@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron')
+const { contextBridge, ipcRenderer, webFrame } = require('electron')
 
 contextBridge.exposeInMainWorld('sheetApi', {
   load: () => ipcRenderer.invoke('store:load'),
@@ -16,4 +16,5 @@ contextBridge.exposeInMainWorld('sheetApi', {
   bookList: () => ipcRenderer.invoke('book:list'),
   symbolList: () => ipcRenderer.invoke('symbols:list'),
   symbolDownload: () => ipcRenderer.invoke('symbols:download'),
+  setZoom: (factor) => webFrame.setZoomFactor(factor),
 })

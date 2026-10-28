@@ -25,6 +25,7 @@ declare global {
       symbolList: () => Promise<{ id: string; name: string; kind: 'class' | 'branch' | 'faction'; cls: string; url: string }[]>
       /** fetch them from the Arknights wiki into the app's data folder; returns how many */
       symbolDownload: () => Promise<number>
+      setZoom?: (factor: number) => void
       /** every imported sourcebook (folders under <userData>/sourcebook) */
       bookList: () => Promise<{ id: string; title: string; games?: string[]; pages: number; aspect: number; ext: string; toc?: [number, string, number][] }[]>
     }

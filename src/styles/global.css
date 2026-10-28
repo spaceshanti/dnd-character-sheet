@@ -250,6 +250,15 @@ input[type='number']::-webkit-inner-spin-button { display: none; }
 .nav button.tab.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 700; }
 .nav .btn.sm { font-size: 11px; }
 .nav .spacer { flex: 1; }
+/* the bar always fits the window (TopBar steps these up until nothing sticks out) */
+.nav.tight-1 button.tab, .nav.tight-2 button.tab { padding: 5px 7px; letter-spacing: 0.06em; }
+.nav.tight-2 .nav-l, .nav.tight-3 .nav-l { display: none; }
+.nav.tight-2 .btn.sm, .nav.tight-3 .btn.sm { padding-left: 7px; padding-right: 7px; }
+.nav.tight-2 .nav-l, .nav.tight-4 .nav-l { display: none; }
+.nav.tight-3 button.tab, .nav.tight-4 button.tab { padding: 5px 4px; font-size: 9.5px; letter-spacing: 0.02em; }
+.nav.tight-4 { gap: 0; padding: 0 4px; }
+.nav.tight-4 .btn.sm { padding-left: 4px; padding-right: 4px; }
+.nav.tight-4 button.tab { font-size: 8.5px; padding: 5px 3px; letter-spacing: 0; }
 
 /* ---------- left dock: quick-access drawer opened from the left edge ---------- */
 .body { position: relative; }

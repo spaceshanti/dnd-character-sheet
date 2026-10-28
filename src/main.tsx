@@ -23,6 +23,9 @@ import './styles/skins/honkai.css'
 import './styles/skins/arknights.css'
 import './styles/book.css'
 import App from './App'
+import { installZoom } from './zoom'
+
+installZoom()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

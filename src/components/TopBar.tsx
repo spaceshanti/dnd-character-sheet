@@ -119,6 +119,24 @@ export function TopBar() {
 
   const lineStyle = { fontWeight: 600 }
   const fill = useAutoFill()
+  // the page bar always fits: tighten the tabs, then drop the buttons' words, until nothing sticks out
+  const [navEl, setNavEl] = useState<HTMLElement | null>(null)
+  const [tight, setTight] = useState(0)
+  const [, remeasure] = useState(0)
+  useLayoutEffect(() => {
+    const n = navEl
+    if (n && tight < 4 && n.scrollWidth > n.clientWidth + 1) setTight(tight + 1)
+  })
+  useLayoutEffect(() => {
+    const n = navEl
+    if (!n) return
+    let w = n.clientWidth
+    const check = () => { if (n.clientWidth !== w) { w = n.clientWidth; setTight(0); remeasure((x) => x + 1) } }
+    const ro = new ResizeObserver(check)
+    ro.observe(n)
+    window.addEventListener('resize', check)
+    return () => { ro.disconnect(); window.removeEventListener('resize', check) }
+  }, [navEl])
   // the marks beside the portrait share its height
   const portrait = Math.max(60, mainH - 12)
   const symCount = ak ? 4 : 3
@@ -180,15 +198,16 @@ export function TopBar() {
         <Vitals />
       </div>
 
-      <nav className="nav">
+      <nav className={`nav tight-${tight}`} ref={setNavEl}>
         {(ak ? AK_TABS : TABS).map((t) => (
           <button key={t.id} className={`tab ${page === t.id ? 'active' : ''}`} onClick={() => go(t.id)}>{t.name}</button>
         ))}
         <span className="spacer" />
-        <button className="btn sm ghost" onClick={() => set({ book: 'full' })} title="Read the sourcebooks full screen (Ctrl + B: side pane, Ctrl + F: search)">📖 Sourcebooks</button>
-        <button className="btn sm ghost" onClick={shortRest} title="Short rest">☾ Short rest</button>
-        <button className="btn sm ghost" onClick={longRest} title="Long rest">☀ Long rest</button>
-        <button className="btn sm ghost" onClick={() => set({ charListOpen: true })}>👥 Characters</button>
+        {/* labels drop to just their icons when the window is too narrow for them */}
+        <button className="btn sm ghost" onClick={() => set({ book: 'full' })} title="Read the sourcebooks full screen (Ctrl + B: side pane, Ctrl + F: search)">📖<span className="nav-l"> Sourcebooks</span></button>
+        <button className="btn sm ghost" onClick={shortRest} title="Short rest">☾<span className="nav-l"> Short rest</span></button>
+        <button className="btn sm ghost" onClick={longRest} title="Long rest">☀<span className="nav-l"> Long rest</span></button>
+        <button className="btn sm ghost" onClick={() => set({ charListOpen: true })} title="Characters">👥<span className="nav-l"> Characters</span></button>
         <button className="btn sm ghost" onClick={() => set({ themeOpen: true })} title="UI style (Ctrl + T)">◐</button>
       </nav>
       <Toast msg={toast.msg} />

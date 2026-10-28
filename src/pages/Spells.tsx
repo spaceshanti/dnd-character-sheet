@@ -71,18 +71,18 @@ export function SpellsPage() {
 function SpellFeatures() {
   const c = useChar()
   const set = useUI((s) => s.set)
-  const [shut, setShut] = useState<Set<string>>(new Set())
+  const [opened, setOpened] = useState<Set<string>>(new Set())
   const list = c.features.filter((f) => f.onSpellPage)
   if (!list.length) return null
   return (
     <Frame title={isAK(c) ? 'Features for my Arts' : 'Spellcasting features'} tight>
       <div className="spell-feats">
         {list.map((f) => {
-          const open = !shut.has(f.id)
+          const open = opened.has(f.id)
           return (
             <div key={f.id} className="spell-feat">
               <div className="row" style={{ gap: 6 }}>
-                <button className="btn icon sm ghost" title={open ? 'Fold' : 'Unfold'} onClick={() => setShut((s) => { const n = new Set(s); if (open) n.add(f.id); else n.delete(f.id); return n })}>{open ? '▾' : '▸'}</button>
+                <button className="btn icon sm ghost" title={open ? 'Fold' : 'Unfold'} onClick={() => setOpened((s) => { const n = new Set(s); if (open) n.delete(f.id); else n.add(f.id); return n })}>{open ? '▾' : '▸'}</button>
                 <b className="grow" style={{ cursor: 'pointer' }} onClick={() => set({ drawer: { kind: 'feature', id: f.id } })}>{f.name || 'Unnamed feature'}</b>
                 {f.source && <span className="muted small">{f.source}</span>}
               </div>
