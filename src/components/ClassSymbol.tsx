@@ -63,7 +63,7 @@ const BY_ID = Object.fromEntries(SYMBOLS.map((s) => [s.id, s]))
 
 /* ---------- official Arknights icons: downloaded on request into the app's data folder (never bundled) ---------- */
 
-export interface AkIcon { id: string; name: string; kind: 'class' | 'branch'; cls: string; url: string }
+export interface AkIcon { id: string; name: string; kind: 'class' | 'branch' | 'faction'; cls: string; url: string }
 
 export const useAkIcons = create<{
   list: AkIcon[]; loaded: boolean; busy: boolean; error: string; tried: boolean
@@ -74,7 +74,8 @@ export const useAkIcons = create<{
   list: [], loaded: false, busy: false, error: '', tried: false,
   async ensure() {
     await get().load()
-    if (get().list.length || get().tried || get().busy || !window.sheetApi?.symbolDownload) return
+    // fetch when there are none yet, or only the older set without the nation / faction icons
+    if (get().list.some((i) => i.kind === 'faction') || get().tried || get().busy || !window.sheetApi?.symbolDownload) return
     set({ tried: true })
     await get().download()
   },
@@ -112,6 +113,19 @@ const AK_BRANCH_ALIAS: Record<string, string> = {
   musha: 'Soloblade Guard', weaponmaster: 'Swordmaster Guard', 'anti-air': 'Marksman Sniper', heavyshot: 'Heavyshooter Sniper',
   spreadshot: 'Spreadshooter Sniper', physician: 'Medic Medic', triage: 'Multi-target Medic', ward: 'Watchman Medic',
   witchcraft: 'Incantation Medic', infuser: 'Alchemist Specialist', inventor: 'Geek Specialist',
+}
+
+const plainName = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim()
+
+/** A nation / faction's official icon from its name ("Lungmen", "Rhodes Island", "Bolivar"), on Arknights sheets. */
+export function autoFactionFor(name: string, icons: AkIcon[]): string {
+  const n = plainName(name)
+  if (!n) return ''
+  const factions = icons.filter((i) => i.kind === 'faction')
+  const hit = factions.find((i) => plainName(i.name) === n)
+    ?? factions.find((i) => plainName(i.name.replace(/\(.*\)/, '')) === n)
+    ?? factions.filter((i) => n.includes(plainName(i.name)) || plainName(i.name).startsWith(n)).sort((a, b) => a.name.length - b.name.length)[0]
+  return hit?.id ?? ''
 }
 
 /** The automatic mark for a class / branch: the official Arknights icon on Arknights sheets (once downloaded), else ours. */
@@ -165,11 +179,13 @@ export function SymbolMark({ value, size = 22, title }: { value: string; size?: 
   return <svg className="sym-svg" viewBox="0 0 24 24" width={size} height={size} aria-label={title ?? s.name}><title>{title ?? s.name}</title><path d={s.d} fillRule="evenodd" /></svg>
 }
 
-/** The little symbol button beside the Class / Subclass fields; click to pick another, or your own picture. */
-export function SymbolPicker({ value, auto, label, onChange, ak = false, akClass = '' }: {
+/** One badge in the row under the character's name; click to pick another mark, or your own picture. */
+export function SymbolPicker({ value, auto, label, onChange, official, akClass = '', fallback = '' }: {
   value: string; auto: string; label: string; onChange: (v: string) => void
-  /** Arknights sheet: offer the official class & branch icons first */
-  ak?: boolean
+  /** Arknights sheet: offer the game's class & branch icons, or its nation & faction icons, first */
+  official?: 'class' | 'faction'
+  /** shown when nothing is picked and there's no automatic mark (e.g. the faction emblem picture) */
+  fallback?: string
   /** the character's game class (e.g. Sniper), to list its branches first */
   akClass?: string
 }) {
@@ -177,7 +193,7 @@ export function SymbolPicker({ value, auto, label, onChange, ak = false, akClass
   const btn = useRef<HTMLButtonElement>(null)
   const file = useRef<HTMLInputElement>(null)
   const { list: icons, busy, error, download } = useAkIcons()
-  const shown = value || auto
+  const shown = value || auto || fallback
   const autoName = auto.startsWith('ak:') ? icons.find((i) => i.id === auto)?.name : BY_ID[auto]?.name
   const classIcons = icons.filter((i) => i.kind === 'class')
   const branchGroups = [...new Set(icons.filter((i) => i.kind === 'branch').map((i) => i.cls))]
@@ -189,8 +205,8 @@ export function SymbolPicker({ value, auto, label, onChange, ak = false, akClass
   )
   return (
     <>
-      <button ref={btn} className={`sym-btn ${shown ? '' : 'empty'}`} title={`${label} symbol: click to choose`} onClick={() => setOpen(!open)}>
-        {shown ? <SymbolMark value={shown} size={20} /> : <span>＋</span>}
+      <button ref={btn} className={`sym-btn ${shown ? '' : 'empty'}`} title={`${label}${shown ? '' : ' (none yet)'}: click to choose`} onClick={() => setOpen(!open)}>
+        {shown ? <SymbolMark value={shown} size={22} /> : <span>＋</span>}
       </button>
       <input ref={file} type="file" accept="image/*" hidden onChange={async (e) => {
         const f = e.target.files?.[0]
@@ -210,15 +226,17 @@ export function SymbolPicker({ value, auto, label, onChange, ak = false, akClass
               </button>
               {value.startsWith('data:') && <button className="sym-cell on" title="Your picture"><SymbolMark value={value} size={22} /></button>}
             </div>
-            {ak && (
+            {official && (
               <>
                 <div className="sym-h">Arknights · official icons</div>
                 {icons.length === 0 ? (
                   <div className="sym-dl">
-                    <span className="muted small">The game's class and branch icons, downloaded from the Arknights wiki onto this computer (not part of the app).</span>
+                    <span className="muted small">The game's class, branch, nation and faction icons, downloaded from the Arknights wiki onto this computer (not part of the app).</span>
                     <button className="btn sm primary" disabled={busy} onClick={download}>{busy ? 'Downloading…' : 'Download them'}</button>
                     {error && <span className="small" style={{ color: 'var(--dis)' }}>{error}</span>}
                   </div>
+                ) : official === 'faction' ? (
+                  <div className="sym-grid">{icons.filter((i) => i.kind === 'faction').map((i) => cell(i.id, i.name))}</div>
                 ) : (
                   <>
                     <div className="sym-sub">Classes</div>

@@ -7,7 +7,7 @@ import { activeEffects, damageReduction, netAdvantage, signed, spLimits, statInf
 import { uid } from '../blank'
 import { useChar, useStore, useUI, type PageId } from '../store'
 import { Field, FitInput, Num, Pips, Popover, Toast, useToast } from './ui'
-import { akClassOf, autoSymbolFor, SymbolPicker, useAkIcons } from './ClassSymbol'
+import { akClassOf, autoFactionFor, autoSymbolFor, SymbolPicker, useAkIcons } from './ClassSymbol'
 import { dropImagesOn, Lightbox } from './ImagePicker'
 import { StatEditor } from './StatEditor'
 import { Icon } from './Icon'
@@ -120,6 +120,16 @@ export function TopBar() {
   return (
     <header className="topbar">
       <Portrait size={Math.max(60, mainH - 12)} />
+      {/* class, subclass / branch, nationality and faction marks, stacked beside the portrait */}
+      <div className="sym-col">
+        <SymbolPicker label="Class" official={ak ? 'class' : undefined} akClass={akClassOf(c.className)} value={c.classSymbol}
+          auto={autoSymbolFor(c.className, { ak, icons: akIcons })} onChange={(v) => patch((d) => { d.classSymbol = v })} />
+        <SymbolPicker label={ak ? 'Branch' : 'Subclass'} official={ak ? 'class' : undefined} akClass={akClassOf(c.className)} value={c.subclassSymbol}
+          auto={autoSymbolFor(c.subclass, { ak, branchOf: c.className, icons: akIcons })} onChange={(v) => patch((d) => { d.subclassSymbol = v })} />
+        {ak && <SymbolPicker label="Nationality" official="faction" value={c.nationSymbol} auto={autoFactionFor(c.nationality, akIcons)} onChange={(v) => patch((d) => { d.nationSymbol = v })} />}
+        <SymbolPicker label="Faction" official={ak ? 'faction' : undefined} value={c.factionSymbol} fallback={c.emblem}
+          auto={ak && c.story.alliesTitle !== 'Allies & Organizations' ? autoFactionFor(c.story.alliesTitle, akIcons) : ''} onChange={(v) => patch((d) => { d.factionSymbol = v })} />
+      </div>
       <div className="top-main" ref={mainRef}>
         <div className="banner">
           <div className="name-banner">
@@ -127,20 +137,8 @@ export function TopBar() {
             <label>Character Name</label>
           </div>
           <div className="details">
-            <div className="field sym-field">
-              <div className="row">
-                <SymbolPicker label="Class" ak={ak} akClass={akClassOf(c.className)} value={c.classSymbol} auto={autoSymbolFor(c.className, { ak, icons: akIcons })} onChange={(v) => patch((d) => { d.classSymbol = v })} />
-                <FitInput value={c.className} onChange={(e) => patch((d) => { d.className = e.target.value })} />
-              </div>
-              <label>Class</label>
-            </div>
-            <div className="field sym-field">
-              <div className="row">
-                <SymbolPicker label={ak ? 'Branch' : 'Subclass'} ak={ak} akClass={akClassOf(c.className)} value={c.subclassSymbol} auto={autoSymbolFor(c.subclass, { ak, branchOf: c.className, icons: akIcons })} onChange={(v) => patch((d) => { d.subclassSymbol = v })} />
-                <FitInput value={c.subclass} onChange={(e) => patch((d) => { d.subclass = e.target.value })} />
-              </div>
-              <label>{ak ? 'Branch' : 'Subclass'}</label>
-            </div>
+            <Field label="Class" value={c.className} onChange={(v) => patch((d) => { d.className = v })} />
+            <Field label={ak ? 'Branch' : 'Subclass'} value={c.subclass} onChange={(v) => patch((d) => { d.subclass = v })} />
             <Field label="Species / Race" value={c.species} onChange={(v) => patch((d) => { d.species = v })} />
             <div className="field">
               <div className="row" style={{ gap: 4 }}>

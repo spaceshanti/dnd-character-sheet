@@ -22,7 +22,7 @@ declare global {
       /** the imported sourcebook's page info, or null if it hasn't been imported */
       bookInfo: (id: string) => Promise<{ title: string; pages: number; aspect: number; ext: string } | null>
       /** downloaded official Arknights class / branch icons (as data URLs) */
-      symbolList: () => Promise<{ id: string; name: string; kind: 'class' | 'branch'; cls: string; url: string }[]>
+      symbolList: () => Promise<{ id: string; name: string; kind: 'class' | 'branch' | 'faction'; cls: string; url: string }[]>
       /** fetch them from the Arknights wiki into the app's data folder; returns how many */
       symbolDownload: () => Promise<number>
       /** every imported sourcebook (folders under <userData>/sourcebook) */

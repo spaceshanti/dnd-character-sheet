@@ -276,6 +276,9 @@ export interface Character {
   /** class / subclass symbols: a built-in mark id or your own picture (data URL); '' = from the name */
   classSymbol: string
   subclassSymbol: string
+  /** nationality / faction marks, same rules ('' = automatic from the name; the faction falls back to the emblem picture) */
+  nationSymbol: string
+  factionSymbol: string
   level: number
   species: string
   background: string

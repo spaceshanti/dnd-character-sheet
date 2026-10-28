@@ -79,9 +79,10 @@ https://media.dndbeyond.com/compendium-images/srd/5.2/SRD_CC_v5.2.1.pdf
 
 ## Class symbols
 
-Each character has a symbol beside its Class and Subclass / Branch in the top bar (click to change; an original set, or your
-own picture). On Arknights sheets the game's official class and branch icons are used automatically: they're downloaded
-once from the Arknights wiki into the app's data folder (`%APPDATA%/Character Sheet/symbols/ak`) and never bundled.
+Beside the portrait is a column of marks: class, subclass / branch, nationality (Arknights) and faction (click any to change;
+an original set, or your own picture; the faction falls back to your emblem picture). On Arknights sheets the game's
+official class, branch, nation and faction icons are picked automatically from the names: they're downloaded once from the
+Arknights wiki into the app's data folder (`%APPDATA%/Character Sheet/symbols/ak`) and never bundled.
 
 ## Importing the Arknights 5e book
 

@@ -136,7 +136,10 @@ ipcMain.handle('symbols:download', async () => {
   fs.mkdirSync(symDir(), { recursive: true })
   // class marks: "Vanguard B.png" etc.; branch marks: everything in Category:Branch icons ("Pioneer Vanguard.png")
   const branch = await wiki({ action: 'query', list: 'categorymembers', cmtitle: 'Category:Branch icons', cmlimit: '500', cmtype: 'file' })
-  const titles = [...AK_CLASSES.map((c) => `File:${c} B.png`), ...branch.query.categorymembers.map((m) => m.title)]
+  // nations and factions (Lungmen, Kazimierz, Rhodes Island, Penguin Logistics…)
+  const faction = await wiki({ action: 'query', list: 'categorymembers', cmtitle: 'Category:Faction icons', cmlimit: '500', cmtype: 'file' })
+  const factionTitles = new Set(faction.query.categorymembers.map((m) => m.title))
+  const titles = [...AK_CLASSES.map((c) => `File:${c} B.png`), ...branch.query.categorymembers.map((m) => m.title), ...factionTitles]
   const urls = {}
   for (let i = 0; i < titles.length; i += 40) {
     const info = await wiki({ action: 'query', prop: 'imageinfo', iiprop: 'url', titles: titles.slice(i, i + 40).join('|') })
@@ -150,8 +153,9 @@ ipcMain.handle('symbols:download', async () => {
     const r = await net.fetch(url, { headers: UA })
     if (!r.ok) continue
     fs.writeFileSync(path.join(symDir(), file), Buffer.from(await r.arrayBuffer()))
-    const cls = isClass ? name.replace(/ B$/, '') : AK_CLASSES.find((c) => name.endsWith(` ${c}`)) || ''
-    index.push({ id: `ak:${file.replace(/\.png$/, '')}`, name: isClass ? cls : name, kind: isClass ? 'class' : 'branch', cls, file })
+    const isFaction = factionTitles.has(title)
+    const cls = isClass ? name.replace(/ B$/, '') : isFaction ? '' : AK_CLASSES.find((c) => name.endsWith(` ${c}`)) || ''
+    index.push({ id: `ak:${file.replace(/\.png$/, '')}`, name: isClass ? cls : name, kind: isClass ? 'class' : isFaction ? 'faction' : 'branch', cls, file })
   }
   fs.writeFileSync(path.join(symDir(), 'index.json'), JSON.stringify(index))
   return index.length
