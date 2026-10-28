@@ -185,9 +185,13 @@ input[type='number']::-webkit-inner-spin-button { display: none; }
 .details { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px 12px; align-content: center; }
 .details .field > input, .details .line-input { font-size: 13px; font-weight: 600; }
 .details .field > label { font-size: 8px; margin-top: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* one row whatever the width (e.g. with the sourcebook pane open): scrolls sideways instead of growing the top bar */
-.vitals { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 7px; padding: 4px 12px 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
-.vitals::-webkit-scrollbar { height: 6px; }
+/* one row that fits the window: boxes tighten up as the top bar gets narrower (see the @container rules below) */
+.vitals { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 7px; padding: 4px 12px 6px; overflow: hidden; }
+.top-main { container: topbar / inline-size; }
+.hp-main { min-width: 104px; }
+.death-box { min-width: 118px; }
+.cond-box { flex: 1 1 150px; min-width: 64px; max-width: 260px; align-items: flex-start; overflow: hidden; }
+.cond-box > .row { overflow: hidden; max-height: 44px; }
 .vbox {
   position: relative; border: 2px solid var(--ink); border-radius: 8px; background: var(--panel); min-width: 60px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px 6px 1px; cursor: pointer;
@@ -633,3 +637,51 @@ svg.ico { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14e
 .spell-feats { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px 16px; }
 .spell-feat { border-bottom: 1px solid var(--line); padding-bottom: 6px; }
 .spell-feat .prose { margin: 2px 0 0 30px; }
+
+/* top bar on narrower windows: tighter boxes, then the extras go, so it never needs a sideways scroll */
+@container topbar (max-width: 1080px) {
+  .vitals { gap: 5px; padding: 4px 8px 6px; }
+  .vbox { padding: 2px 4px 1px; min-width: 52px; }
+  .vbox .v { font-size: 18px; }
+  .shield { width: 58px; }
+  .hp-box { gap: 5px; padding: 2px 6px; }
+  .hp-main { min-width: 92px; }
+  .hp-box .big input { width: 38px; font-size: 20px; }
+  .death-box { min-width: 100px; }
+  .inv-btn { width: 58px; }
+}
+@container topbar (max-width: 920px) {
+  .vbox .sub { display: none; }
+  .size-box { display: none; }
+  .vitals .pip { width: 10px; height: 10px; }
+  .death-box { min-width: 86px; }
+  .hp-box .btn.sm { padding: 0 4px; font-size: 10px; }
+  .hp-box .box-input { width: 34px !important; }
+  .hp-main { min-width: 80px; }
+  .inv-btn { width: 46px; }
+  .inv-btn .l { display: none; }
+  .details { gap: 1px 8px; }
+}
+@container topbar (max-width: 640px) {
+  .hd-box { display: none; }
+}
+@container topbar (max-width: 760px) {
+  .cond-box { display: none; }
+  .vbox .l { font-size: 7px; letter-spacing: .06em; }
+  .hp-box .big .of { font-size: 13px; }
+}
+
+/* class / subclass symbols */
+.sym-field .row { gap: 4px; }
+.sym-field .row input { flex: 1; min-width: 0; font-weight: 600; font-size: 13px; border-bottom: 1px solid var(--ink); padding: 1px 2px; }
+.sym-field .row input:focus { border-bottom-color: var(--accent); background: var(--accent-soft); }
+.sym-btn { flex: none; width: 24px; height: 24px; display: grid; place-items: center; border: none; background: none; padding: 0; color: var(--accent); border-radius: 4px; cursor: pointer; }
+.sym-btn:hover { background: var(--accent-soft); }
+.sym-btn.empty { color: var(--muted); border: 1px dashed var(--line); font-size: 12px; }
+.sym-svg { fill: currentColor; display: block; }
+.sym-img { object-fit: contain; display: block; }
+.sym-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; max-height: 300px; overflow-y: auto; }
+.sym-cell { aspect-ratio: 1; display: grid; place-items: center; border: 1px solid transparent; border-radius: 4px; background: var(--panel2); color: var(--ink); padding: 0; position: relative; }
+.sym-cell:hover { border-color: var(--accent); color: var(--accent); }
+.sym-cell.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.sym-cell i { position: absolute; bottom: 0; font-size: 7px; font-style: normal; color: var(--muted); }

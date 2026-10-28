@@ -270,6 +270,9 @@ export interface Character {
   name: string
   className: string
   subclass: string
+  /** class / subclass symbols: a built-in mark id or your own picture (data URL); '' = from the name */
+  classSymbol: string
+  subclassSymbol: string
   level: number
   species: string
   background: string

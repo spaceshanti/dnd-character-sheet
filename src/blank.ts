@@ -58,7 +58,7 @@ export function blankCharacter(name = 'New Character', system: SystemId = 'dnd5e
   const slots: Character['slots'] = {}
   for (let i = 1; i <= 9; i++) slots[i] = { total: 0, used: 0 }
   return {
-    id: uid(), system, name, className: '', subclass: '', level: 1, species: '', background: '', alignment: '', nationality: '',
+    id: uid(), system, name, className: '', subclass: '', classSymbol: '', subclassSymbol: '', level: 1, species: '', background: '', alignment: '', nationality: '',
     player: '', xp: '', portrait: '', appearanceImage: '', emblem: '',
     appearance: { age: '', height: '', weight: '', eyes: '', skin: '', hair: '' },
     abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },

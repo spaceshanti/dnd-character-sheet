@@ -6,6 +6,7 @@ import { activeEffects, damageReduction, netAdvantage, signed, spLimits, statInf
 import { uid } from '../blank'
 import { useChar, useStore, useUI, type PageId } from '../store'
 import { Field, FitInput, Num, Pips, Popover, Toast, useToast } from './ui'
+import { autoSymbol, SymbolPicker } from './ClassSymbol'
 import { dropImagesOn, Lightbox } from './ImagePicker'
 import { StatEditor } from './StatEditor'
 import { Icon } from './Icon'
@@ -117,8 +118,20 @@ export function TopBar() {
             <label>Character Name</label>
           </div>
           <div className="details">
-            <Field label="Class" value={c.className} onChange={(v) => patch((d) => { d.className = v })} />
-            <Field label={ak ? 'Branch' : 'Subclass'} value={c.subclass} onChange={(v) => patch((d) => { d.subclass = v })} />
+            <div className="field sym-field">
+              <div className="row">
+                <SymbolPicker label="Class" value={c.classSymbol} auto={autoSymbol(c.className)} onChange={(v) => patch((d) => { d.classSymbol = v })} />
+                <FitInput value={c.className} onChange={(e) => patch((d) => { d.className = e.target.value })} />
+              </div>
+              <label>Class</label>
+            </div>
+            <div className="field sym-field">
+              <div className="row">
+                <SymbolPicker label={ak ? 'Branch' : 'Subclass'} value={c.subclassSymbol} auto={autoSymbol(c.subclass)} onChange={(v) => patch((d) => { d.subclassSymbol = v })} />
+                <FitInput value={c.subclass} onChange={(e) => patch((d) => { d.subclass = e.target.value })} />
+              </div>
+              <label>{ak ? 'Branch' : 'Subclass'}</label>
+            </div>
             <Field label="Species / Race" value={c.species} onChange={(v) => patch((d) => { d.species = v })} />
             <div className="field">
               <div className="row" style={{ gap: 4 }}>
@@ -247,7 +260,7 @@ function Vitals() {
           <div className="sub">{dr.adds.length ? `= ${dr.total}` : ''}</div>
         </div>
       ) : (
-        <div className="vbox" style={{ cursor: 'default' }}>
+        <div className="vbox size-box" style={{ cursor: 'default' }}>
           <div className="l">Size</div>
           <select className="size-select" value={c.size} onChange={(e) => patch((d) => { d.size = e.target.value })}>
             {SIZES.includes(c.size) ? null : <option value={c.size}>{c.size}</option>}
@@ -258,7 +271,7 @@ function Vitals() {
       )}
 
       <div className="vbox hp-box">
-        <div style={{ minWidth: 104 }}>
+        <div className="hp-main">
           <div className="l" style={{ textAlign: 'left' }}>Hit Points</div>
           <div className="big">
             <Num min={0} className="" value={c.hp.current} onChange={(n) => patch((d) => { d.hp.current = n })} />
@@ -283,7 +296,7 @@ function Vitals() {
         </div>
       </div>
 
-      <div className="vbox" ref={(el) => (refs.current.hd = el)} onClick={() => setHdOpen(!hdOpen)} title="Hit dice">
+      <div className="vbox hd-box" ref={(el) => (refs.current.hd = el)} onClick={() => setHdOpen(!hdOpen)} title="Hit dice">
         <div className="l">Hit Dice</div>
         <div className="v" style={{ fontSize: c.hitDice.length > 1 ? 14 : undefined }}>
           {c.hitDice.length === 0 ? '—' : c.hitDice.map((h) => `${h.total - h.spent}d${h.die}`).join(' + ')}
@@ -292,7 +305,7 @@ function Vitals() {
       </div>
 
       {ak ? (
-        <div className={`vbox ${c.hp.current <= 0 ? 'dying' : ''}`} style={{ cursor: 'default', minWidth: 118 }}
+        <div className={`vbox death-box ${c.hp.current <= 0 ? 'dying' : ''}`} style={{ cursor: 'default' }}
           title={"Dying at 0 HP: death save at the start of each turn (+2 Mettle on a success, +1 on a fail). Three failures and you die.\n\nDeath's Door actions:\n" + DEATHS_DOOR.map(([n, m, t]) => `${n} (${m} Mettle): ${t}`).join('\n')}>
           <div className="l">{c.hp.current <= 0 ? 'Dying' : 'Mettle · Fails'}</div>
           <div className="row" style={{ gap: 6, marginTop: 3 }}>
@@ -305,7 +318,7 @@ function Vitals() {
           </div>
         </div>
       ) : (
-      <div className="vbox" style={{ cursor: 'default', minWidth: 118 }}>
+      <div className="vbox death-box" style={{ cursor: 'default' }}>
         <div className="l">Death Saves</div>
         <div className="row" style={{ gap: 6, marginTop: 3 }}>
           <span className="small muted" style={{ width: 14 }}>✓</span>
@@ -318,7 +331,7 @@ function Vitals() {
       </div>
       )}
 
-      <div className="vbox" ref={(el) => (refs.current.cond = el)} style={{ minWidth: 150, maxWidth: 260, alignItems: 'flex-start' }} onClick={() => setCondOpen(!condOpen)}>
+      <div className="vbox cond-box" ref={(el) => (refs.current.cond = el)} onClick={() => setCondOpen(!condOpen)}>
         <div className="l" style={{ alignSelf: 'center' }}>Conditions</div>
         <div className="row" style={{ flexWrap: 'wrap', gap: 3, padding: '3px 0' }}>
           {c.conditions.length === 0 && <span className="muted small">none — click to add</span>}
