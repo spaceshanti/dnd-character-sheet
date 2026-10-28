@@ -21,7 +21,7 @@ export function newSpell(level = 1, name = ''): Spell {
   }
 }
 export function newFeature(category: Feature['category'] = 'class'): Feature {
-  return { id: uid(), name: '', category, source: '', description: '', actionType: 'none', effects: [], active: true, actions: [], masteries: [], restEffects: [], collapsed: false, actionMods: [] }
+  return { id: uid(), name: '', category, source: '', description: '', actionType: 'none', effects: [], active: true, actions: [], masteries: [], restEffects: [], collapsed: false, actionMods: [], onSpellPage: false }
 }
 export function newItem(): Item {
   return {
@@ -50,7 +50,6 @@ export function blankAk(): AkData {
   return {
     lmd: 0, mettle: 0, sp: 0, activeSkill: '', opSkills: [], ap: { max: 0, used: 0, recharge: 'long' }, maxArtLevel: 0,
     ninthUsed: false, infected: false, assimilation: 0, dr: 0, drNote: '', codename: '',
-    display: { range: [], position: '', tags: [], stars: 0 },
   }
 }
 
@@ -105,7 +104,7 @@ export function normalize(raw: Partial<Character>): Character {
   c.story = { ...b.story, ...raw.story }
   c.slots = { ...b.slots, ...raw.slots }
   c.system = raw.system === 'ak5e' ? 'ak5e' : 'dnd5e'
-  c.ak = { ...b.ak, ...raw.ak, ap: { ...b.ak.ap, ...raw.ak?.ap }, display: { ...b.ak.display, ...raw.ak?.display } }
+  c.ak = { ...b.ak, ...raw.ak, ap: { ...b.ak.ap, ...raw.ak?.ap } }
   // the three personality boxes became one
   if (c.story.trait2 || c.story.trait3) {
     c.story.trait1 = [c.story.trait1, c.story.trait2, c.story.trait3].filter((t) => t.trim()).join('\n\n')
@@ -113,7 +112,7 @@ export function normalize(raw: Partial<Character>): Character {
     c.story.trait3 = ''
   }
   c.spells = c.spells.map((s) => ({ ...s, materialConsumed: s.materialConsumed ?? isConsumed(s.components) }))
-  c.features = c.features.map((f) => ({ ...f, actions: f.actions ?? [], masteries: f.masteries ?? [], restEffects: f.restEffects ?? [], collapsed: f.collapsed ?? false, actionMods: f.actionMods ?? [] }))
+  c.features = c.features.map((f) => ({ ...f, actions: f.actions ?? [], masteries: f.masteries ?? [], restEffects: f.restEffects ?? [], collapsed: f.collapsed ?? false, actionMods: f.actionMods ?? [], onSpellPage: f.onSpellPage ?? false }))
   c.spells = c.spells.map((s) => ({ ...s, grantedBy: s.grantedBy ?? '', ammoId: s.ammoId ?? '', ammoCost: s.ammoCost ?? 1 }))
   c.resources = c.resources.map((r) => ({ ...r, die: r.die ?? '', featureId: r.featureId ?? '' }))
   c.items = c.items.map((i) => ({

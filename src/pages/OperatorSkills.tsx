@@ -1,9 +1,9 @@
-import { Fragment, useMemo, useRef, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { spLimits } from '../calc'
 import { newOpSkill } from '../blank'
 import { activateOp, endOp, gainSp } from '../ak'
 import { CHARGING, fromOpLib, OP_CLASSES, OP_LIB, searchOp, TIERS, type LibOpSkill } from '../opSkillLib'
-import { imageToDataUrl, useChar, useStore } from '../store'
+import { useChar, useStore } from '../store'
 import { Frame, Modal, Num, Toast, useToast } from '../components/ui'
 import { RichArea, RichText } from '../components/RichText'
 import type { OperatorSkill, SkillTier } from '../types'
@@ -43,25 +43,6 @@ export function SpTracker({ onMsg }: { onMsg: (m: string) => void }) {
         </div>
       )}
     </div>
-  )
-}
-
-/** Square picture for a skill (operator view only): click to choose your own image, ✕ to remove it. */
-export function SkillIconPick({ s, size = 44 }: { s: OperatorSkill; size?: number }) {
-  const patch = useStore((st) => st.patch)
-  const input = useRef<HTMLInputElement>(null)
-  const set = (icon: string) => patch((d) => { const x = d.ak.opSkills.find((y) => y.id === s.id); if (x) x.icon = icon })
-  return (
-    <span className="skill-icon-pick" style={{ width: size, height: size }}>
-      <input ref={input} type="file" accept="image/*" hidden onChange={async (e) => {
-        const f = e.target.files?.[0]
-        e.target.value = ''
-        if (f) set(await imageToDataUrl(f, 256, true))
-      }} />
-      <button className="sip" title={s.icon ? 'Change icon' : 'Add your own icon'} onClick={() => input.current?.click()}
-        style={s.icon ? { backgroundImage: `url("${s.icon}")` } : undefined}>{s.icon ? '' : '＋'}</button>
-      {s.icon && <button className="sip-x" title="Remove icon" onClick={() => set('')}>✕</button>}
-    </span>
   )
 }
 

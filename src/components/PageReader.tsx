@@ -1,40 +1,29 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { BookSection } from '../book/book'
 import { BookContents } from './BookContents'
-import { keyInScope, type ReaderProps } from './BookViewer'
+import { keyInScope, useBookmarks, type ReaderProps } from './BookViewer'
+import type { BookInfo } from '../book/books'
 
 /*
- * The sourcebook as its real pages (rendered from your PDF by tools/import_ak5e_pdf.py), with the same
+ * A sourcebook as its real pages (rendered from your PDF by tools/import_book_pdf.py), with the same
  * contents sidebar as the text view. Search runs over each page's words and highlights them on the page.
- * Only the pages around where you are get loaded, so the 500 pages scroll smoothly.
+ * Only the pages around where you are get loaded, so hundreds of pages scroll smoothly.
  */
 
-export interface PageBook { base: string; pages: number; aspect: number; ext: string }
 type Word = [number, number, number, number, string]
 
-/** Where the imported pages are: the app's data folder (desktop app), or a dev copy for the browser preview. */
-export async function findPageBook(): Promise<PageBook | null> {
-  if (window.sheetApi?.bookInfo) {
-    const info = await window.sheetApi.bookInfo('ak5e')
-    return info ? { base: 'sheetbook://ak5e/', ...info } : null
-  }
-  try {
-    const r = await fetch('/book-dev/ak5e/book.json')
-    if (r.ok && r.headers.get('content-type')?.includes('json')) return { base: '/book-dev/ak5e/', ...(await r.json()) }
-  } catch { /* no dev copy */ }
-  return null
-}
-
 interface PageHit { page: number; w0: number; w1: number; before: string; match: string; after: string }
-const LAST = 'book-page'
 const GAP = 14
 
-export function PageReader({ book, pb, layout, onClose, extra, searchTick }: ReaderProps & { book: BookSection[]; pb: PageBook }) {
+export function PageReader({ book, pb, layout, onClose, extra, searchTick }: ReaderProps & { book: BookSection[]; pb: BookInfo }) {
+  // where you were, per book (the AK5e book used to be the only one)
+  const LAST = `book-page-${pb.id}`
   const scroller = useRef<HTMLDivElement>(null)
   const search = useRef<HTMLInputElement>(null)
   const [width, setWidth] = useState(900)
   const [zoom, setZoom] = useState(() => { try { return +(localStorage.getItem('book-zoom') || 1) || 1 } catch { return 1 } })
-  const [page, setPage] = useState(() => { try { return Math.max(1, +(localStorage.getItem(LAST) || 1)) } catch { return 1 } })
+  const [page, setPage] = useState(() => { try { return Math.max(1, +(localStorage.getItem(LAST) || (pb.id === 'ak5e' && localStorage.getItem('book-page')) || 1)) } catch { return 1 } })
+  const bm = useBookmarks(pb.id)
   const [words, setWords] = useState<Word[][] | null>(null)
   const [q, setQ] = useState('')
   const [hitIdx, setHitIdx] = useState(-1)
@@ -131,6 +120,15 @@ export function PageReader({ book, pb, layout, onClose, extra, searchTick }: Rea
   }
   const goSection = (s: BookSection) => scrollToPage(s.page, titleY(s.page, s.title))
   const goHeading = (_s: BookSection, h: BookSection['subs'][number]) => scrollToPage(h.page, titleY(h.page, h.title))
+  /** the nearest heading at or above a spot, to name a bookmark */
+  const headingAt = (p: number, y: number) => {
+    let best = ''
+    for (const s of book) {
+      if (s.page < p || (s.page === p && titleY(p, s.title) <= y + 0.05)) best = s.title
+      for (const h of s.subs) if (h.page < p || (h.page === p && titleY(p, h.title) <= y + 0.05)) best = h.title
+    }
+    return best
+  }
 
   // which section you're in, for the contents highlight
   const current = useMemo(() => {
@@ -184,7 +182,7 @@ export function PageReader({ book, pb, layout, onClose, extra, searchTick }: Rea
     <div className="book">
       <div className="bk-head">
         <button className={`btn sm ${navOpen ? 'primary' : ''}`} title={navOpen ? 'Hide the contents' : 'Show the contents'} onClick={toggleNav}>☰</button>
-        <b className="bk-title">Arknights 5e</b>
+        <b className="bk-title">{pb.title}</b>
         <div className="bk-search">
           <input ref={search} placeholder={words ? 'Search the book (Ctrl + F)' : 'Loading the words…'} value={q} autoFocus
             onChange={(e) => { setQ(e.target.value); setHitIdx(-1) }}
@@ -205,6 +203,11 @@ export function PageReader({ book, pb, layout, onClose, extra, searchTick }: Rea
           <span className="muted small">/ {pb.pages}</span>
           <button type="button" className="btn sm" title="Next page (→)" onClick={() => scrollToPage(page + 1)}>›</button>
         </form>
+        <button className="btn sm bk-markbtn" title="Bookmark this page" onClick={() => {
+          const el = scroller.current
+          const y = el ? Math.max(0, (el.scrollTop - (page - 1) * stride) / pageH) : 0
+          bm.add(page, headingAt(page, y) || `Page ${page}`, y)
+        }}>☆</button>
         {extra}
         <button className="btn sm" onClick={onClose} title="Close (Esc)">✕</button>
       </div>
@@ -232,7 +235,9 @@ export function PageReader({ book, pb, layout, onClose, extra, searchTick }: Rea
                 )
               })}
             </div>
-          ) : <BookContents book={book} current={current} onSection={goSection} onHeading={goHeading} />}
+          ) : <BookContents book={book} current={current} onSection={goSection} onHeading={goHeading}
+            marks={bm.marks} onOpenMark={(m) => scrollToPage(m.page, m.y)} onRenameMark={(m) => bm.rename(m.id, m.title)} onRemoveMark={(m) => bm.remove(m.id)}
+            onMarkHere={(title, p) => bm.add(p, title, titleY(p, title))} />}
         </nav>
         <div ref={scroller} className="bk-pages" onScroll={onScroll}>
           {/* wide enough for zoomed-in pages to scroll sideways instead of being cut off */}

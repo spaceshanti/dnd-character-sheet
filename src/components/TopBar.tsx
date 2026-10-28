@@ -146,7 +146,7 @@ export function TopBar() {
           <button key={t.id} className={`tab ${page === t.id ? 'active' : ''}`} onClick={() => go(t.id)}>{t.name}</button>
         ))}
         <span className="spacer" />
-        {ak && <button className="btn sm ghost" onClick={() => set({ book: 'full' })} title="Read the Arknights 5e sourcebook full screen (Ctrl + B: side pane, Ctrl + F: search it)">📖 Sourcebook</button>}
+        <button className="btn sm ghost" onClick={() => set({ book: 'full' })} title="Read the sourcebooks full screen (Ctrl + B: side pane, Ctrl + F: search)">📖 Sourcebooks</button>
         <button className="btn sm ghost" onClick={shortRest} title="Short rest">☾ Short rest</button>
         <button className="btn sm ghost" onClick={longRest} title="Long rest">☀ Long rest</button>
         <button className="btn sm ghost" onClick={() => set({ charListOpen: true })}>👥 Characters</button>

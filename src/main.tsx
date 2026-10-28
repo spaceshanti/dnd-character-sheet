@@ -21,7 +21,6 @@ import './styles/skins/skyrim.css'
 import './styles/skins/hollow.css'
 import './styles/skins/honkai.css'
 import './styles/skins/arknights.css'
-import './styles/operator.css'
 import './styles/book.css'
 import App from './App'
 

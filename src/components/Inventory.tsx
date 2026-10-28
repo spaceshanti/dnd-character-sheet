@@ -3,9 +3,10 @@ import { ABILITIES, ACTION_TYPES, ITEM_CATEGORIES, RARITIES, SLOT_IDS } from '..
 import { attackInfo, carryCapacity, itemAttacks, masterySource, signed, totalWeight } from '../calc'
 import { newItem } from '../blank'
 import { isAK } from '../systems'
-import { bestItem } from '../itemLib'
+import { bestItemFor } from '../itemLib'
+import { systemOf, type SystemId } from '../systems'
 import { ammoOptions, ammoText } from '../consume'
-import { MASTERIES, MASTERY_INFO, WEAPON_NAMES, lookupArmor, lookupWeapon } from '../data/gear'
+import { MASTERIES, MASTERY_INFO, akGearExtras, lookupArmor, lookupWeapon, weaponNames } from '../data/gear'
 import { PropertyEditor, WeaponTags } from './WeaponTags'
 import { useChar, useStore, useUI } from '../store'
 import { EffectsEditor, Modal, Num, Select, Switch } from './ui'
@@ -35,19 +36,24 @@ function parseGear(text: string): { qty: number; name: string } {
 }
 
 /** A new item from a typed line, pre-filled with standard weapon / armor stats when the name matches. */
-function itemFromText(text: string): Item {
+function itemFromText(text: string, sys: SystemId): Item {
   const { qty, name } = parseGear(text)
   // "Longsword +1", "+2 Chain Mail": the number becomes the magic bonus
   const plus = +((name.match(/(?:^|\s)\+([1-3])\b/) || [])[1] || 0)
-  const weapon = lookupWeapon(name)
-  const armor = weapon ? null : lookupArmor(name)
+  const lib = bestItemFor(name, sys)
+  // a named magic weapon / armour ("Blacksteel": "Weapon (Handgun), Artifact") takes its base item's stats
+  const base = /^(?:Weapon|Armou?r)\s*\(([^)]+)\)/i.exec(lib?.d ?? '')?.[1] ?? ''
+  const weapon = lookupWeapon(name, sys) ?? (base ? lookupWeapon(base, sys) : null)
+  const armor = weapon ? null : lookupArmor(name, sys) ?? (base ? lookupArmor(base, sys) : null)
   if (weapon) weapon.magicBonus = plus
   if (armor) armor.bonus = plus
-  const lib = bestItem(name)
+  // Arknights gear: armour Damage Reduction / Conductive spell bonus while equipped, plus the table's notes
+  const ak = sys === 'ak5e' && (weapon || armor) ? akGearExtras(name) ?? (base ? akGearExtras(base) : null) : null
   return {
     ...newItem(), name, qty, weapon, armor,
     category: weapon ? 'Weapon' : armor ? 'Armor' : lib?.k ?? 'Misc',
-    description: lib?.d ?? '', weight: lib?.w ?? 0, value: lib?.c ?? '',
+    description: lib?.d || ak?.description || '', weight: lib?.w || ak?.weight || 0, value: lib?.m ? lib.c : lib?.c || ak?.value || '',
+    effects: ak?.effects ?? [],
     rarity: plus ? (plus === 1 ? 'uncommon' : plus === 2 ? 'rare' : 'very rare') : lib?.r ?? 'common',
     attunement: lib?.a ?? false,
   }
@@ -83,7 +89,7 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
 
   const add = () => {
     if (!draft.trim()) return
-    const it = itemFromText(draft)
+    const it = itemFromText(draft, systemOf(c))
     patch((d) => { d.items.push(it) })
     setDraft('')
   }
@@ -276,7 +282,7 @@ function ItemEditor({ item }: { item: Item }) {
       <div className="row"><span className="field-lbl">Worn in</span><Select value={item.slot} onChange={setSlot} options={slotOptions} /></div>
 
       <Section title="Weapon" open={!!item.weapon}
-        right={<Switch on={!!item.weapon} title="Can attack with this" onChange={(b) => up((x) => { x.weapon = b ? (lookupWeapon(x.name) ?? { ...DEFAULT_WEAPON }) : null; if (b && x.category === 'Misc') x.category = 'Weapon' })} />}>
+        right={<Switch on={!!item.weapon} title="Can attack with this" onChange={(b) => up((x) => { x.weapon = b ? (lookupWeapon(x.name, systemOf(c)) ?? { ...DEFAULT_WEAPON }) : null; if (b && x.category === 'Misc') x.category = 'Weapon' })} />}>
         {!item.weapon ? <div className="muted small">Switch on to list this under Weapons & Attacks.</div> : (
           <>
             {atkInfo && atk && (
@@ -306,8 +312,8 @@ function ItemEditor({ item }: { item: Item }) {
             {item.weapon.ammoId && <div className="small muted">{ammoText(c, item.weapon.ammoId, item.weapon.ammoCost)}: the Use button in Weapons & Attacks counts it down.</div>}
             <div className="row" style={{ flexWrap: 'wrap' }}>
               <span className="field-lbl">Kind</span>
-              <Select value={item.weapon.kind} onChange={(v) => upW((w) => { const std = lookupWeapon(v); w.kind = v; if (std) w.mastery = std.mastery })}
-                options={[{ id: '', name: 'Custom / other' }, ...WEAPON_NAMES.map((n) => ({ id: n, name: n }))]} />
+              <Select value={item.weapon.kind} onChange={(v) => upW((w) => { const std = lookupWeapon(v, systemOf(c)); w.kind = v; if (std) w.mastery = std.mastery })}
+                options={[{ id: '', name: 'Custom / other' }, ...weaponNames(systemOf(c)).map((n) => ({ id: n, name: n }))]} />
               <span className="field-lbl">Mastery</span>
               <Select value={item.weapon.mastery} onChange={(v) => upW((w) => { w.mastery = v })}
                 options={[{ id: '', name: 'None' }, ...MASTERIES.map((m) => ({ id: m, name: m }))]} />
@@ -320,7 +326,7 @@ function ItemEditor({ item }: { item: Item }) {
       </Section>
 
       <Section title="Armor / shield" open={!!item.armor}
-        right={<Switch on={!!item.armor} title="Counts toward AC when worn" onChange={(b) => up((x) => { x.armor = b ? (lookupArmor(x.name) ?? { ...DEFAULT_ARMOR }) : null; if (b && x.category === 'Misc') x.category = 'Armor' })} />}>
+        right={<Switch on={!!item.armor} title="Counts toward AC when worn" onChange={(b) => up((x) => { x.armor = b ? (lookupArmor(x.name, systemOf(c)) ?? { ...DEFAULT_ARMOR }) : null; if (b && x.category === 'Misc') x.category = 'Armor' })} />}>
         {!item.armor ? <div className="muted small">Switch on for armor or a shield.</div> : (
           <>
             <div className="row" style={{ flexWrap: 'wrap' }}>
@@ -376,11 +382,12 @@ function ItemEditor({ item }: { item: Item }) {
 
 /** Fill an item's description from the bundled SRD library, or fetch it from wikidot by name / link. */
 function ItemTextSource({ item }: { item: Item }) {
+  const c = useChar()
   const patch = useStore((s) => s.patch)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   const up = (fn: (i: Item) => void) => patch((d) => { const x = d.items.find((y) => y.id === item.id); if (x) fn(x) })
-  const lib = bestItem(item.name)
+  const lib = bestItemFor(item.name, systemOf(c))
   const replaceOk = () => !item.description.trim() || window.confirm('Replace the current description?')
   const fetchIt = async () => {
     setMsg('')

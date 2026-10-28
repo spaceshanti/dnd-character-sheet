@@ -317,6 +317,10 @@ export function FeatureDrawer({ id }: { id: string }) {
             <Select value={f.actionType} onChange={(v) => up((x) => { x.actionType = v })} options={ACTION_TYPES} />
             <span className="muted small">(none if it only gives actions)</span>
           </div>
+          <label className="row small" title="For features about spellcasting or certain kinds of spells (e.g. Metamagic, Empowered Evocation, Arts pool bonuses)">
+            <Switch on={f.onSpellPage} onChange={(b) => up((x) => { x.onSpellPage = b })} />
+            Also show on the {isAK(c) ? 'Arts' : 'Spells'} page
+          </label>
           <FeatureChangesEditor f={f} />
           <FeatureUsageEditor f={f} />
           <div className="row" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>

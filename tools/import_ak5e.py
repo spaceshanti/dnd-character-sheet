@@ -157,12 +157,131 @@ def operator_skills(src):
     return out
 
 
+def lb(s):
+    m = re.search(r"([\d.]+)\s*lb", s or "")
+    return float(m.group(1)) if m else 0
+
+
+def table_rows(block):
+    """Data rows of the first markdown table in block (skips the header and |:---| line)."""
+    rows = []
+    for line in block.splitlines():
+        if not line.startswith("|") or re.match(r"^\|[\s:|-]+\|?\s*$", line):
+            continue
+        rows.append(cells(line))
+    return rows[1:] if rows else []
+
+
+def section(src, start, end):
+    a = src.index(start)
+    b = src.index(end, a + len(start))
+    return src[a:b]
+
+
+def described(block, level="####"):
+    """'#### Name' blocks → {name: plain text}"""
+    out = {}
+    for part in re.split(r"^" + level + r" ", block, flags=re.M)[1:]:
+        name, _, body = part.partition("\n")
+        body = re.split(r"^#{1,4} ", body, maxsplit=1, flags=re.M)[0]
+        out[name.strip().replace("’", "'")] = plain(body)
+    return out
+
+
+RARITIES = ["very rare", "uncommon", "common", "rare", "legendary", "artifact"]
+
+
+def equipment(src):
+    """Chapter 4: weapons, armour, weapon properties and the item lists, for filling items in by name."""
+    ch4 = chapter(src, "Chapter 4: Equipment", "Chapter 5")
+    weapons = []
+    for title in ("##### Melee Weapons", "##### Ranged Weapons"):
+        cat = ""
+        for c in table_rows(section(ch4, title, "\\page")):
+            if len(c) == 1 or (c[0].startswith("*") and len(c) < 3):
+                cat = c[0].strip("* ")
+                continue
+            if len(c) < 5:
+                continue
+            name = c[0].replace("&emsp;", "").strip(" *")
+            dmg = re.match(r"(\S+)\s+(\w+)", c[1])
+            props = c[2].strip()
+            rng = re.search(r"(?:Range|Thrown)\s*\(([^)]+)\)", props)
+            weapons.append({"n": name, "damage": dmg.group(1) if dmg else c[1], "type": (dmg.group(2).lower() if dmg else ""),
+                            "props": props, "range": rng.group(1) if rng else "", "cat": cat, "w": lb(c[3]), "c": c[4].replace("*", "").strip()})
+    armour = []
+    cat = ""
+    for c in table_rows(section(ch4, "| Name | Armour Class", "##### Bastion")):
+        if len(c) == 1 or (c[0].startswith("*") and len(c) < 3):
+            cat = c[0].strip("* ").lower()
+            continue
+        if len(c) < 7:
+            continue
+        name = c[0].replace("&emsp;", "").strip(" *")
+        ac_text = c[1]
+        base = int((re.search(r"\d+", ac_text) or [0])[0]) if re.search(r"\d+", ac_text) else 0
+        if "shield" in cat:
+            kind, dex_max = "shield", 0
+        elif "max 2" in ac_text.lower():
+            kind, dex_max = "medium", 2
+        elif "dex" in ac_text.lower():
+            kind, dex_max = "light", None
+        else:
+            kind, dex_max = "heavy", 0
+        drm = re.match(r"(\d+)\s*(?:\(([^)]+)\))?", c[2])
+        armour.append({"n": name, "kind": kind, "cat": cat, "ac": base, "dr": int(drm.group(1)) if drm else 0,
+                       "drType": (drm.group(2) or "") if drm else "", "str": int(c[3]) if c[3].isdigit() else 0,
+                       "special": "" if c[4] == "-" else c[4], "w": lb(c[5]), "c": c[6].replace("*", "").strip()})
+    props = described(section(ch4, "### New Properties", "## Armour"))
+    bastion = re.search(r"##### Bastion Special Property\n(.+?)\n\s*\n", ch4, re.S)
+    if bastion:
+        props["Bastion"] = plain(bastion.group(1))
+    # "Conductive (X)" → "Conductive"
+    props = {re.sub(r"\s*\(.*\)$", "", k): v for k, v in props.items()}
+
+    items = []
+    tools = section(ch4, "## Toolkits and other Equipment", "## Adventuring Gear")
+    tool_desc = described(tools)
+    for c in table_rows(section(tools, "| Toolkit |", "\n\n")):
+        if len(c) >= 3:
+            n = c[0].strip()
+            # the table says "Makeup Kit", its write-up is headed "Makeover Kit"
+            desc = tool_desc.get(n) or tool_desc.get(n.replace("Makeup", "Makeover"), "")
+            items.append({"n": n, "k": "Tool", "d": desc + (f"\n\nRefill cost: {c[3]}" if len(c) > 3 and c[3] not in ("", "N/A") else ""),
+                          "w": lb(c[1]), "c": c[2], "r": "common", "a": False, "m": False, "e": "AK5e"})
+    inst_desc = tool_desc.get("Instrument (X)", "")
+    for c in table_rows(section(tools, "| Instrument |", "\n\n")):
+        if len(c) >= 3:
+            items.append({"n": c[0].strip(), "k": "Tool", "d": inst_desc, "w": lb(c[1]), "c": c[2], "r": "common", "a": False, "m": False, "e": "AK5e"})
+    gear = section(ch4, "## Adventuring Gear", "## Magic Items")
+    gear_desc = described(gear)
+    for c in table_rows(section(gear, "| Gear |", "\n\n")):
+        if len(c) >= 3:
+            n = c[0].strip()
+            items.append({"n": n, "k": "Gear", "d": gear_desc.get(n, ""), "w": lb(c[1]), "c": c[2], "r": "common", "a": False, "m": False, "e": "AK5e"})
+    magic = ch4[ch4.index("## Magic Items"):]
+    for part in re.split(r"^#### ", magic, flags=re.M)[1:]:
+        name, _, body = part.partition("\n")
+        head = re.search(r"^\*([^*\n]+)\*", body.strip())
+        if not head:
+            continue
+        kind = head.group(1)
+        low = kind.lower()
+        rarity = next((r for r in RARITIES if r in low), "rare")
+        text = re.split(r"^#{1,4} ", body, maxsplit=1, flags=re.M)[0]
+        items.append({"n": name.strip().replace("’", "'"), "k": "Weapon" if low.startswith("weapon") else "Armor" if low.startswith("armo") else "Wondrous",
+                      "d": plain(text), "w": 0, "c": "", "r": rarity, "a": "attunement" in low, "m": True, "e": "AK5e"})
+    return {"weapons": weapons, "armour": armour, "properties": props, "items": items}
+
+
 def main():
     src = read_source(sys.argv[1] if len(sys.argv) > 1 else "")
     ch5 = chapter(src, "Chapter 5: Arts", "Chapter 6")
     pools = arts_pools(ch5)
     spells = new_arts(ch5)
     skills = operator_skills(src)
+    gear = equipment(src)
+    print(f"{len(gear['weapons'])} weapons, {len(gear['armour'])} armour, {len(gear['properties'])} properties, {len(gear['items'])} items")
     known = {s["n"].lower() for s in spells}
     for pool, levels in pools.items():
         for rows in levels.values():
@@ -171,7 +290,7 @@ def main():
                     print("  no description found for new Art:", r["n"])
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
-        json.dump({"source": BOOK, "system": "ak5e", "spells": spells, "classLists": pools, "opSkills": skills}, f, ensure_ascii=False)
+        json.dump({"source": BOOK, "system": "ak5e", "spells": spells, "classLists": pools, "opSkills": skills, "gear": gear}, f, ensure_ascii=False)
     print(f"{len(pools)} Arts pools, {len(spells)} new Arts, {len(skills)} Operator Skills -> {os.path.normpath(OUT)}")
     # the whole book, for the in-app sourcebook reader
     os.makedirs(os.path.dirname(BOOK_OUT), exist_ok=True)

@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { hasBook, loadBook, renderSection, searchBook, type BookSection, type Hit } from '../book/book'
-import { useUI } from '../store'
+import { useStore, useUI } from '../store'
+import { systemOf } from '../systems'
+import { listBooks, sectionsFromToc, type BookInfo } from '../book/books'
 import { BookContents } from './BookContents'
-import { findPageBook, PageReader, type PageBook } from './PageReader'
+import { PageReader } from './PageReader'
 
 /*
  * In-app reader for the Arknights 5e sourcebook: contents on the left (chapters → sections → sub-headings),
@@ -58,19 +60,56 @@ export function BookViewer() {
   )
 }
 
-/** The real pages when the PDF has been imported (tools/import_ak5e_pdf.py), the text otherwise; switchable. */
+const store = (k: string, v: string) => { try { localStorage.setItem(k, v) } catch { /* private mode */ } }
+const read = (k: string) => { try { return localStorage.getItem(k) } catch { return null } }
+
+/**
+ * Picks the book: every imported sourcebook for this character's game (D&D: the 2024 SRD and any you've added;
+ * Arknights: the AK5e book and the SRD), switchable from the header. The AK5e book also has a text view.
+ */
 function Reader({ layout, onClose }: { layout: BookLayout; onClose: () => void }) {
   const set = useUI((s) => s.set)
   const searchTick = useUI((s) => s.bookSearch)
-  const [book, setBook] = useState<BookSection[] | null>(null)
-  const [pb, setPb] = useState<PageBook | null | undefined>(undefined)
-  const [mode, setModeState] = useState<'pages' | 'text'>(() => { try { return localStorage.getItem('book-mode') === 'text' ? 'text' : 'pages' } catch { return 'pages' } })
-  const setMode = (m: 'pages' | 'text') => { setModeState(m); try { localStorage.setItem('book-mode', m) } catch { /* private mode */ } }
-  useEffect(() => { loadBook().then(setBook); findPageBook().then(setPb) }, [])
-  if (pb === undefined || (hasBook() && !book)) return <div className={`book ${layout}`}><div className="bk-empty muted">Opening the sourcebook…</div></div>
+  const sys = useStore((s) => systemOf(s.chars[s.activeId]))
+  const [books, setBooks] = useState<BookInfo[] | null>(null)
+  const [akText, setAkText] = useState<BookSection[] | null>(null)
+  const [mode, setModeState] = useState<'pages' | 'text'>(() => (read('book-mode') === 'text' ? 'text' : 'pages'))
+  const setMode = (m: 'pages' | 'text') => { setModeState(m); store('book-mode', m) }
+  const [chosen, setChosen] = useState(() => read(`book-current-${sys}`) || '')
+  useEffect(() => { listBooks().then(setBooks); loadBook().then(setAkText) }, [])
+
+  const mine = (books ?? []).filter((b) => b.games.includes(sys))
+  // the AK5e book's text works even before its pages are imported
+  const choices: { id: string; title: string; info?: BookInfo }[] = mine.map((b) => ({ id: b.id, title: b.title, info: b }))
+  if (sys === 'ak5e' && hasBook() && !choices.some((b) => b.id === 'ak5e')) choices.unshift({ id: 'ak5e', title: 'Arknights 5e' })
+  choices.sort((a, b) => (a.id === 'ak5e' ? -1 : b.id === 'ak5e' ? 1 : 0))
+  const cur = choices.find((b) => b.id === chosen) ?? choices[0]
+  const sections = useMemo(() => (!cur ? [] : cur.id === 'ak5e' ? (akText ?? []) : cur.info ? sectionsFromToc(cur.info) : []), [cur?.id, akText]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!books || (hasBook() && !akText)) return <div className="book"><div className="bk-empty muted">Opening the sourcebook…</div></div>
+  if (!cur) {
+    return (
+      <div className="book">
+        <div className="bk-head"><b>Sourcebooks</b><span className="grow" /><button className="btn sm" onClick={onClose}>✕ Close</button></div>
+        <div className="bk-empty">
+          <p>No sourcebooks for this game yet. Add a PDF once with</p>
+          <code>python tools/import_book_pdf.py srd52 "SRD 5.2.1" dnd5e,ak5e "path/to/book.pdf"</code>
+          <p className="muted small">It's kept in the app's data folder, and every character of that game can open it.</p>
+        </div>
+      </div>
+    )
+  }
+  const pick = (id: string) => { setChosen(id); store(`book-current-${sys}`, id) }
+  const canText = cur.id === 'ak5e' && hasBook()
+  const showPages = cur.info && (mode === 'pages' || !canText)
   const extra = (
     <>
-      {pb && hasBook() && (
+      {choices.length > 1 && (
+        <select className="bk-pick" value={cur.id} onChange={(e) => pick(e.target.value)} title="Switch book">
+          {choices.map((b) => <option key={b.id} value={b.id}>{b.title}</option>)}
+        </select>
+      )}
+      {canText && cur.info && (
         <div className="seg bk-mode">
           <button className={mode === 'pages' ? 'on' : ''} onClick={() => setMode('pages')} title="The book's real pages">Pages</button>
           <button className={mode === 'text' ? 'on' : ''} onClick={() => setMode('text')} title="Plain text, follows your UI style">Text</button>
@@ -82,8 +121,22 @@ function Reader({ layout, onClose }: { layout: BookLayout; onClose: () => void }
     </>
   )
   const props: ReaderProps = { layout, onClose, extra, searchTick }
-  if (pb && (mode === 'pages' || !hasBook())) return <PageReader book={book ?? []} pb={pb} {...props} />
+  if (showPages) return <PageReader key={cur.id} book={sections} pb={cur.info!} {...props} />
   return <TextReader {...props} />
+}
+
+/** Bookmarks for one book, plus the "bookmark this" action, for the contents sidebar. */
+export function useBookmarks(bookId: string) {
+  const all = useStore((s) => s.bookmarks)
+  const add = useStore((s) => s.addBookmark)
+  const update = useStore((s) => s.updateBookmark)
+  const remove = useStore((s) => s.removeBookmark)
+  return {
+    marks: all.filter((b) => b.book === bookId).sort((a, b) => a.page - b.page || a.y - b.y),
+    add: (page: number, title: string, y = 0) => add({ book: bookId, page, title, y }),
+    rename: (id: string, old: string) => { const t = window.prompt('Bookmark name', old); if (t != null && t.trim()) update(id, { title: t.trim() }) },
+    remove,
+  }
 }
 
 const LAST = 'book-last'
@@ -99,6 +152,7 @@ function TextReader({ layout, onClose, extra, searchTick }: ReaderProps) {
   const search = useRef<HTMLInputElement>(null)
   const marked = useRef('')
   const textEl = useRef<HTMLDivElement>(null)
+  const bm = useBookmarks('ak5e')
 
   useEffect(() => { loadBook().then(setBook) }, [])
   useEffect(() => { try { localStorage.setItem(LAST, String(cur)) } catch { /* private mode */ } }, [cur])
@@ -208,6 +262,7 @@ function TextReader({ layout, onClose, extra, searchTick }: ReaderProps) {
         </form>
         <button className="btn sm" disabled={!sec || cur === 0} onClick={() => go(cur - 1)}>‹ Prev</button>
         <button className="btn sm" disabled={!book || cur >= book.length - 1} onClick={() => go(cur + 1)}>Next ›</button>
+        <button className="btn sm bk-markbtn" title="Bookmark this section" disabled={!sec} onClick={() => sec && bm.add(sec.page, sec.title)}>☆</button>
         {extra}
         <button className="btn sm" onClick={onClose} title="Close (Esc)">✕</button>
       </div>
@@ -229,7 +284,9 @@ function TextReader({ layout, onClose, extra, searchTick }: ReaderProps) {
                 </div>
               ))}
             </div>
-          ) : book && <BookContents book={book} current={cur} onSection={(s) => go(s.id)} onHeading={(s, h) => go(s.id, { slug: h.slug })} />}
+          ) : book && <BookContents book={book} current={cur} onSection={(s) => go(s.id)} onHeading={(s, h) => go(s.id, { slug: h.slug })}
+            marks={bm.marks} onOpenMark={(m) => goPage(m.page)} onRenameMark={(m) => bm.rename(m.id, m.title)} onRemoveMark={(m) => bm.remove(m.id)}
+            onMarkHere={(title, p) => bm.add(p, title)} />}
         </nav>
         <article ref={body} className="bk-text" onClick={onClick}>
           {sec && <div className="bk-crumb">{book![sec.chapter].title}{sec.level === 2 ? ` › ${sec.title}` : ''}</div>}

@@ -53,8 +53,6 @@ Each character belongs to a game, chosen when you create it (switch later in Set
 
 Each game remembers its own UI style. The Rhodes Island style is made for the Arknights sheet.
 
-Arknights characters also get an **Operator view** (top bar): the character shown like the game's operator screen.
-
 ## Exporting to a printable sheet
 
 Settings → *Export to a printable sheet*. Add your own copy of a form-fillable sheet once (the official 2014 or 2024 sheet,
@@ -62,17 +60,22 @@ or the Current Standard CS v1.4) and export any D&D character onto it. For Arkni
 images from the book's [imgchest link](https://imgchest.com/p/qb4zpmejdyj); the export writes onto them. The sheets stay
 in the app's data folder and aren't part of this repository.
 
-## The Arknights 5e sourcebook reader
+## Sourcebooks
 
-Arknights characters get a **📖 Sourcebook** button (Ctrl + B). To read the real pages, art and all, add your PDF of the book once:
+Every character gets a **📖 Sourcebooks** reader (Ctrl + B for a side pane, Ctrl + F to search). It shows a book's real
+pages with its contents, page-accurate headings, on-page search highlights and your bookmarks (★ at the top of the
+contents; ☆ on any heading or in the header adds one). Books are added once from a PDF and kept in the app's data folder
+(`%APPDATA%/Character Sheet/sourcebook/<id>`), never in this repository:
 
 ```
-python tools/import_ak5e_pdf.py "C:/path/to/AK5e 1st Edition v1.3.1 - The Homebrewery.pdf"
+python tools/import_book_pdf.py srd52 "SRD 5.2.1 (2024 rules)" dnd5e,ak5e "SRD_CC_v5.2.1.pdf"
+python tools/import_book_pdf.py ak5e "Arknights 5e" ak5e "AK5e 1st Edition v1.3.1 - The Homebrewery.pdf"
+python tools/import_book_pdf.py phb2024 "Player's Handbook (2024)" dnd5e "your own PHB.pdf"
 ```
 
-That renders every page into the app's data folder (`%APPDATA%/Character Sheet/sourcebook/ak5e`, about 200 MB) with each
-page's words for search. The reader's contents, headings and search jump to the real pages; a Text mode shows the same
-book as plain text in your UI style.
+The last argument before the file says which characters see the book (`dnd5e`, `ak5e`, or both). With more than one,
+switch books from the reader's header. The free SRD 5.2.1 PDF (the 2024 rules, CC-BY-4.0) is at
+https://media.dndbeyond.com/compendium-images/srd/5.2/SRD_CC_v5.2.1.pdf
 
 ## Importing the Arknights 5e book
 
@@ -80,8 +83,9 @@ book as plain text in your UI style.
 python tools/import_ak5e.py
 ```
 
-Downloads the book's source from Homebrewery and writes `src/data/extra/ak5e.json` with every Arts pool, the new Arts and every
-Operator Skill table, so the Arts library can filter by pool and the Op. Skills page can add skills from the book. Rebuild afterwards.
+Downloads the book's source from Homebrewery and writes `src/data/extra/ak5e.json` with every Arts pool, the new Arts, every
+Operator Skill table and the Equipment chapter (weapons, armour, weapon properties and items, so typing an item's name on an
+Arknights sheet fills it in), so the Arts library can filter by pool and the Op. Skills page can add skills from the book. Rebuild afterwards.
 
 ## Credits
 

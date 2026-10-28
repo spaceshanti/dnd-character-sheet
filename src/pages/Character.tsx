@@ -22,7 +22,7 @@ export function CharacterPage() {
         <Frame title="Appearance" tight>
           {isAK(c) && (
             <div style={{ marginBottom: 8 }}>
-              <Field label="Operator codename (shown on the operator view)" value={c.ak.codename} placeholder="not assigned yet"
+              <Field label="Operator codename" value={c.ak.codename} placeholder="not assigned yet"
                 onChange={(v) => patch((d) => { d.ak.codename = v })} />
             </div>
           )}

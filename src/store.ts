@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { produce } from 'immer'
-import type { AppData, Character, CustomSpell } from './types'
+import type { AppData, Bookmark, Character, CustomSpell } from './types'
 import { blankCharacter, normalize, uid } from './blank'
 import { SKINS, type SkinId } from './skins'
 import { systemOf, type SystemId } from './systems'
@@ -21,6 +21,8 @@ declare global {
       saveFile: (name: string, bytes: Uint8Array) => Promise<string>
       /** the imported sourcebook's page info, or null if it hasn't been imported */
       bookInfo: (id: string) => Promise<{ title: string; pages: number; aspect: number; ext: string } | null>
+      /** every imported sourcebook (folders under <userData>/sourcebook) */
+      bookList: () => Promise<{ id: string; title: string; games?: string[]; pages: number; aspect: number; ext: string; toc?: [number, string, number][] }[]>
     }
   }
 }
@@ -62,7 +64,11 @@ async function writeStore(json: string) {
   else try { localStorage.setItem(LS_KEY, json) } catch { /* quota */ }
 }
 
-interface State extends Omit<AppData, 'skin' | 'customSpells' | 'skinBySystem'> {
+interface State extends Omit<AppData, 'skin' | 'customSpells' | 'skinBySystem' | 'bookmarks'> {
+  bookmarks: Bookmark[]
+  addBookmark: (b: Omit<Bookmark, 'id'>) => void
+  updateBookmark: (id: string, p: Partial<Bookmark>) => void
+  removeBookmark: (id: string) => void
   skin: SkinId
   skinBySystem: Partial<Record<SystemId, SkinId>>
   customSpells: CustomSpell[]
@@ -83,7 +89,7 @@ interface State extends Omit<AppData, 'skin' | 'customSpells' | 'skinBySystem'> 
 }
 
 export const useStore = create<State>((set, get) => ({
-  version: 1, chars: {}, order: [], activeId: '', theme: 'light', skin: 'standard', skinBySystem: {}, customSpells: [], loaded: false, saveError: '',
+  version: 1, chars: {}, order: [], activeId: '', theme: 'light', skin: 'standard', skinBySystem: {}, customSpells: [], bookmarks: [], loaded: false, saveError: '',
 
   async load() {
     let data: Partial<AppData> | null = null
@@ -104,7 +110,7 @@ export const useStore = create<State>((set, get) => ({
     for (const [sys, id] of Object.entries(data?.skinBySystem ?? {})) if (SKINS.some((k) => k.id === id)) skinBySystem[sys as SystemId] = id as SkinId
     // saves from before games existed: the style in use becomes the D&D one
     if (!skinBySystem.dnd5e) skinBySystem.dnd5e = skin
-    set({ chars, order, activeId, theme: data?.theme === 'dark' ? 'dark' : 'light', skin, skinBySystem, customSpells: data?.customSpells ?? [], loaded: true })
+    set({ chars, order, activeId, theme: data?.theme === 'dark' ? 'dark' : 'light', skin, skinBySystem, customSpells: data?.customSpells ?? [], bookmarks: data?.bookmarks ?? [], loaded: true })
   },
 
   patch(fn) {
@@ -162,6 +168,9 @@ export const useStore = create<State>((set, get) => ({
   setSkin: (skin) => set((s) => ({ skin, skinBySystem: { ...s.skinBySystem, [systemOf(s.chars[s.activeId])]: skin } })),
   saveCustomSpell: (sp) => set((s) => ({ customSpells: s.customSpells.some((x) => x.id === sp.id) ? s.customSpells.map((x) => (x.id === sp.id ? sp : x)) : [...s.customSpells, sp] })),
   deleteCustomSpell: (id) => set((s) => ({ customSpells: s.customSpells.filter((x) => x.id !== id) })),
+  addBookmark: (b) => set((s) => ({ bookmarks: [...s.bookmarks, { ...b, id: uid() }] })),
+  updateBookmark: (id, p) => set((s) => ({ bookmarks: s.bookmarks.map((x) => (x.id === id ? { ...x, ...p } : x)) })),
+  removeBookmark: (id) => set((s) => ({ bookmarks: s.bookmarks.filter((x) => x.id !== id) })),
 }))
 
 /* debounce-save everything whenever it changes (after the first load) */
@@ -169,12 +178,12 @@ let timer: ReturnType<typeof setTimeout> | undefined
 useStore.subscribe((s, prev) => {
   // nothing to save for the load itself, only for changes after it (keeps the .bak a real previous version)
   if (!s.loaded || !prev.loaded) return
-  if (s.chars === prev.chars && s.order === prev.order && s.activeId === prev.activeId && s.theme === prev.theme && s.skin === prev.skin && s.skinBySystem === prev.skinBySystem && s.customSpells === prev.customSpells) return
+  if (s.chars === prev.chars && s.order === prev.order && s.activeId === prev.activeId && s.theme === prev.theme && s.skin === prev.skin && s.skinBySystem === prev.skinBySystem && s.customSpells === prev.customSpells && s.bookmarks === prev.bookmarks) return
   clearTimeout(timer)
   timer = setTimeout(async () => {
-    const { chars, order, activeId, theme, skin, skinBySystem, customSpells } = useStore.getState()
+    const { chars, order, activeId, theme, skin, skinBySystem, customSpells, bookmarks } = useStore.getState()
     try {
-      await writeStore(JSON.stringify({ version: 1, chars, order, activeId, theme, skin, skinBySystem, customSpells } satisfies AppData))
+      await writeStore(JSON.stringify({ version: 1, chars, order, activeId, theme, skin, skinBySystem, customSpells, bookmarks } satisfies AppData))
       useStore.setState({ saveError: '' })
     } catch (e) {
       useStore.setState({ saveError: String(e) })
@@ -204,8 +213,6 @@ interface UIState {
   inventorySelected: string
   /** the character list screen, opened from inside a character */
   charListOpen: boolean
-  /** AK5e: the full-screen operator view */
-  operatorOpen: boolean
   /** AK5e: the sourcebook reader */
   book: '' | 'side' | 'full'
   /** bumped to put the cursor in the sourcebook's search box */
@@ -224,7 +231,7 @@ function readOpen() {
 }
 
 export const useUI = create<UIState>((set) => ({
-  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', charListOpen: false, operatorOpen: false, book: '', bookSearch: 0, themeOpen: false, drawer: null, imagePick: null,
+  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', charListOpen: false, book: '', bookSearch: 0, themeOpen: false, drawer: null, imagePick: null,
   go: (page) => set({ page }),
   toggleDock: () => set((s) => {
     try { localStorage.setItem('dock-open', s.dockOpen ? '0' : '1') } catch { /* private mode */ }

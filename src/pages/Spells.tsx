@@ -56,6 +56,7 @@ export function SpellsPage() {
         )}
       </div>
       {view === 'mine' && ak && <ArtsPoints />}
+      {view === 'mine' && <SpellFeatures />}
 
       {view === 'mine' && <MySpells />}
       {view === 'library' && <Library />}
@@ -65,6 +66,34 @@ export function SpellsPage() {
 }
 
 /* ------------------------------------------------------------- my spells */
+
+/** Features you've marked "show on the Spells / Arts page": rules that change how you cast, kept in view here. */
+function SpellFeatures() {
+  const c = useChar()
+  const set = useUI((s) => s.set)
+  const [shut, setShut] = useState<Set<string>>(new Set())
+  const list = c.features.filter((f) => f.onSpellPage)
+  if (!list.length) return null
+  return (
+    <Frame title={isAK(c) ? 'Features for my Arts' : 'Spellcasting features'} tight>
+      <div className="spell-feats">
+        {list.map((f) => {
+          const open = !shut.has(f.id)
+          return (
+            <div key={f.id} className="spell-feat">
+              <div className="row" style={{ gap: 6 }}>
+                <button className="btn icon sm ghost" title={open ? 'Fold' : 'Unfold'} onClick={() => setShut((s) => { const n = new Set(s); if (open) n.add(f.id); else n.delete(f.id); return n })}>{open ? '▾' : '▸'}</button>
+                <b className="grow" style={{ cursor: 'pointer' }} onClick={() => set({ drawer: { kind: 'feature', id: f.id } })}>{f.name || 'Unnamed feature'}</b>
+                {f.source && <span className="muted small">{f.source}</span>}
+              </div>
+              {open && (f.description ? <RichText className="prose small-prose" value={f.description} /> : <div className="muted small">No description yet.</div>)}
+            </div>
+          )
+        })}
+      </div>
+    </Frame>
+  )
+}
 
 /** AK5e: one pool of Arts Points instead of spell slots, and a maximum Art level. */
 function ArtsPoints() {

@@ -15,7 +15,6 @@ import { ActionsPage } from './pages/Actions'
 import { GalleryPage } from './pages/Gallery'
 import { SettingsPage } from './pages/Settings'
 import { OperatorSkillsPage } from './pages/OperatorSkills'
-import { OperatorScreen } from './components/OperatorScreen'
 import { BookViewer } from './components/BookViewer'
 import { systemOf } from './systems'
 
@@ -59,16 +58,15 @@ export default function App() {
         u.set({ themeOpen: !u.themeOpen })
         return
       }
-      // Arknights sourcebook. Ctrl+B: side pane on / off (not in a text box, where it's bold, except the book's own search).
+      // Sourcebooks. Ctrl+B: side pane on / off (not in a text box, where it's bold, except the book's own search).
       // Ctrl+F: open the side pane if it's closed and jump to its search box.
-      const ak = () => { const st = useStore.getState(); return st.chars[st.activeId]?.system === 'ak5e' }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b' && (!typing || t.closest('.book')) && ak()) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b' && (!typing || t.closest('.book'))) {
         e.preventDefault()
         const u = useUI.getState()
         u.set({ book: u.book === 'side' ? '' : 'side' })
         return
       }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f' && ak()) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
         e.preventDefault()
         const u = useUI.getState()
         u.set({ book: u.book || 'side', bookSearch: u.bookSearch + 1 })
@@ -111,8 +109,7 @@ export default function App() {
       <ThemeMenu />
       <ImagePicker />
       <DrawerHost />
-      {system === 'ak5e' && <OperatorScreen />}
-      {system === 'ak5e' && <BookViewer />}
+      <BookViewer />
     </div>
   )
 }

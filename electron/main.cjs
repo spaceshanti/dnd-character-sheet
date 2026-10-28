@@ -118,6 +118,15 @@ ipcMain.handle('item:fetch', (_e, target) => fetchItem(target))
 
 /* ---------- sourcebook pages (imported with tools/import_ak5e_pdf.py) ---------- */
 const bookRoot = () => path.join(app.getPath('userData'), 'sourcebook')
+ipcMain.handle('book:list', () => {
+  const out = []
+  let ids = []
+  try { ids = fs.readdirSync(bookRoot()) } catch { return out }
+  for (const id of ids) {
+    try { out.push({ id, ...JSON.parse(fs.readFileSync(path.join(bookRoot(), id, 'book.json'), 'utf-8')) }) } catch { /* not a book */ }
+  }
+  return out
+})
 ipcMain.handle('book:info', (_e, id) => {
   try { return JSON.parse(fs.readFileSync(path.join(bookRoot(), String(id).replace(/[^\w-]/g, ''), 'book.json'), 'utf-8')) } catch { return null }
 })

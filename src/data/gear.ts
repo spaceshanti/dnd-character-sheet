@@ -1,5 +1,9 @@
 /** Standard weapons and armor (System Reference Document 5.2, CC-BY-4.0). Used to pre-fill items by name. */
-import type { ArmorStats, WeaponStats } from '../types'
+import type { ArmorStats, Effect, WeaponStats } from '../types'
+import type { SystemId } from '../systems'
+
+// local id helper (blank.ts imports this file, so it can't be imported back)
+const uid = () => (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36))
 
 type W = [name: string, damage: string, type: string, properties: string, range?: string]
 
@@ -98,7 +102,58 @@ const W_SORTED = [...WEAPONS].sort(byLength)
 const A_SORTED = [...ARMOR].sort(byLength)
 const has = (name: string, key: string) => new RegExp(`\\b${key.replace(/ /g, '\\s*')}\\b`, 'i').test(name)
 
-export function lookupWeapon(name: string): WeaponStats | null {
+/* ---------- Arknights 5e equipment (from the book, via tools/import_ak5e.py → src/data/extra/ak5e.json) ---------- */
+
+interface AkWeapon { n: string; damage: string; type: string; props: string; range: string; cat: string; w: number; c: string }
+interface AkArmour { n: string; kind: ArmorStats['kind']; cat: string; ac: number; dr: number; drType: string; str: number; special: string; w: number; c: string }
+interface AkGear { weapons: AkWeapon[]; armour: AkArmour[]; properties: Record<string, string>; items: unknown[] }
+
+const AK: AkGear = (() => {
+  const files = import.meta.glob('./extra/*.json', { eager: true, import: 'default' }) as Record<string, { gear?: AkGear }>
+  const g = Object.values(files).find((f) => f.gear)?.gear
+  return g ?? { weapons: [], armour: [], properties: {}, items: [] }
+})()
+export const AK_ITEMS = AK.items
+const AKW_SORTED = [...AK.weapons].sort((a, b) => b.n.length - a.n.length)
+const AKA_SORTED = [...AK.armour].sort((a, b) => b.n.length - a.n.length)
+
+export function akWeapon(name: string): AkWeapon | undefined { return AKW_SORTED.find((w) => has(name, w.n)) }
+export function akArmour(name: string): AkArmour | undefined { return AKA_SORTED.find((a) => has(name, a.n)) }
+
+function akWeaponStats(w: AkWeapon): WeaponStats {
+  const ranged = /\b(Range|Firearm|Splash)\b/i.test(w.props)
+  return {
+    damage: w.damage, damageType: w.type, properties: w.props, range: w.range, proficient: true, magicBonus: 0, kind: w.n, mastery: '', ammoId: '', ammoCost: 1,
+    ability: /finesse/i.test(w.props) ? 'finesse' : ranged ? 'dex' : 'str',
+  }
+}
+
+/** What an AK5e weapon / armour does to your sheet while equipped (armour DR, Conductive spell bonus), and its notes. */
+export function akGearExtras(name: string): { effects: Effect[]; description: string; weight: number; value: string } | null {
+  const a = akArmour(name)
+  if (a) {
+    const effects: Effect[] = a.dr ? [{ id: uid(), target: 'dr', type: 'bonus', value: a.dr, note: a.drType }] : []
+    const notes = [
+      `${a.cat.replace(/\b\w/g, (x) => x.toUpperCase())}.`,
+      a.dr ? `Damage Reduction ${a.dr}${a.drType ? ` (${a.drType})` : ''} while worn.` : '',
+      a.str ? `Strength ${a.str} needed, or your Speed drops by 10 ft.` : '',
+      a.special ? `${a.special}.` : '',
+    ].filter(Boolean)
+    return { effects, description: notes.join(' '), weight: a.w, value: a.c }
+  }
+  const w = akWeapon(name)
+  if (w) {
+    const cond = /Conductive\s*\((\d+)\)/i.exec(w.props)
+    const effects: Effect[] = cond
+      ? [{ id: uid(), target: 'spellAttack', type: 'bonus', value: +cond[1], note: 'Conductive' }, { id: uid(), target: 'spellDc', type: 'bonus', value: +cond[1], note: 'Conductive' }]
+      : []
+    return { effects, description: `${w.cat.replace(/s$/, '')}.`, weight: w.w, value: w.c }
+  }
+  return null
+}
+
+export function lookupWeapon(name: string, sys: SystemId = 'dnd5e'): WeaponStats | null {
+  if (sys === 'ak5e') { const w = akWeapon(name); return w ? akWeaponStats(w) : null }
   const w = W_SORTED.find(([n]) => has(name, n))
   if (!w) return null
   const [kind, damage, damageType, properties, range = ''] = w
@@ -112,14 +167,20 @@ export function lookupWeapon(name: string): WeaponStats | null {
 // clothing that happens to share a word with an armor ("wolf hide cloak", "leather boots")
 const NOT_ARMOR = /cloak|cape|robe|boot|glove|gauntlet|belt|hat|hood|bag|pouch|case|strap|scrap/i
 
-export function lookupArmor(name: string): ArmorStats | null {
+export function lookupArmor(name: string, sys: SystemId = 'dnd5e'): ArmorStats | null {
   if (NOT_ARMOR.test(name) && !/shield/i.test(name)) return null
+  if (sys === 'ak5e') {
+    const a = akArmour(name)
+    return a ? { kind: a.kind, ac: a.ac, bonus: 0 } : null
+  }
   const a = A_SORTED.find(([n]) => has(name, n))
   return a ? { kind: a[1], ac: a[2], bonus: 0 } : null
 }
 
 export const WEAPON_NAMES = WEAPONS.map((w) => w[0])
 export const ARMOR_NAMES = ARMOR.map((a) => a[0])
+/** the standard weapon list for a game (for the weapon "kind" picker) */
+export const weaponNames = (sys: SystemId) => (sys === 'ak5e' ? AK.weapons.map((w) => w.n) : WEAPON_NAMES)
 
 /** Short reminders shown when hovering a property (paraphrased, not rules text). */
 export const PROPERTY_INFO: Record<string, string> = {
@@ -133,6 +194,9 @@ export const PROPERTY_INFO: Record<string, string> = {
   'Two-Handed': 'Needs both hands to attack with.',
   Versatile: 'Use it one- or two-handed; the bracketed damage is for two hands.',
   Silvered: 'Coated in silver, which some creatures are vulnerable to.',
+  Range: 'A ranged weapon: normal range / long range in feet (Disadvantage beyond normal range).',
+  // Arknights 5e's new properties, from your imported copy of the book
+  ...Object.fromEntries(Object.entries(AK.properties).map(([k, v]) => [k, v.length > 420 ? v.slice(0, 417) + '…' : v])),
 }
 
 /** Weapon mastery properties (2024 rules), paraphrased. */

@@ -115,7 +115,7 @@ const SHORTCUTS: [string, string][] = [
   ['Tab', 'Open / close abilities, saves & skills'],
   ['Ctrl + I', 'Open / close the inventory'],
   ['Ctrl + T', 'UI style menu'],
-  ['Ctrl + B', 'Arknights 5e sourcebook in a side pane: open / close (Arknights characters)'],
+  ['Ctrl + B', 'Sourcebooks in a side pane: open / close'],
   ['Ctrl + F', 'Search the sourcebook (opens the side pane if it\'s closed)'],
   ['← / →', 'Sourcebook: previous / next page'],
   ['Esc', 'Close the open window, side panel or popup'],

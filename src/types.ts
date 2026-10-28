@@ -98,6 +98,8 @@ export interface Feature {
   collapsed: boolean
   /** additions this feature makes to other features' actions */
   actionMods: ActionMod[]
+  /** also shown on the Spells / Arts page (for features about spellcasting or certain kinds of spells) */
+  onSpellPage: boolean
 }
 
 /** e.g. Telekinetic Techniques adds Boost / Disorient / Telekinetic Bolt to Psionic Power's Telekinetic Propel */
@@ -233,8 +235,6 @@ export interface OperatorSkill {
   activation: string
   duration: string
   effect: string
-  /** your own picture for the skill (data URL), shown on the operator view */
-  icon?: string
 }
 
 /** Everything only an Arknights 5e sheet has. */
@@ -258,21 +258,10 @@ export interface AkData {
   /** flat Damage Reduction (applied before resistance) */
   dr: number
   drNote: string
-  /** operator codename, if one's been assigned; shown instead of the name on the operator view */
+  /** operator codename, if one's been assigned */
   codename: string
-  /** how the operator view shows this character */
-  display: OperatorDisplay
 }
 
-export interface OperatorDisplay {
-  /** attack range tiles as [forward, sideways] offsets from the operator's own tile (0, 0) */
-  range: [number, number][]
-  position: '' | 'Melee' | 'Ranged'
-  /** up to two tags, e.g. DPS, Healing */
-  tags: string[]
-  /** 0 = follow level */
-  stars: number
-}
 
 export interface Character {
   id: string
@@ -367,6 +356,17 @@ export interface CustomSpell {
   fromSpell?: string
 }
 
+/** A saved spot in a sourcebook (shown at the top of the reader's contents). */
+export interface Bookmark {
+  id: string
+  /** sourcebook id (folder name, e.g. ak5e, srd52) */
+  book: string
+  page: number
+  title: string
+  /** where on the page, 0–1 from the top */
+  y: number
+}
+
 export interface AppData {
   version: 1
   chars: Record<string, Character>
@@ -378,4 +378,6 @@ export interface AppData {
   skinBySystem?: Record<string, string>
   /** your own spells, available to every character */
   customSpells?: CustomSpell[]
+  /** sourcebook bookmarks, shared by all characters */
+  bookmarks?: Bookmark[]
 }
