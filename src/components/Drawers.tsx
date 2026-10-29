@@ -137,7 +137,12 @@ export function SpellDrawer({ id }: { id: string }) {
               <button className="btn sm" style={{ marginTop: 8 }} onClick={() => setEditing(true)}>Paste one in</button>
             </div>
           )}
-          {sp.notes && <div><div className="field-lbl">My notes</div><RichText className="prose" value={sp.notes} /></div>}
+          {/* this character's own take on the spell: how it looks for them, house-rule tweaks. Never goes into the spell library. */}
+          <div className="spell-notes">
+            <div className="field-lbl">My flavour &amp; notes <span className="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>· only on this character</span></div>
+            <RichArea className="box-input" minRows={2} value={sp.notes} onChange={(v) => up((x) => { x.notes = v })}
+              placeholder="What it looks like when you cast it, or a homebrew change to how it works…" />
+          </div>
           {sp.effects.length > 0 && (
             <div className="col">
               <div className="row">
@@ -233,7 +238,6 @@ export function SpellDrawer({ id }: { id: string }) {
             {!ak && <label className="row small"><Switch on={sp.prepared} onChange={(b) => up((x) => { x.prepared = b })} /> Prepared</label>}
             {!ak && <label className="row small"><Switch on={sp.alwaysPrepared} onChange={(b) => up((x) => { x.alwaysPrepared = b })} /> Always prepared</label>}
           </div>
-          <RichArea className="box-input" minRows={2} placeholder="My notes" value={sp.notes} onChange={(v) => up((x) => { x.notes = v })} />
           <div>
             <div className="field-lbl" style={{ marginBottom: 4 }}>What this spell changes on my sheet (e.g. Mage Armor → AC +3)</div>
             <EffectsEditor effects={sp.effects} onChange={(e) => up((x) => { x.effects = e })} />
