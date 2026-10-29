@@ -146,12 +146,13 @@ export function TopBar() {
     sub: c.subclassSymbol || autoSymbolFor(c.subclass, { ak, branchOf: c.className, icons: akIcons }),
     nat: c.nationSymbol === 'emblem' ? c.emblem : c.nationSymbol || autoFactionFor(c.nationality, akIcons),
   }
-  const inline = (v: string, what: string) => (v ? <SymbolMark value={v} size={15} title={what} /> : undefined)
+  // class / branch / nation marks are an Arknights-sheet thing; the D&D sheet goes without
+  const inline = (v: string, what: string) => (ak && v ? <SymbolMark value={v} size={15} title={what} /> : undefined)
   return (
-    <header className="topbar">
+    <header className={`topbar ${ak ? '' : 'no-marks'}`}>
       <Portrait size={portrait} />
       {/* class, subclass / branch, nationality and faction marks, stacked beside the portrait */}
-      <div className="sym-col" style={{ height: portrait }}>
+      {ak && <div className="sym-col" style={{ height: portrait }}>
         <SymbolPicker size={symSize} label="Class" official={ak ? 'class' : undefined} akClass={akClassOf(c.className)} value={c.classSymbol}
           auto={autoSymbolFor(c.className, { ak, icons: akIcons })} onChange={(v) => patch((d) => { d.classSymbol = v })} />
         <SymbolPicker size={symSize} label={ak ? 'Branch' : 'Subclass'} official={ak ? 'class' : undefined} akClass={akClassOf(c.className)} value={c.subclassSymbol}
@@ -159,7 +160,7 @@ export function TopBar() {
         {ak && <SymbolPicker size={symSize} label="Nationality" official="faction" value={c.nationSymbol} emblem={c.emblem} auto={autoFactionFor(c.nationality, akIcons)} onChange={(v) => patch((d) => { d.nationSymbol = v })} />}
         <SymbolPicker size={symSize} label="Faction" official={ak ? 'faction' : undefined} value={c.factionSymbol} fallback={c.emblem} emblem={c.emblem}
           auto={ak && c.story.alliesTitle !== 'Allies & Organizations' ? autoFactionFor(c.story.alliesTitle, akIcons) : ''} onChange={(v) => patch((d) => { d.factionSymbol = v })} />
-      </div>
+      </div>}
       <div className="top-main" ref={mainRef}>
         <div className="banner">
           <div className="name-banner">
