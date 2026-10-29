@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { hasBook, loadBook, renderSection, searchBook, type BookSection, type Hit } from '../book/book'
+import { linkSpells } from '../book/spellLinks'
+import { SpellPeek } from './SpellPeek'
 import { useStore, useUI } from '../store'
 import { systemOf } from '../systems'
 import { listBooks, sectionsFromToc, type BookInfo } from '../book/books'
@@ -158,7 +160,16 @@ function TextReader({ layout, onClose, extra, searchTick }: ReaderProps) {
   useEffect(() => { try { localStorage.setItem(LAST, String(cur)) } catch { /* private mode */ } }, [cur])
 
   const sec = book?.[cur]
-  const html = useMemo(() => (sec ? renderSection(sec) : ''), [sec])
+  const customSpells = useStore((s) => s.customSpells)
+  const [peek, setPeek] = useState<{ name: string; x: number; y: number } | null>(null)
+  // spell / Art names link to the spell
+  const html = useMemo(() => {
+    if (!sec) return ''
+    const doc = new DOMParser().parseFromString(`<div>${renderSection(sec)}</div>`, 'text/html')
+    const root = doc.body.firstElementChild!
+    linkSpells(root)
+    return root.innerHTML
+  }, [sec, customSpells])
   const hits: Hit[] = useMemo(() => (book ? searchBook(book, q) : []), [book, q])
 
   const go = (id: number, to?: { page?: number; slug?: string; nth?: number }) => {
@@ -206,6 +217,7 @@ function TextReader({ layout, onClose, extra, searchTick }: ReaderProps) {
   useEffect(() => { if (searchTick) { search.current?.focus(); search.current?.select() } }, [searchTick])
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && document.querySelector('.spell-peek')) return
       if (e.key === 'Escape' && keyInScope(layout, e)) { e.stopImmediatePropagation(); if (q && document.activeElement === search.current) setQ(''); else onClose() }
     }
     window.addEventListener('keydown', k, true)
@@ -214,6 +226,8 @@ function TextReader({ layout, onClose, extra, searchTick }: ReaderProps) {
 
   // links inside the book: its own contents page uses #p<page>; web links open in the browser
   const onClick = (e: React.MouseEvent) => {
+    const spell = (e.target as HTMLElement).closest('.bk-spell')
+    if (spell) { setPeek({ name: spell.getAttribute('data-spell') || '', x: e.clientX, y: e.clientY }); return }
     const a = (e.target as HTMLElement).closest('a')
     if (!a) return
     const href = a.getAttribute('href') || ''
@@ -292,6 +306,7 @@ function TextReader({ layout, onClose, extra, searchTick }: ReaderProps) {
           {sec && <div className="bk-crumb">{book![sec.chapter].title}{sec.level === 2 ? ` › ${sec.title}` : ''}</div>}
           {/* only this part is touched by search highlighting: React doesn't manage what's inside it */}
           <div ref={textEl} dangerouslySetInnerHTML={{ __html: html }} />
+          {peek && <SpellPeek name={peek.name} at={peek} onClose={() => setPeek(null)} />}
           {book && sec && (
             <div className="bk-foot">
               {cur > 0 && <button className="btn" onClick={() => go(cur - 1)}>‹ {book[cur - 1].title}</button>}

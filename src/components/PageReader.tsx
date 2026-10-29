@@ -3,6 +3,9 @@ import type { BookSection } from '../book/book'
 import { BookContents } from './BookContents'
 import { keyInScope, useBookmarks, type ReaderProps } from './BookViewer'
 import type { BookInfo } from '../book/books'
+import { findSpells } from '../book/spellLinks'
+import { useStore } from '../store'
+import { SpellPeek } from './SpellPeek'
 
 /*
  * A sourcebook as its real pages (rendered from your PDF by tools/import_book_pdf.py), with the same
@@ -14,6 +17,28 @@ type Word = [number, number, number, number, string]
 
 interface PageHit { page: number; w0: number; w1: number; before: string; match: string; after: string }
 const GAP = 14
+
+/** a page's words grouped into lines (same height on the page), each in reading order; two-column pages give two runs per y */
+function linesOf(ws: Word[]): Word[][] {
+  const lines = new Map<number, Word[]>()
+  for (const w of ws) {
+    const key = [...lines.keys()].find((y) => Math.abs(y - w[1]) <= 4) ?? w[1]
+    if (!lines.has(key)) lines.set(key, [])
+    lines.get(key)!.push(w)
+  }
+  const out: Word[][] = []
+  for (const line of lines.values()) {
+    line.sort((a, b) => a[0] - b[0])
+    // split at the gap between the page's two text columns
+    let run: Word[] = []
+    for (const w of line) {
+      if (run.length && w[0] - run[run.length - 1][2] > 60) { out.push(run); run = [] }
+      run.push(w)
+    }
+    if (run.length) out.push(run)
+  }
+  return out
+}
 
 export function PageReader({ book, pb, layout, onClose, extra, searchTick }: ReaderProps & { book: BookSection[]; pb: BookInfo }) {
   // where you were, per book (the AK5e book used to be the only one)
@@ -137,6 +162,28 @@ export function PageReader({ book, pb, layout, onClose, extra, searchTick }: Rea
     return id
   }, [book, page])
 
+  // spell / Art names on a page become links that open the spell (worked out once per page)
+  const customSpells = useStore((s) => s.customSpells)
+  const spellCache = useMemo(() => new Map<number, { x0: number; y0: number; x1: number; y1: number; name: string }[]>(), [words, customSpells])
+  const [peek, setPeek] = useState<{ name: string; x: number; y: number } | null>(null)
+  const spellLinks = (p: number) => {
+    if (!words) return []
+    const hit = spellCache.get(p)
+    if (hit) return hit
+    const out: { x0: number; y0: number; x1: number; y1: number; name: string }[] = []
+    for (const ws of linesOf(words[p - 1] ?? [])) {
+      // a gap much wider than a space is a column / table-cell break
+      const gapBefore = (i: number) => i > 0 && ws[i][0] - ws[i - 1][2] > 22
+      const gapAfter = (i: number) => i < ws.length - 1 && ws[i + 1][0] - ws[i][2] > 22
+      for (const r of findSpells(ws.map((w) => w[4]), { before: gapBefore, after: gapAfter })) {
+        const run = ws.slice(r.i0, r.i1 + 1)
+        out.push({ x0: run[0][0], y0: Math.min(...run.map((w) => w[1])), x1: run[run.length - 1][2], y1: Math.max(...run.map((w) => w[3])), name: r.spell.n })
+      }
+    }
+    spellCache.set(p, out)
+    return out
+  }
+
   // the book's own contents pages: each line ending in a page number becomes a link
   const contents = book.find((s) => s.title === 'Contents')
   const tocLinks = (p: number) => {
@@ -167,6 +214,7 @@ export function PageReader({ book, pb, layout, onClose, extra, searchTick }: Rea
     const k = (e: KeyboardEvent) => {
       if (!keyInScope(layout, e)) return
       const typing = /INPUT|TEXTAREA/.test((e.target as HTMLElement).tagName)
+      if (e.key === 'Escape' && document.querySelector('.spell-peek')) return
       if (e.key === 'Escape') { e.stopImmediatePropagation(); if (q && document.activeElement === search.current) setQ(''); else onClose() }
       else if (!typing && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) { e.preventDefault(); scrollToPage(page + (e.key === 'ArrowRight' ? 1 : -1)) }
     }
@@ -256,12 +304,17 @@ export function PageReader({ book, pb, layout, onClose, extra, searchTick }: Rea
                   <button key={j} className="bk-toclink" title={`Go to page ${l.to}`} onClick={() => scrollToPage(l.to, 0)}
                     style={{ left: `${l.x0 / 10}%`, top: `${l.y0 / 10}%`, width: `${(l.x1 - l.x0) / 10}%`, height: `${(l.y1 - l.y0) / 10}%` }} />
                 ))}
+                {spellLinks(p).map((l, j) => (
+                  <button key={`s${j}`} className="bk-spelllink" title={`${l.name}: click to read it`} onClick={(e) => setPeek({ name: l.name, x: e.clientX, y: e.clientY })}
+                    style={{ left: `${l.x0 / 10}%`, top: `${l.y0 / 10}%`, width: `${(l.x1 - l.x0) / 10}%`, height: `${(l.y1 - l.y0) / 10}%` }} />
+                ))}
                 <span className="bk-pnum">{p}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
+      {peek && <SpellPeek name={peek.name} at={peek} onClose={() => setPeek(null)} />}
     </div>
   )
 }

@@ -77,6 +77,9 @@ The last argument before the file says which characters see the book (`dnd5e`, `
 switch books from the reader's header. The free SRD 5.2.1 PDF (the 2024 rules, CC-BY-4.0) is at
 https://media.dndbeyond.com/compendium-images/srd/5.2/SRD_CC_v5.2.1.pdf
 
+Spell and Art names in the books (Arts pool tables, class spell lists, "you learn the Detect Magic Art") are links: click
+one to read the spell in a card over the page and add it to your character, without leaving the book.
+
 ## Class symbols
 
 On Arknights sheets, beside the portrait is a column of marks: class, branch, nationality and faction (click any to change;
