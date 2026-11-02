@@ -1,9 +1,6 @@
 # Character Sheet
 
-> **AI usage disclaimer:** this app was built with heavy use of AI. Its code, data-import tools and documentation were
-> largely written by Claude (Anthropic's AI model, via Claude Code), directed, tested and reviewed by a human. It may
-> contain mistakes, including in rules text it extracts from sourcebooks, so check anything important against the
-> official books.
+> **AI usage disclaimer:** this app was built with heavy use of AI. Its code, data-import tools and documentation were largely written by Claude (Anthropic's AI model, via Claude Code). This application was built to address a personal need/inconvenience of mine and not to be shipped as a product.
 
 A desktop D&D character sheet (Electron + React). Opens as its own window, saves to a local file, works offline.
 
