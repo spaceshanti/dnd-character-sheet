@@ -2,8 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ALIGNMENTS, conditionsFor } from '../constants'
 import { isAK, systemOf } from '../systems'
 import { DEATHS_DOOR } from '../ak'
-import { rememberRest, restSnapshot } from '../rest'
-import { activeEffects, damageReduction, netAdvantage, signed, spLimits, statInfo, type StatKey } from '../calc'
+import { longRestOn, rememberRest, restEffects, restSnapshot } from '../rest'
+import { activeEffects, damageReduction, netAdvantage, signed, statInfo, type StatKey } from '../calc'
 import { uid } from '../blank'
 import { useChar, useStore, useUI, type PageId } from '../store'
 import { Field, FitInput, Num, Pips, Popover, Toast, useToast } from './ui'
@@ -52,20 +52,6 @@ export function TopBar() {
   }, [])
 
   const toast = useToast()
-  /** apply every active feature's effects for this kind of rest; returns what happened */
-  const restEffects = (d: typeof c, rest: 'long' | 'short') => {
-    const done: string[] = []
-    for (const f of d.features) {
-      if (!f.active) continue
-      for (const e of f.restEffects) {
-        if (e.rest !== rest) continue
-        if (e.kind === 'inspiration') { d.inspiration = true; done.push(`Heroic Inspiration (${f.name || 'feature'})`) }
-        else if (e.kind === 'tempHp') { d.hp.temp = Math.max(d.hp.temp, e.value); done.push(`${e.value} temp HP (${f.name || 'feature'})`) }
-        else if (e.kind === 'reminder') done.push(`Reminder: ${e.note || f.name}`)
-      }
-    }
-    return done
-  }
   const report = (rest: string, done: string[]) => toast.show(done.length ? `${rest} rest · ${done.join(' · ')}` : `${rest} rest taken`)
 
   const akIcons = useAkIcons((st) => st.list)
@@ -81,23 +67,7 @@ export function TopBar() {
     const before = restSnapshot(c)
     patch((d) => {
       rememberRest(d, 'long', before)
-      const max = statInfo(d as typeof c, 'hpMax', activeEffects(d as typeof c)).total
-      d.hp.current = max
-      d.hp.temp = 0
-      if (ak) {
-        // AK5e: failed death saves only go away one per long rest
-        d.deathSaves = { successes: 0, failures: Math.max(0, d.deathSaves.failures - 1) }
-        d.ak.mettle = 0
-        d.ak.ap.used = 0
-        d.ak.ninthUsed = false
-        d.ak.activeSkill = ''
-        d.ak.sp = Math.max(d.ak.sp, spLimits(d as typeof c).start)
-      } else d.deathSaves = { successes: 0, failures: 0 }
-      for (const k of Object.keys(d.slots)) d.slots[+k].used = 0
-      let regain = Math.max(1, Math.floor(d.hitDice.reduce((s, h) => s + h.total, 0) / 2))
-      for (const h of d.hitDice) { const r = Math.min(h.spent, regain); h.spent -= r; regain -= r }
-      for (const r of d.resources) r.used = 0
-      done = restEffects(d, 'long')
+      done = longRestOn(d)
     })
     report('Long', done)
   }

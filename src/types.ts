@@ -265,6 +265,38 @@ export interface AkData {
 }
 
 
+/**
+ * Everything that belongs to one class when a character has an Alternate Class: switching swaps this with the
+ * character's current one. Name, story, inventory, level and (other than the two swapped) ability scores are shared.
+ */
+export interface ClassSide {
+  className: string
+  subclass: string
+  classSymbol: string
+  subclassSymbol: string
+  hpMax: Stat
+  hpCurrent: number
+  hitDice: HitDie[]
+  speed: Stat
+  saveProf: Record<AbilityKey, 0 | 1>
+  spellAbility: AbilityKey | ''
+  features: Feature[]
+  resources: Resource[]
+  spells: Spell[]
+  /** class proficiencies (languages stay with the character) */
+  profs: { weapons: string; armor: string; tools: string }
+  ak: Pick<AkData, 'opSkills' | 'ap' | 'maxArtLevel' | 'activeSkill' | 'sp'>
+}
+
+export interface AltClass {
+  /** true while playing the alternate class (its scores are swapped in) */
+  active: boolean
+  /** the two ability scores whose values swap while in the alternate class */
+  swap: [AbilityKey, AbilityKey]
+  /** the class you're not playing right now */
+  other: ClassSide
+}
+
 /** the parts of a character a rest changes */
 export type RestSnapshot = Pick<Character, 'hp' | 'deathSaves' | 'slots' | 'hitDice' | 'resources' | 'inspiration' | 'ak'>
 
@@ -343,6 +375,8 @@ export interface Character {
   battleState: string
   gallery: GalleryImage[]
   ak: AkData
+  /** Arknights optional rule: a second class you can switch to at a long rest (from 7th level) */
+  altClass?: AltClass | null
   /** how things were just before the last long / short rest, so it can be undone */
   restUndo?: { long?: { at: number; before: RestSnapshot }; short?: { at: number; before: RestSnapshot } }
   updatedAt: number

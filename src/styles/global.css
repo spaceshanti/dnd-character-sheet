@@ -721,3 +721,7 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 
 .die-add { font-size: 10.5px; color: var(--muted); padding: 0 5px; }
 .die-add:hover { color: var(--accent); }
+
+/* Overview: Alternate Class */
+.alt-now { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; }
+.alt-now .field-lbl { width: 58px; flex: none; margin: 0; }

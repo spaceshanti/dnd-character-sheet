@@ -11,7 +11,10 @@ import { ammoText, useItem } from '../consume'
 import { RichArea } from '../components/RichText'
 import { Icon, itemIcon } from '../components/Icon'
 import { WeaponTags } from '../components/WeaponTags'
-import type { Attack, Effect } from '../types'
+import { newSide, otherName, setSwap, switchClass } from '../altClass'
+import { hasFeaturesFor, planFill, ruleNames, type FillPlan } from '../autofill'
+import { longRestOn } from '../rest'
+import type { AbilityKey, Attack, Effect } from '../types'
 
 const effectText = (e: Effect) =>
   `${targetName(e.target)} ${e.type === 'bonus' ? signed(e.value ?? 0) : e.type === 'minScore' ? `≥ ${e.value}` : e.type}`
@@ -31,6 +34,7 @@ export function Overview() {
             </div>
           ))}
         </Frame>
+        {isAK(c) && <AltClassPanel />}
       </div>
 
       <div className="col" style={{ gap: 14 }}>
@@ -74,6 +78,115 @@ export function Overview() {
         </Frame>
       </div>
     </div>
+  )
+}
+
+/** AK5e optional rule: a second class from 7th level, switched to as part of a long rest. */
+function AltClassPanel() {
+  const c = useChar()
+  const patch = useStore((s) => s.patch)
+  const toast = useToast()
+  const alt = c.altClass
+  const [form, setForm] = useState<{ cls: string; branch: string; a: AbilityKey; b: AbilityKey } | null>(null)
+  if (!alt && !form && c.level < 7) return null
+  const label = (cls: string, sub: string) => [sub, cls].filter(Boolean).join(' ') || 'no class yet'
+  const abil = (k: AbilityKey) => ABILITIES.find((x) => x.key === k)?.short ?? k
+  const abilOptions = ABILITIES.map((x) => ({ id: x.key, name: x.short }))
+  const other = otherName(c)
+  const sameClass = !!form && !!form.cls.trim() && form.cls.trim().toLowerCase() === c.className.trim().toLowerCase()
+
+  const add = () => {
+    if (!form) return
+    patch((d) => { d.altClass = { active: false, swap: [form.a, form.b], other: newSide(d, form.cls.trim(), form.branch.trim()) } })
+    setForm(null)
+    toast.show(`Added ${label(form.cls.trim(), form.branch.trim())} as your alternate class`)
+  }
+  const doSwitch = (rest: boolean) => {
+    const msg = rest
+      ? `Take a long rest and switch to ${other}? You don't regain any hit dice on this rest.`
+      : `Switch to ${other} without resting? (The rule is to switch as part of a long rest.)`
+    if (!window.confirm(msg)) return
+    let done: string[] = []
+    patch((d) => { switchClass(d); if (rest) done = longRestOn(d, { hitDice: false }) })
+    toast.show(`Now playing ${other}${rest ? ' · long rest taken, no hit dice regained' : ''}${done.length ? ' · ' + done.join(' · ') : ''}`)
+  }
+  // a new alternate class starts empty: offer to fill it in from the book, linked up like the top bar does
+  const plans = alt && !hasFeaturesFor(c, 'class')
+    ? [planFill(c, 'class', c.className), c.subclass ? planFill(c, 'subclass', c.subclass) : null].filter((p): p is FillPlan => !!p && p.features.length > 0)
+    : []
+  const fill = () => {
+    patch((d) => { for (const p of plans) p.apply(d) })
+    toast.show(`Filled in ${plans.map((p) => p.name).join(' and ')} features`)
+  }
+
+  return (
+    <Frame title="Alternate Class" tight>
+      {!alt && !form && (
+        <>
+          <div className="small muted" style={{ marginBottom: 8 }}>
+            Optional rule: from 7th level you can take a second class and switch to it as part of a long rest. Features, max HP and
+            speed are separate; name, story, inventory and level are shared, and two ability scores swap.
+          </div>
+          <button className="btn sm" onClick={() => setForm({ cls: '', branch: '', a: 'str', b: 'wis' })}>＋ Add an alternate class</button>
+        </>
+      )}
+      {form && (
+        <div className="col" style={{ gap: 6 }}>
+          <div className="field-lbl">Class</div>
+          <input className="box-input" list="alt-classes" value={form.cls} placeholder="e.g. Caster" onChange={(e) => setForm({ ...form, cls: e.target.value })} />
+          <datalist id="alt-classes">{ruleNames(c, 'class').map((n) => <option key={n} value={n} />)}</datalist>
+          <div className="field-lbl">Branch</div>
+          <input className="box-input" list="alt-branches" value={form.branch} placeholder="optional" onChange={(e) => setForm({ ...form, branch: e.target.value })} />
+          <datalist id="alt-branches">{ruleNames(c, 'subclass', form.cls).map((n) => <option key={n} value={n} />)}</datalist>
+          <div className="field-lbl">Swap these two scores</div>
+          <div className="row" style={{ gap: 4 }}>
+            <Select value={form.a} options={abilOptions} onChange={(v) => setForm({ ...form, a: v as AbilityKey })} />
+            <span>⇄</span>
+            <Select value={form.b} options={abilOptions} onChange={(v) => setForm({ ...form, b: v as AbilityKey })} />
+          </div>
+          {sameClass && <div className="small" style={{ color: 'var(--dis)' }}>It has to be a different class from {c.className}.</div>}
+          <div className="row" style={{ gap: 6, justifyContent: 'flex-end' }}>
+            <button className="btn sm ghost" onClick={() => setForm(null)}>Cancel</button>
+            <button className="btn sm primary" disabled={!form.cls.trim() || sameClass || form.a === form.b} onClick={add}>Add</button>
+          </div>
+        </div>
+      )}
+      {alt && (
+        <div className="col" style={{ gap: 6 }}>
+          <div className="alt-now">
+            <span className="field-lbl">Playing</span>
+            <b>{label(c.className, c.subclass)}</b>
+            <span className={`chip ${alt.active ? 'accent' : ''}`}>{alt.active ? 'alternate' : 'original'}</span>
+          </div>
+          <div className="alt-now">
+            <span className="field-lbl">Other</span>
+            <span>{label(alt.other.className, alt.other.subclass)}</span>
+          </div>
+          <div className="alt-now">
+            <span className="field-lbl">Swapped</span>
+            {alt.active ? (
+              <span title="Swapped while you're in the alternate class">{abil(alt.swap[0])} ⇄ {abil(alt.swap[1])} <span className="muted small">(now)</span></span>
+            ) : (
+              <span className="row" style={{ gap: 3 }}>
+                <Select value={alt.swap[0]} options={abilOptions} onChange={(v) => patch((d) => setSwap(d, [v as AbilityKey, d.altClass!.swap[1]]))} />
+                <span>⇄</span>
+                <Select value={alt.swap[1]} options={abilOptions} onChange={(v) => patch((d) => setSwap(d, [d.altClass!.swap[0], v as AbilityKey]))} />
+              </span>
+            )}
+          </div>
+          <button className="btn sm primary" onClick={() => doSwitch(true)} title="Switch class as part of a long rest (no hit dice regained)">☀ Long rest &amp; switch to {other}</button>
+          <div className="row" style={{ gap: 6 }}>
+            <button className="btn sm ghost grow" onClick={() => doSwitch(false)} title="For fixing things up; the rule is to switch on a long rest">Switch without resting</button>
+            {!alt.active && (
+              <button className="btn sm ghost" title="Remove the alternate class (its features and so on are deleted)"
+                onClick={() => { if (window.confirm(`Remove ${other} and everything on it?`)) patch((d) => { d.altClass = null }) }}>Remove</button>
+            )}
+          </div>
+          {plans.length > 0 && <button className="btn sm" onClick={fill}>Fill in {plans.map((p) => p.name).join(' / ')} features</button>}
+        </div>
+      )}
+      <Toast msg={toast.msg} />
+    </Frame>
   )
 }
 

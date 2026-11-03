@@ -450,3 +450,14 @@ export const fillSnapshot = (c: Character) => JSON.parse(JSON.stringify({
 export const duplicates = (c: Character, plan: FillPlan) => plan.features.some((f) => c.features.some((x) => plain(x.name) === plain(f.name)))
 
 export const fillAvailable = (c: Character) => (isAK(c) ? !!AK : true)
+
+/** class / branch names the rules know, for suggestions (branches of the given class) */
+export function ruleNames(c: Character, kind: 'class' | 'subclass', className = ''): string[] {
+  if (isAK(c)) {
+    if (!AK) return []
+    if (kind === 'class') return AK.classes.map((x) => x.name)
+    return pick(AK.classes, className, AK_CLASS_NAMES)?.branches.map((b) => b.name) ?? []
+  }
+  if (kind === 'class') return SRD.classes.map((x) => x.name)
+  return pick(SRD.classes, className)?.subclasses.map((s) => s.name) ?? []
+}
