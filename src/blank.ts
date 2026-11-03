@@ -74,6 +74,7 @@ export function blankCharacter(name = 'New Character', system: SystemId = 'dnd5e
     initiative: { base: 0, mods: [] },
     size: 'Medium', conditions: [],
     spellAbility: '', slots, spells: [],
+    locked: true,
     features: [], items: [], attacks: [], resources: [],
     coins: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 }, carryMultiplier: 15,
     proficiencies: { weapons: '', armor: '', tools: '', languages: '' },
@@ -104,6 +105,8 @@ export function normalize(raw: Partial<Character>): Character {
   c.story = { ...b.story, ...raw.story }
   c.slots = { ...b.slots, ...raw.slots }
   c.system = raw.system === 'ak5e' ? 'ak5e' : 'dnd5e'
+  // deletion protection is on unless it was turned off
+  c.locked = raw.locked ?? true
   c.ak = { ...b.ak, ...raw.ak, ap: { ...b.ak.ap, ...raw.ak?.ap } }
   // the three personality boxes became one
   if (c.story.trait2 || c.story.trait3) {

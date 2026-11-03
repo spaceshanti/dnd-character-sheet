@@ -375,6 +375,8 @@ export interface Character {
   battleState: string
   gallery: GalleryImage[]
   ak: AkData
+  /** deletion protection: a locked character can't be deleted until it's unlocked (on by default) */
+  locked: boolean
   /** Arknights optional rule: a second class you can switch to at a long rest (from 7th level) */
   altClass?: AltClass | null
   /** how things were just before the last long / short rest, so it can be undone */
@@ -414,6 +416,12 @@ export interface Bookmark {
   y: number
 }
 
+/** a deleted character, kept so it can be restored (for TRASH_DAYS) */
+export interface TrashedChar {
+  char: Character
+  deletedAt: number
+}
+
 export interface AppData {
   version: 1
   chars: Record<string, Character>
@@ -427,4 +435,6 @@ export interface AppData {
   customSpells?: CustomSpell[]
   /** sourcebook bookmarks, shared by all characters */
   bookmarks?: Bookmark[]
+  /** deleted characters, restorable for a while */
+  trash?: TrashedChar[]
 }

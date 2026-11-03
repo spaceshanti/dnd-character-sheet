@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { SYSTEMS, systemName, systemOf, type SystemId } from '../systems'
-import { downloadJson, useStore, useUI } from '../store'
+import { downloadJson, TRASH_DAYS, useStore, useUI } from '../store'
 import { Toast, useToast } from '../components/ui'
 import type { Character } from '../types'
 
@@ -15,7 +15,9 @@ function ago(t: number): string {
 
 /** Start screen: shown when there's no character to open, or from the 👥 Characters button. */
 export function CharacterList() {
-  const { chars, order, activeId, setActive, addChar, dupChar, deleteChar, importChars } = useStore()
+  const { chars, order, activeId, setActive, addChar, dupChar, deleteChar, importChars, trash, restoreChar, purgeChar } = useStore()
+  const [trashOpen, setTrashOpen] = useState(false)
+  const setLocked = (id: string, locked: boolean) => useStore.setState((s) => ({ chars: { ...s.chars, [id]: { ...s.chars[id], locked } } }))
   const set = useUI((s) => s.set)
   const file = useRef<HTMLInputElement>(null)
   const toast = useToast()
@@ -85,8 +87,11 @@ export function CharacterList() {
                   <button className="btn sm" onClick={() => dupChar(id)}>Copy</button>
                   <button className="btn sm" onClick={() => downloadJson(`${(c.name || 'character').replace(/[^\w-]+/g, '_')}.json`, c)}>Export</button>
                   <span className="grow" />
-                  <button className="btn sm danger" title="Delete"
-                    onClick={() => { if (window.confirm(`Delete ${c.name || 'this character'}? This can't be undone.`)) deleteChar(id) }}>✕</button>
+                  {/* deletion protection: unlock first, then delete (and it can still be restored for a while) */}
+                  <button className={`btn sm ghost lock-btn ${c.locked ? 'on' : ''}`} onClick={() => setLocked(id, !c.locked)}
+                    title={c.locked ? 'Protected from deletion. Click to unlock' : 'Unlocked: can be deleted. Click to protect it again'}>{c.locked ? '🔒' : '🔓'}</button>
+                  <button className="btn sm danger" disabled={c.locked} title={c.locked ? 'Unlock it (🔒) to delete' : 'Delete'}
+                    onClick={() => { if (window.confirm(`Delete ${c.name || 'this character'}? You can restore it from Recently deleted for ${TRASH_DAYS} days.`)) deleteChar(id) }}>✕</button>
                 </div>
               </div>
             </div>
@@ -100,6 +105,26 @@ export function CharacterList() {
           </button>
         ))}
       </div>
+
+      {trash.length > 0 && (
+        <div className="charlist-trash">
+          <button className="btn sm ghost" onClick={() => setTrashOpen(!trashOpen)}>{trashOpen ? '▾' : '▸'} Recently deleted ({trash.length})</button>
+          {trashOpen && (
+            <div className="col" style={{ gap: 4, marginTop: 6 }}>
+              <div className="muted small">Deleted characters can be restored for {TRASH_DAYS} days.</div>
+              {trash.map((t) => (
+                <div key={t.char.id + t.deletedAt} className="row trash-row">
+                  <b>{t.char.name || 'Unnamed'}</b>
+                  <span className="muted small grow">{[t.char.level ? `Level ${t.char.level}` : '', t.char.className].filter(Boolean).join(' · ')} · deleted {ago(t.deletedAt)}</span>
+                  <button className="btn sm" onClick={() => restoreChar(t.char.id)}>Restore</button>
+                  <button className="btn sm ghost" title="Delete for good"
+                    onClick={() => { if (window.confirm(`Delete ${t.char.name || 'this character'} for good? This can't be undone.`)) purgeChar(t.char.id) }}>Delete forever</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <Toast msg={toast.msg} />
     </div>
   )
