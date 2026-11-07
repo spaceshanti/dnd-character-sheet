@@ -1,6 +1,7 @@
 /** Standard weapons and armor (System Reference Document 5.2, CC-BY-4.0). Used to pre-fill items by name. */
 import type { ArmorStats, Effect, WeaponStats } from '../types'
 import type { SystemId } from '../systems'
+import { extraFiles } from './runtime'
 
 // local id helper (blank.ts imports this file, so it can't be imported back)
 const uid = () => (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36))
@@ -102,15 +103,14 @@ const W_SORTED = [...WEAPONS].sort(byLength)
 const A_SORTED = [...ARMOR].sort(byLength)
 const has = (name: string, key: string) => new RegExp(`\\b${key.replace(/ /g, '\\s*')}\\b`, 'i').test(name)
 
-/* ---------- Arknights 5e equipment (from the book, via tools/import_ak5e.py → src/data/extra/ak5e.json) ---------- */
+/* ---------- Arknights 5e equipment (from the book, which the app downloads onto your computer) ---------- */
 
 interface AkWeapon { n: string; damage: string; type: string; props: string; range: string; cat: string; w: number; c: string }
 interface AkArmour { n: string; kind: ArmorStats['kind']; cat: string; ac: number; dr: number; drType: string; str: number; special: string; w: number; c: string }
 interface AkGear { weapons: AkWeapon[]; armour: AkArmour[]; properties: Record<string, string>; items: unknown[] }
 
 const AK: AkGear = (() => {
-  const files = import.meta.glob('./extra/*.json', { eager: true, import: 'default' }) as Record<string, { gear?: AkGear }>
-  const g = Object.values(files).find((f) => f.gear)?.gear
+  const g = extraFiles().find((f) => f.gear)?.gear as AkGear | undefined
   return g ?? { weapons: [], armour: [], properties: {}, items: [] }
 })()
 export const AK_ITEMS = AK.items

@@ -26,6 +26,15 @@ declare global {
       /** fetch them from the Arknights wiki into the app's data folder; returns how many */
       symbolDownload: () => Promise<number>
       setZoom?: (factor: number) => void
+      extraList: () => Promise<{ name: string; text: string }[]>
+      extraSave: (name: string, text: string) => Promise<void>
+      bookTextGet: (id: string) => Promise<string>
+      bookTextSave: (id: string, text: string) => Promise<void>
+      fetchUrl: <B extends boolean = false>(url: string, binary?: B) => Promise<B extends true ? Uint8Array : string>
+      bookWrite: (id: string, rel: string, data: string | Uint8Array) => Promise<void>
+      bookRemove: (id: string) => Promise<void>
+      appVersion: () => Promise<string>
+      checkUpdate: () => Promise<{ status: 'dev' | 'current' | 'downloading'; latest?: string }>
       /** every imported sourcebook (folders under <userData>/sourcebook) */
       bookList: () => Promise<{ id: string; title: string; games?: string[]; pages: number; aspect: number; ext: string; toc?: [number, string, number][] }[]>
     }

@@ -1,5 +1,6 @@
 import { uid } from './blank'
 import type { OperatorSkill, SkillTier } from './types'
+import { extraFiles } from './data/runtime'
 
 /** One row of an Operator Skill table, as written by tools/import_ak5e.py */
 export interface LibOpSkill {
@@ -16,8 +17,7 @@ export interface LibOpSkill {
 }
 
 function build(): LibOpSkill[] {
-  const extras = import.meta.glob('./data/extra/*.json', { eager: true, import: 'default' }) as Record<string, { opSkills?: LibOpSkill[] }>
-  return Object.values(extras).flatMap((f) => f.opSkills ?? [])
+  return extraFiles().flatMap((f) => (f.opSkills ?? []) as LibOpSkill[])
 }
 
 export const OP_LIB = build()

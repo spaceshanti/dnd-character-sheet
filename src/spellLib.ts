@@ -2,6 +2,7 @@ import raw from './data/spells.json'
 import { isConsumed, newSpell, uid } from './blank'
 import type { CustomSpell, Spell } from './types'
 import { useStore } from './store'
+import { extraFiles } from './data/runtime'
 
 export interface LibSpell {
   n: string
@@ -42,8 +43,7 @@ export const nameKey = (n: string) =>
 
 function buildLibrary(): LibSpell[] {
   const lib: LibSpell[] = (raw as LibSpell[]).map((s) => ({ ...s, cl: [...s.cl] }))
-  const extras = import.meta.glob('./data/extra/*.json', { eager: true, import: 'default' }) as Record<string, ExtraFile>
-  for (const file of Object.values(extras)) {
+  for (const file of extraFiles() as ExtraFile[]) {
     const tag = file.system === 'ak5e' ? 'AK5e' : 'UA'
     for (const s of file.spells ?? []) lib.push({ ...s, e: s.e || tag, src: file.source })
     for (const [cls, levels] of Object.entries(file.classLists ?? {})) {

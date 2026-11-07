@@ -4,6 +4,7 @@ import { mod } from './calc'
 import { newFeature, newFeatureAction, newResource, uid } from './blank'
 import { bestLib, fromLib } from './spellLib'
 import { isAK } from './systems'
+import { extraFiles } from './data/runtime'
 import type { AbilityKey, ActionType, Character, Effect, Feature, Recharge, Resource, Spell } from './types'
 
 /*
@@ -11,7 +12,7 @@ import type { AbilityKey, ActionType, Character, Effect, Feature, Recharge, Reso
  * nationality and the sheet offers to add everything it gives you at your level — features, the resources they
  * use (with their maximums from the class table), the actions that spend them, spell slots / Arts Points,
  * always-prepared spells, hit dice, saving throws and proficiencies — all linked up.
- * D&D comes from the SRD 5.2.1 (bundled); Arknights from the book you imported (src/data/extra/ak5e.json).
+ * D&D comes from the SRD 5.2.1 (bundled); Arknights from the book the app downloaded onto this computer.
  */
 
 export type FillKind = 'class' | 'subclass' | 'species' | 'background' | 'nationality'
@@ -44,8 +45,7 @@ interface AkRules {
 
 const SRD = srd as unknown as SrdData
 const AK: AkRules | null = (() => {
-  const files = import.meta.glob('./data/extra/*.json', { eager: true, import: 'default' }) as Record<string, { rules?: AkRules }>
-  return Object.values(files).find((f) => f.rules)?.rules ?? null
+  return (extraFiles().find((f) => f.rules)?.rules as AkRules | undefined) ?? null
 })()
 
 /* ---------- names ---------- */

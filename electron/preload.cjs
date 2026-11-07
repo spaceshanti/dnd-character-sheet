@@ -17,4 +17,13 @@ contextBridge.exposeInMainWorld('sheetApi', {
   symbolList: () => ipcRenderer.invoke('symbols:list'),
   symbolDownload: () => ipcRenderer.invoke('symbols:download'),
   setZoom: (factor) => webFrame.setZoomFactor(factor),
+  extraList: () => ipcRenderer.invoke('extra:list'),
+  extraSave: (name, text) => ipcRenderer.invoke('extra:save', name, text),
+  bookTextGet: (id) => ipcRenderer.invoke('booktext:get', id),
+  bookTextSave: (id, text) => ipcRenderer.invoke('booktext:save', id, text),
+  fetchUrl: (url, binary) => ipcRenderer.invoke('net:fetch', url, !!binary),
+  bookWrite: (id, rel, data) => ipcRenderer.invoke('book:write', id, rel, data),
+  bookRemove: (id) => ipcRenderer.invoke('book:remove', id),
+  appVersion: () => ipcRenderer.invoke('app:version'),
+  checkUpdate: () => ipcRenderer.invoke('update:check'),
 })

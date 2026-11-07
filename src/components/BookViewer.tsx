@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { hasBook, loadBook, renderSection, searchBook, type BookSection, type Hit } from '../book/book'
 import { linkSpells } from '../book/spellLinks'
 import { SpellPeek } from './SpellPeek'
+import { BookSetup } from './BookSetup'
 import { useStore, useUI } from '../store'
 import { systemOf } from '../systems'
 import { listBooks, sectionsFromToc, type BookInfo } from '../book/books'
@@ -93,10 +94,9 @@ function Reader({ layout, onClose }: { layout: BookLayout; onClose: () => void }
     return (
       <div className="book">
         <div className="bk-head"><b>Sourcebooks</b><span className="grow" /><button className="btn sm" onClick={onClose}>✕ Close</button></div>
-        <div className="bk-empty">
-          <p>No sourcebooks for this game yet. Add a PDF once with</p>
-          <code>python tools/import_book_pdf.py srd52 "SRD 5.2.1" dnd5e,ak5e "path/to/book.pdf"</code>
-          <p className="muted small">It's kept in the app's data folder, and every character of that game can open it.</p>
+        <div className="bk-empty bk-setup">
+          <p>No sourcebooks for this game yet. Get them onto this computer here (once; every character of that game can open them):</p>
+          <BookSetup game={sys} />
         </div>
       </div>
     )
@@ -247,10 +247,9 @@ function TextReader({ layout, onClose, extra, searchTick }: ReaderProps) {
     return (
       <div className="book">
         <div className="bk-head"><b>Arknights 5e sourcebook</b><span className="grow" /><button className="btn sm" onClick={onClose}>✕ Close</button></div>
-        <div className="bk-empty">
-          <p>The book isn't in this copy of the app yet. Add your PDF of it once with</p>
-          <code>python tools/import_ak5e_pdf.py "path/to/the book.pdf"</code>
-          <p className="muted small">That shows the real pages. For the text view and contents, also run <code>python tools/import_ak5e.py</code> and rebuild.</p>
+        <div className="bk-empty bk-setup">
+          <p>The book isn't on this computer yet:</p>
+          <BookSetup game="ak5e" />
         </div>
       </div>
     )

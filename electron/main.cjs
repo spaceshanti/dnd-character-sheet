@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, shell, Menu, dialog, protocol, net } = requ
 const fs = require('fs')
 const path = require('path')
 const { pathToFileURL } = require('url')
+const { autoUpdater } = require('electron-updater')
 
 // sheetbook://ak5e/pages/001.jpg → <userData>/sourcebook/ak5e/pages/001.jpg (the book pages you imported)
 protocol.registerSchemesAsPrivileged([
@@ -111,6 +112,45 @@ ipcMain.handle('file:save', async (e, defaultName, bytes) => {
   return r.filePath
 })
 
+/* ---------- book data kept on this computer (never part of the app): the Arknights 5e book, your imported spell lists ---------- */
+const extraDir = () => path.join(app.getPath('userData'), 'extra')
+const bookTextDir = () => path.join(app.getPath('userData'), 'books')
+const plainFile = (n) => String(n).replace(/[^\w.-]+/g, '_')
+ipcMain.handle('extra:list', () => {
+  try {
+    return fs.readdirSync(extraDir()).filter((f) => f.endsWith('.json')).map((f) => ({ name: f, text: fs.readFileSync(path.join(extraDir(), f), 'utf-8') }))
+  } catch { return [] }
+})
+ipcMain.handle('extra:save', (_e, name, text) => {
+  fs.mkdirSync(extraDir(), { recursive: true })
+  fs.writeFileSync(path.join(extraDir(), plainFile(name)), text, 'utf-8')
+})
+ipcMain.handle('booktext:get', (_e, id) => {
+  try { return fs.readFileSync(path.join(bookTextDir(), plainFile(id) + '.md'), 'utf-8') } catch { return '' }
+})
+ipcMain.handle('booktext:save', (_e, id, text) => {
+  fs.mkdirSync(bookTextDir(), { recursive: true })
+  fs.writeFileSync(path.join(bookTextDir(), plainFile(id) + '.md'), text, 'utf-8')
+})
+// downloads the app makes for you: the Arknights 5e book's source on Homebrewery, the free SRD PDF
+const FETCH_HOSTS = ['homebrewery.naturalcrit.com', 'media.dndbeyond.com']
+ipcMain.handle('net:fetch', async (_e, url, binary) => {
+  const u = new URL(url)
+  if (u.protocol !== 'https:' || !FETCH_HOSTS.includes(u.hostname)) throw new Error('not an allowed address')
+  const r = await net.fetch(url, { headers: UA })
+  if (!r.ok) throw new Error(`HTTP ${r.status}`)
+  return binary ? new Uint8Array(await r.arrayBuffer()) : r.text()
+})
+
+/* ---------- version & updates ---------- */
+ipcMain.handle('app:version', () => app.getVersion())
+ipcMain.handle('update:check', async () => {
+  if (!app.isPackaged) return { status: 'dev' }
+  const r = await autoUpdater.checkForUpdates()
+  const latest = r?.updateInfo?.version
+  return { status: latest && latest !== app.getVersion() ? 'downloading' : 'current', latest }
+})
+
 /* ---------- spell lookup from wikidot ---------- */
 const { fetchSpell, fetchItem } = require('./spells.cjs')
 ipcMain.handle('spell:fetch', (_e, target) => fetchSpell(target))
@@ -172,6 +212,18 @@ ipcMain.handle('book:list', () => {
   }
   return out
 })
+// a book imported inside the app (pages, words.json, book.json), written into <userData>/sourcebook/<id>/
+ipcMain.handle('book:write', (_e, id, rel, data) => {
+  const root = path.join(bookRoot(), String(id).replace(/[^\w-]/g, ''))
+  const file = path.normalize(path.join(root, String(rel)))
+  if (!file.startsWith(root + path.sep)) throw new Error('bad path')
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  fs.writeFileSync(file, typeof data === 'string' ? data : Buffer.from(data))
+})
+ipcMain.handle('book:remove', (_e, id) => {
+  const dir = path.join(bookRoot(), String(id).replace(/[^\w-]/g, ''))
+  if (dir !== bookRoot()) fs.rmSync(dir, { recursive: true, force: true })
+})
 ipcMain.handle('book:info', (_e, id) => {
   try { return JSON.parse(fs.readFileSync(path.join(bookRoot(), String(id).replace(/[^\w-]/g, ''), 'book.json'), 'utf-8')) } catch { return null }
 })
@@ -190,6 +242,8 @@ app.whenReady().then(() => {
     }
   })
   createWindow()
+  // new versions come from the GitHub Releases page: downloaded in the background, installed when you close the app
+  if (app.isPackaged) autoUpdater.checkForUpdatesAndNotify().catch(() => { /* offline: try next time */ })
   app.on('activate', () => BrowserWindow.getAllWindows().length === 0 && createWindow())
 })
 app.on('window-all-closed', () => app.quit())

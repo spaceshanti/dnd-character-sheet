@@ -4,11 +4,25 @@
 
 A desktop D&D character sheet (Electron + React). Opens as its own window, saves to a local file, works offline.
 
-## Install
+## Download (Windows)
 
-Run `release/Character-Sheet-Setup-<version>.exe` (built with `npm run dist`). It installs for your user only
-(no admin needed), adds Start menu and desktop shortcuts, and can be removed from Windows' Installed apps.
-Your characters are stored separately, so reinstalling or updating never touches them.
+**[⬇ Download the latest installer](https://github.com/spaceshanti/dnd-character-sheet/releases/latest/download/Character-Sheet-Setup.exe)**
+(or pick a version on the [Releases page](https://github.com/spaceshanti/dnd-character-sheet/releases/latest)).
+
+1. Run `Character-Sheet-Setup.exe`. Windows may say *"Windows protected your PC"* because the app isn't code-signed:
+   click **More info → Run anyway**.
+2. It installs for your user only (no admin needed) and adds Start menu and desktop shortcuts.
+3. The app updates itself: new versions download in the background and install when you close it
+   (Settings → *Check for updates* to check by hand).
+
+Your characters are saved on your own computer, so reinstalling or updating never touches them.
+
+**Books:** none are included in the download. The first time you open an Arknights character, the app downloads the
+Arknights 5e book from Homebrewery by itself (Arts, gear, Operator Skills, classes for filling in features, and the book's
+text in the 📖 Sourcebooks reader). Settings → **Sourcebooks** adds the rest:
+- **2024 rules (SRD 5.2.1)**: one click, downloaded and set up for you.
+- **Arknights 5e real pages**: add a PDF of the book (print it to PDF from Homebrewery, or get the file from your party)
+  for the page view with clickable contents and spell names.
 
 ## Work on it (live reload)
 
@@ -26,6 +40,10 @@ npm run dist:dir     # unpacked app -> release/win-unpacked/Character Sheet.exe
 
 Bump `version` in `package.json` before building an update; installing it over the old one keeps your data.
 
+To publish a version, attach the three files from `release/` (`Character-Sheet-Setup-<version>.exe`, its `.blockmap` and
+`latest.yml`) plus a copy of the installer named `Character-Sheet-Setup.exe` to a GitHub release tagged `v<version>`.
+The installed apps check `latest.yml` there to update themselves; the plain-named copy keeps the README's download link working.
+
 ## Where your data is
 
 `%APPDATA%\Character Sheet\characters.json` (plus a `.bak` of the previous save). Export / import from the Characters window.
@@ -40,8 +58,9 @@ Bump `version` in `package.json` before building an update; installing it over t
 python tools/import_ua_spells.py "C:\path\to\UA2025-ThePsion.pdf"
 ```
 
-Reads the class spell list and any full spell write-ups from the PDF and writes `src/data/extra/<name>.json`.
-The app merges every file in that folder into the Spell Library (filter Class → Psion). Restart the app after importing.
+Reads the class spell list and any full spell write-ups from the PDF and writes `<name>.json` into the app's data folder
+(`%APPDATA%/Character Sheet/extra`). The app merges every file there into the Spell Library (filter Class → Psion).
+Restart the app after importing.
 Spells on the list that aren't in the SRD and aren't written out in the PDF appear as "name only" entries.
 
 ## Games
@@ -66,18 +85,13 @@ in the app's data folder and aren't part of this repository.
 
 Every character gets a **📖 Sourcebooks** reader (Ctrl + B for a side pane, Ctrl + F to search). It shows a book's real
 pages with its contents, page-accurate headings, on-page search highlights and your bookmarks (★ at the top of the
-contents; ☆ on any heading or in the header adds one). Books are added once from a PDF and kept in the app's data folder
-(`%APPDATA%/Character Sheet/sourcebook/<id>`), never in this repository:
+contents; ☆ on any heading or in the header adds one). Books are added from **Settings → Sourcebooks** (see Download above)
+and kept in the app's data folder (`%APPDATA%/Character Sheet/sourcebook/<id>`), never in the app or this repository.
+With more than one, switch books from the reader's header.
 
-```
-python tools/import_book_pdf.py srd52 "SRD 5.2.1 (2024 rules)" dnd5e,ak5e "SRD_CC_v5.2.1.pdf"
-python tools/import_book_pdf.py ak5e "Arknights 5e" ak5e "AK5e 1st Edition v1.3.1 - The Homebrewery.pdf"
-python tools/import_book_pdf.py phb2024 "Player's Handbook (2024)" dnd5e "your own PHB.pdf"
-```
-
-The last argument before the file says which characters see the book (`dnd5e`, `ak5e`, or both). With more than one,
-switch books from the reader's header. The free SRD 5.2.1 PDF (the 2024 rules, CC-BY-4.0) is at
-https://media.dndbeyond.com/compendium-images/srd/5.2/SRD_CC_v5.2.1.pdf
+Other PDFs you own can be added with `python tools/import_book_pdf.py <id> "<title>" <games> "book.pdf"`, for example
+`python tools/import_book_pdf.py phb2024 "Player's Handbook (2024)" dnd5e "your own PHB.pdf"` (`<games>`: `dnd5e`, `ak5e`,
+or both as `dnd5e,ak5e`).
 
 Spell and Art names in the books (Arts pool tables, class spell lists, "you learn the Detect Magic Art") are links: click
 one to read the spell in a card over the page and add it to your character, without leaving the book.
@@ -96,17 +110,17 @@ features of that kind yet, the sheet offers to fill them in up to your level: fe
 the class table, recharge from the text), the actions that spend them, spell slots / Arts Points and max Art level,
 always-prepared spells, hit dice and HP, saving throws and proficiencies. Undo is offered right after. D&D uses
 `src/data/srd52.json` (built from the SRD 5.2.1 PDF with `python tools/build_srd_data.py SRD_CC_v5.2.1.pdf`); Arknights uses
-the classes, branches, species, nationalities and backgrounds from the imported book (`tools/ak_rules.py`).
+the classes, branches, species, nationalities and backgrounds from the downloaded book.
 
-## Importing the Arknights 5e book
+## The Arknights 5e book data
 
-```
-python tools/import_ak5e.py
-```
+The app reads the book's markdown source from Homebrewery (`src/ak5e/parse.ts`): every Arts pool, the new Arts, every
+Operator Skill table, the Equipment chapter (so typing an item's name on an Arknights sheet fills it in), and the classes,
+branches, species, nationalities and backgrounds for filling in features. It's stored in the app's data folder
+(`%APPDATA%/Character Sheet/extra/ak5e.json` and `books/ak5e.md`); Settings → Sourcebooks → *Update* fetches it again.
 
-Downloads the book's source from Homebrewery and writes `src/data/extra/ak5e.json` with every Arts pool, the new Arts, every
-Operator Skill table and the Equipment chapter (weapons, armour, weapon properties and items, so typing an item's name on an
-Arknights sheet fills it in), so the Arts library can filter by pool and the Op. Skills page can add skills from the book. Rebuild afterwards.
+For working on the app in a browser, `python tools/import_ak5e.py` writes the same data into `src/data/extra` and
+`src/data/book` (both gitignored), which only the development preview reads.
 
 ## Credits
 
@@ -115,4 +129,6 @@ licensed under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/), via [5
 The class, species, background and feat data used to fill in features is from the System Reference Document 5.2.1 by
 Wizards of the Coast LLC, licensed under CC-BY-4.0.
 This is unofficial fan software, not affiliated with Wizards of the Coast, Hypergryph or Yostar.
-Arknights 5e is a fan homebrew by its own authors; its text is imported locally from your own copy and is not part of this repository.
+Arknights 5e is a fan homebrew by its own authors; the app downloads it from Homebrewery onto your own computer, and none
+of its text is part of this repository or the installer. The 2024 rules PDF is downloaded from D&D Beyond the same way.
+PDF pages are drawn with [PDF.js](https://mozilla.github.io/pdf.js/) (Apache-2.0).

@@ -22,13 +22,17 @@ import './styles/skins/hollow.css'
 import './styles/skins/honkai.css'
 import './styles/skins/arknights.css'
 import './styles/book.css'
-import App from './App'
 import { installZoom } from './zoom'
+import { loadRuntimeData } from './data/runtime'
 
 installZoom()
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)
+// the downloaded book data has to be in place before the libraries built from it load
+loadRuntimeData().then(async () => {
+  const { default: App } = await import('./App')
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  )
+})

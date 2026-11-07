@@ -5,8 +5,8 @@
 Reads, from your copy of the PDF:
   * the class spell list ("CANTRIPS (LEVEL 0 PSION SPELLS)", "LEVEL 1 PSION SPELLS", ...)
   * full spell write-ups in the PDF's SPELLS section
-and writes src/data/extra/<pdf-name>.json, which the app merges into its library on the next start.
-Nothing is uploaded anywhere; the output stays in this project folder.
+and writes <pdf-name>.json into the app's data folder (%APPDATA%/Character Sheet/extra), which the app merges into
+its library on the next start. Nothing is uploaded anywhere, and nothing goes into this project.
 """
 import json
 import os
@@ -20,7 +20,7 @@ except ImportError:
 
 SCHOOLS = {"Abjuration", "Conjuration", "Divination", "Enchantment", "Evocation", "Illusion", "Necromancy", "Transmutation"}
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT_DIR = os.path.join(HERE, "..", "src", "data", "extra")
+OUT_DIR = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~/.config"), "Character Sheet", "extra")
 
 
 def page_lines(doc):

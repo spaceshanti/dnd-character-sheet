@@ -1,4 +1,5 @@
 import { marked } from 'marked'
+import { bookText } from '../data/runtime'
 
 /*
  * The Arknights 5e sourcebook, read from the Homebrewery markdown that tools/import_ak5e.py saves
@@ -24,15 +25,13 @@ export interface BookSection {
   text: string
 }
 
-const files = import.meta.glob('../data/book/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>
-
-export const hasBook = () => Object.keys(files).length > 0
+export const hasBook = () => !!bookText('ak5e')
 
 let cache: Promise<BookSection[]> | null = null
 export function loadBook(): Promise<BookSection[]> {
-  const load = Object.values(files)[0]
-  if (!load) return Promise.resolve([])
-  cache ??= load().then(split)
+  const md = bookText('ak5e')
+  if (!md) return Promise.resolve([])
+  cache ??= Promise.resolve().then(() => split(md))
   return cache
 }
 

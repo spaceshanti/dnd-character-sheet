@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore, useUI } from './store'
 import { TopBar } from './components/TopBar'
 import { LeftDock } from './components/LeftDock'
@@ -17,6 +17,7 @@ import { SettingsPage } from './pages/Settings'
 import { OperatorSkillsPage } from './pages/OperatorSkills'
 import { BookViewer } from './components/BookViewer'
 import { systemOf } from './systems'
+import { downloadAk5e, hasAkData, reloadSoon } from './components/BookSetup'
 
 export default function App() {
   const loaded = useStore((s) => s.loaded)
@@ -30,6 +31,19 @@ export default function App() {
   const system = useStore((s) => systemOf(s.chars[s.activeId]))
 
   useEffect(() => { load() }, [load])
+  // the first time an Arknights sheet is opened, the book's data is downloaded onto this computer (once)
+  const [akDownload, setAkDownload] = useState('')
+  useEffect(() => {
+    if (!loaded || !hasChar || system !== 'ak5e' || hasAkData() || !window.sheetApi) return
+    let tries = 0
+    try { tries = +(sessionStorage.getItem('ak5e-download-tried') || 0) } catch { /* private mode */ }
+    if (tries) return
+    try { sessionStorage.setItem('ak5e-download-tried', '1') } catch { /* private mode */ }
+    setAkDownload('Downloading the Arknights 5e book (Arts, gear, classes)…')
+    downloadAk5e()
+      .then(() => { setAkDownload('Arknights 5e book downloaded: loading it…'); reloadSoon() })
+      .catch((e) => setAkDownload(`Couldn't download the Arknights 5e book (${e instanceof Error ? e.message : e}). Try again from Settings → Sourcebooks.`))
+  }, [loaded, hasChar, system])
   useEffect(() => { document.documentElement.dataset.theme = theme }, [theme])
   useEffect(() => { document.documentElement.dataset.skin = skin }, [skin])
   // each game keeps its own UI style: opening an Arknights character switches to its look, and back
@@ -110,6 +124,7 @@ export default function App() {
       <ImagePicker />
       <DrawerHost />
       <BookViewer />
+      {akDownload && <div className="toast show" onClick={() => setAkDownload('')}>{akDownload}</div>}
     </div>
   )
 }
