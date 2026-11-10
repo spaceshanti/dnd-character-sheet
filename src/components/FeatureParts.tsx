@@ -131,8 +131,6 @@ export function FeatureUsageEditor({ f }: { f: Feature }) {
   const upE = (id: string, fn: (e: RestEffect) => void) => upF((x) => { const e = x.restEffects.find((y) => y.id === id); if (e) fn(e) })
   // actions may spend this feature's resources or any other resource on the sheet
   const resOptions = [{ id: '', name: 'Free (no cost)' }, ...c.resources.map((r) => ({ id: r.id, name: resLabel(r) }))]
-  // a die only for resources that have one; ⚙ offers adding one
-  const [dieFor, setDieFor] = useState('')
 
   return (
     <div className="col" style={{ gap: 8 }}>
@@ -143,9 +141,8 @@ export function FeatureUsageEditor({ f }: { f: Feature }) {
             <input className="box-input grow" style={{ minWidth: 120 }} placeholder="Resource name" value={r.name} onChange={(e) => upR(r.id, (x) => { x.name = e.target.value })} />
             <span className="small">max</span>
             <Num min={0} max={999} className="box-input" width={44} value={r.max} onChange={(n) => upR(r.id, (x) => { x.max = n; x.used = Math.min(x.used, n) })} />
-            {(r.die || dieFor === r.id) && <DieSlot value={r.die} width={52} onChange={(v) => upR(r.id, (x) => { x.die = v })} />}
+            <DieSlot value={r.die} width={52} onChange={(v) => upR(r.id, (x) => { x.die = v })} />
             <Select value={r.recharge} onChange={(v) => upR(r.id, (x) => { x.recharge = v })} options={RECHARGES} />
-            {!r.die && dieFor !== r.id && <button className="btn icon sm ghost" title="Give this resource a die (e.g. Psionic Energy Dice: d6)" onClick={() => setDieFor(r.id)}>⚙</button>}
             <button className="btn icon sm" title="Remove resource" onClick={() => patch((d) => {
               d.resources = d.resources.filter((y) => y.id !== r.id)
               for (const ft of d.features) for (const a of ft.actions) if (a.resourceId === r.id) a.resourceId = ''

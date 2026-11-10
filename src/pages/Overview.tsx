@@ -308,14 +308,13 @@ function ResourcesPanel() {
               {feat(r.featureId) && <button className="res-feat" onClick={() => set({ drawer: { kind: 'feature', id: r.featureId } })}>from {feat(r.featureId)}</button>}
             </span>
             <Pips total={r.max} used={r.used} onChange={(u) => up((x) => { x.used = u })} />
-            {/* only resources with a die (Psionic Energy Dice…) show one; adding one is behind ⚙ */}
-            {(r.die || gear === r.id) && <DieSlot value={r.die} width={42} onChange={(v) => up((x) => { x.die = v })} />}
+            <DieSlot value={r.die} width={42} onChange={(v) => up((x) => { x.die = v })} />
             <span className="grow" />
             <span className="small muted">max</span>
             <Num min={0} max={999} className="box-input" width={48} style={{ textAlign: 'center' }} value={r.max} onChange={(n) => up((x) => { x.max = n; x.used = Math.min(x.used, n) })} />
-            {/* when it comes back (and a die, if it uses one): tucked away behind ⚙ to keep the list simple */}
+            {/* when it comes back: tucked away behind ⚙ to keep the list simple */}
             {gear === r.id && <Select value={r.recharge} onChange={(v) => up((x) => { x.recharge = v })} options={RECHARGES} />}
-            <button className={`btn icon sm ghost ${gear === r.id ? 'on' : ''}`} title={`Comes back: ${RECHARGES.find((x) => x.id === r.recharge)?.name ?? r.recharge} (click to change, or give it a die)`}
+            <button className={`btn icon sm ghost ${gear === r.id ? 'on' : ''}`} title={`Comes back: ${RECHARGES.find((x) => x.id === r.recharge)?.name ?? r.recharge} (click to change)`}
               onClick={() => setGear(gear === r.id ? '' : r.id)}>⚙</button>
             <button className="btn icon sm ghost" onClick={() => patch((d) => { d.resources = d.resources.filter((y) => y.id !== r.id) })}>✕</button>
           </div>
