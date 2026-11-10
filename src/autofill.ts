@@ -141,7 +141,13 @@ function effectsOf(f: Feature, text: string, level: number): Effect[] {
   if (hp) fx.push({ id: uid(), target: 'hpMax', type: 'bonus', value: level * (hp[1] ? 2 : 1), note: f.name })
   const m = text.match(/Your (?:Walking )?Speed increases by (\d+) feet/i)
   if (m && !/\bwhile\b[^.]*Speed increases/i.test(text.slice(Math.max(0, (m.index ?? 0) - 80), (m.index ?? 0) + 40))) fx.push({ id: uid(), target: 'speed', type: 'bonus', value: +m[1], note: f.name })
-  if (/When you roll Initiative, you can add your Proficiency Bonus/i.test(text)) fx.push({ id: uid(), target: 'initiative', type: 'bonus', value: 0, note: 'Proficiency Bonus' })
+  if (/When you roll Initiative, you can add your Proficiency Bonus/i.test(text)) fx.push({ id: uid(), target: 'initiative', type: 'proficiency', note: f.name })
+  // Jack of All Trades: half proficiency on checks you're not proficient in (Initiative is a Dexterity check)
+  if (/add half your Proficiency Bonus[^.]*ability check/i.test(text)) {
+    fx.push({ id: uid(), target: 'skill:all', type: 'halfProf', note: f.name }, { id: uid(), target: 'initiative', type: 'halfProf', note: f.name })
+  }
+  // AK5e Tenacious: half proficiency on saving throws you're not proficient in
+  if (/half (?:of )?your Proficiency Bonus[^.]*Saving Throws? you are not Proficient/i.test(text)) fx.push({ id: uid(), target: 'save:all', type: 'halfProf', note: f.name })
   return fx
 }
 

@@ -126,6 +126,7 @@ export const EFFECT_TYPES: { id: EffectType; name: string }[] = [
   { id: 'advantage', name: 'Advantage' },
   { id: 'disadvantage', name: 'Disadvantage' },
   { id: 'proficiency', name: 'Grants proficiency' },
+  { id: 'halfProf', name: 'Half proficiency' },
   { id: 'expertise', name: 'Grants expertise' },
   { id: 'minScore', name: 'Sets score to at least' },
   { id: 'note', name: 'Note only' },

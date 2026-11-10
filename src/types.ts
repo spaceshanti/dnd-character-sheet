@@ -10,7 +10,7 @@ export type SkillKey =
 /** 0 none, 1 proficient, 2 expertise */
 export type ProfLevel = 0 | 1 | 2
 
-export type EffectType = 'bonus' | 'advantage' | 'disadvantage' | 'proficiency' | 'expertise' | 'minScore' | 'note'
+export type EffectType = 'bonus' | 'advantage' | 'disadvantage' | 'proficiency' | 'halfProf' | 'expertise' | 'minScore' | 'note'
 
 /**
  * Something a feature / item / spell does to the sheet.
@@ -23,6 +23,10 @@ export interface Effect {
   type: EffectType
   value?: number
   note?: string
+  /** a custom calculation for the value instead of a fixed number, e.g. "max(1, wis)" (see src/formula.ts) */
+  formula?: string
+  /** proficiency / half / expertise: adds on top of other proficiency instead of only counting when it's the best */
+  stacks?: boolean
 }
 
 export type ActionType = 'none' | 'action' | 'bonus' | 'reaction' | 'free' | 'special'

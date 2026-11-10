@@ -96,6 +96,14 @@ or both as `dnd5e,ak5e`).
 Spell and Art names in the books (Arts pool tables, class spell lists, "you learn the Detect Magic Art") are links: click
 one to read the spell in a card over the page and add it to your character, without leaving the book.
 
+## Feature modifiers
+
+A feature (or item, or spell) can change the sheet: bonuses, advantage, proficiency, **½ proficiency** and expertise on
+saves, skills and Initiative. Proficiency-type modifiers count only when they're your best for that roll (the normal rule)
+unless you tick **stacks**, which adds them on top. For anything a fixed number can't do, the feature editor has
+**⚙ Advanced: custom formulas** at the bottom: modifiers worked out from a formula such as `max(1, wis)` or `half(prof)`,
+with a reference of every variable and function a click away.
+
 ## Class symbols
 
 On Arknights sheets, beside the portrait is a column of marks: class, branch, nationality and faction (click any to change;

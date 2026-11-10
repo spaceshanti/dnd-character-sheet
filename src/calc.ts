@@ -1,5 +1,6 @@
 import { ALL_SKILLS } from './constants'
 import { isAK } from './systems'
+import { tryFormula } from './formula'
 import type { AbilityKey, Attack, Character, Effect, Item, ProfLevel, SkillKey, Stat, WeaponStats } from './types'
 
 export interface Part {
@@ -29,7 +30,33 @@ export function activeEffects(c: Character): ActiveEffect[] {
   for (const f of c.features) if (f.active) for (const e of f.effects) out.push({ effect: e, source: f.name || 'Feature', kind: 'feature', sourceId: f.id })
   for (const i of c.items) if (itemIsActive(i)) for (const e of i.effects) out.push({ effect: e, source: i.name || 'Item', kind: 'item', sourceId: i.id })
   for (const s of c.spells) if (s.active) for (const e of s.effects) out.push({ effect: e, source: s.name || 'Spell', kind: 'spell', sourceId: s.id })
-  return out
+  return withFormulas(c, out)
+}
+
+/**
+ * The variables a custom formula can use (see src/formula.ts). Ability modifiers count every effect except other
+ * formulas, so a formula can't end up depending on itself.
+ */
+export function formulaVars(c: Character, effects: ActiveEffect[] = activeEffects(c)): Record<string, number> {
+  const fixed = effects.filter((a) => !a.effect.formula)
+  const v: Record<string, number> = {
+    level: Math.max(1, Math.floor(c.level) || 1), prof: profBonus(c), hitDice: c.hitDice.reduce((s, h) => s + h.total, 0),
+    ap: c.ak?.ap.max ?? 0, artLevel: c.ak?.maxArtLevel ?? 0,
+  }
+  for (const k of ['str', 'dex', 'con', 'int', 'wis', 'cha'] as AbilityKey[]) {
+    const a = ability(c, k, fixed)
+    v[k] = a.mod
+    v[`${k}Score`] = a.score
+  }
+  v.spellMod = c.spellAbility ? v[c.spellAbility] : 0
+  return v
+}
+
+/** effects with a formula get their value worked out now */
+function withFormulas(c: Character, list: ActiveEffect[]): ActiveEffect[] {
+  if (!list.some((a) => a.effect.formula)) return list
+  const vars = formulaVars(c, list)
+  return list.map((a) => (a.effect.formula ? { ...a, effect: { ...a.effect, value: tryFormula(a.effect.formula, vars).value } } : a))
 }
 
 /** Effects that exist but are switched off (shown dimmed in breakdowns). */
@@ -38,7 +65,7 @@ export function inactiveEffects(c: Character): ActiveEffect[] {
   for (const f of c.features) if (!f.active) for (const e of f.effects) out.push({ effect: e, source: f.name || 'Feature', kind: 'feature', sourceId: f.id })
   for (const i of c.items) if (!itemIsActive(i)) for (const e of i.effects) out.push({ effect: e, source: i.name || 'Item', kind: 'item', sourceId: i.id })
   for (const s of c.spells) if (!s.active) for (const e of s.effects) out.push({ effect: e, source: s.name || 'Spell', kind: 'spell', sourceId: s.id })
-  return out
+  return withFormulas(c, out)
 }
 
 const forTargets = (list: ActiveEffect[], targets: string[]) => list.filter((a) => targets.includes(a.effect.target))
@@ -92,16 +119,34 @@ function collect(effects: ActiveEffect[], targets: string[]) {
   const notes: string[] = []
   const bonuses: Part[] = []
   let prof = 0
+  // proficiency that adds on top of the rest (each its own line in the breakdown)
+  const stacked: { label: string; level: number }[] = []
   for (const a of forTargets(effects, targets)) {
     const e = a.effect
     if (e.type === 'advantage') adv.push(a.source + (e.note ? ` — ${e.note}` : ''))
     else if (e.type === 'disadvantage') dis.push(a.source + (e.note ? ` — ${e.note}` : ''))
     else if (e.type === 'note') notes.push(`${a.source}: ${e.note ?? ''}`)
     else if (e.type === 'bonus') bonuses.push({ label: a.source, value: e.value ?? 0 })
-    else if (e.type === 'proficiency') prof = Math.max(prof, 1)
-    else if (e.type === 'expertise') prof = Math.max(prof, 2)
+    else if (e.type === 'proficiency' || e.type === 'halfProf' || e.type === 'expertise') {
+      const level = e.type === 'expertise' ? 2 : e.type === 'halfProf' ? 0.5 : 1
+      if (e.stacks) stacked.push({ label: a.source, level })
+      else prof = Math.max(prof, level)
+    }
   }
-  return { adv, dis, notes, bonuses, prof }
+  return { adv, dis, notes, bonuses, prof, stacked }
+}
+
+/** what proficiency adds at a level: ½ (rounded down), 1× or 2× the bonus */
+function profPart(level: number, pb: number, label?: string): Part {
+  const what = level === 0.5 ? 'Half proficiency' : level === 2 ? 'Expertise' : 'Proficiency'
+  return { label: label ? `${label} (${what.toLowerCase()}, stacks)` : what, value: level === 0.5 ? Math.floor(pb / 2) : pb * level }
+}
+
+/** the proficiency lines for a roll: the best one, then any that stack; and the level shown on its pip */
+function profParts(level: number, stacked: { label: string; level: number }[], pb: number): { parts: Part[]; shown: number } {
+  const parts = level ? [profPart(level, pb)] : []
+  for (const s of stacked) parts.push(profPart(s.level, pb, s.label))
+  return { parts, shown: Math.min(2, level + stacked.reduce((n, s) => n + s.level, 0)) }
 }
 
 export function save(c: Character, k: AbilityKey, effects = activeEffects(c)): RollInfo {
@@ -109,13 +154,11 @@ export function save(c: Character, k: AbilityKey, effects = activeEffects(c)): R
   const col = collect(effects, [`save:${k}`, 'save:all'])
   const base = c.saveProf[k]
   const level = Math.max(base, col.prof)
-  const pb = profBonus(c)
-  const parts: Part[] = [{ label: `${k.toUpperCase()} modifier`, value: ab.mod }]
-  if (level) parts.push({ label: level === 2 ? 'Expertise' : 'Proficiency', value: pb * level })
-  parts.push(...col.bonuses)
+  const pp = profParts(level, col.stacked, profBonus(c))
+  const parts: Part[] = [{ label: `${k.toUpperCase()} modifier`, value: ab.mod }, ...pp.parts, ...col.bonuses]
   return {
     total: parts.reduce((s, p) => s + p.value, 0),
-    parts, adv: col.adv, dis: col.dis, notes: col.notes, profLevel: level, baseProf: base,
+    parts, adv: col.adv, dis: col.dis, notes: col.notes, profLevel: pp.shown, baseProf: base,
   }
 }
 
@@ -125,16 +168,12 @@ export function skill(c: Character, key: SkillKey, effects = activeEffects(c)): 
   const col = collect(effects, [`skill:${key}`, 'skill:all'])
   const base: ProfLevel = c.skillProf[key]
   let level: number = Math.max(base, col.prof)
-  const pb = profBonus(c)
-  const parts: Part[] = [{ label: `${def.ability.toUpperCase()} modifier`, value: ab.mod }]
-  if (level === 0 && c.halfProfAll) {
-    parts.push({ label: 'Half proficiency', value: Math.floor(pb / 2) })
-    level = 0.5
-  } else if (level) parts.push({ label: level === 2 ? 'Expertise' : 'Proficiency', value: pb * level })
-  parts.push(...col.bonuses)
+  if (level === 0 && c.halfProfAll) level = 0.5
+  const pp = profParts(level, col.stacked, profBonus(c))
+  const parts: Part[] = [{ label: `${def.ability.toUpperCase()} modifier`, value: ab.mod }, ...pp.parts, ...col.bonuses]
   return {
     total: parts.reduce((s, p) => s + p.value, 0),
-    parts, adv: col.adv, dis: col.dis, notes: col.notes, profLevel: level, baseProf: base,
+    parts, adv: col.adv, dis: col.dis, notes: col.notes, profLevel: pp.shown, baseProf: base,
   }
 }
 
@@ -185,6 +224,9 @@ export function statInfo(c: Character, key: StatKey, effects = activeEffects(c))
     baseLabel = 'DEX modifier'
     baseValue = ability(c, 'dex', effects).mod
     if (stat.base) adds.push({ label: 'Misc', value: stat.base })
+    // Alert's proficiency, Jack of All Trades' half
+    const ic = collect(effects, ['initiative'])
+    for (const p of profParts(ic.prof, ic.stacked, profBonus(c)).parts) adds.push({ ...p, fromEffect: true })
   } else if (key === 'speed') baseLabel = 'Walking speed'
   else if (key === 'hpMax') baseLabel = 'Hit point maximum'
   for (const sh of worn.filter((i) => i.armor!.kind === 'shield')) adds.push({ label: sh.name || 'Shield', value: sh.armor!.ac + (sh.armor!.bonus || 0), fromEffect: true })

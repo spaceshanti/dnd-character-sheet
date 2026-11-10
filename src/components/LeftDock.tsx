@@ -30,11 +30,11 @@ function Pip({ level, kind, granted, onClick }: { level: number; kind: 'save' | 
     <button
       className={`pip ${shape} ${level >= 1 ? 'on' : ''}`}
       style={{
-        ...(level === 2 ? { boxShadow: 'inset 0 0 0 2px var(--panel)' } : {}),
+        ...(level >= 2 ? { boxShadow: 'inset 0 0 0 2px var(--panel)' } : {}),
         ...(level === 0.5 ? { background: 'linear-gradient(90deg, var(--ink) 50%, transparent 50%)' } : {}),
         ...(granted ? { borderStyle: 'dashed', borderColor: 'var(--accent)' } : {}),
       }}
-      title={granted ? 'Granted by a feature or item' : level === 2 ? 'Expertise' : level === 1 ? 'Proficient' : level === 0.5 ? 'Half proficiency' : 'Not proficient'}
+      title={granted ? 'Granted by a feature or item' : level >= 2 ? 'Expertise' : level > 1 ? 'Proficient, plus more that stacks' : level === 1 ? 'Proficient' : level === 0.5 ? 'Half proficiency' : 'Not proficient'}
       onClick={(e) => { e.stopPropagation(); onClick() }}
     />
   )

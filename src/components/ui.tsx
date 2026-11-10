@@ -244,8 +244,9 @@ export const ActionSelect = ({ value, onChange }: { value: Parameters<typeof Sel
 
 function allowedTypes(target: string): EffectType[] {
   if (target.startsWith('ability:')) return ['bonus', 'minScore', 'note']
-  if (target.startsWith('save:') || target.startsWith('skill:')) return ['advantage', 'disadvantage', 'bonus', 'proficiency', 'expertise', 'note']
-  if (target === 'initiative' || target === 'attack') return ['bonus', 'advantage', 'disadvantage', 'note']
+  if (target.startsWith('save:') || target.startsWith('skill:')) return ['advantage', 'disadvantage', 'bonus', 'proficiency', 'halfProf', 'expertise', 'note']
+  if (target === 'initiative') return ['bonus', 'advantage', 'disadvantage', 'proficiency', 'halfProf', 'note']
+  if (target === 'attack') return ['bonus', 'advantage', 'disadvantage', 'note']
   return ['bonus', 'note']
 }
 
@@ -280,6 +281,11 @@ export function EffectsEditor({ effects, onChange, bare = false }: { effects: Ef
             </select>
             {(e.type === 'bonus' || e.type === 'minScore') && (
               <Num className="box-input n" width={56} value={e.value ?? 0} onChange={(n) => set(e.id, { value: n })} />
+            )}
+            {(e.type === 'proficiency' || e.type === 'halfProf' || e.type === 'expertise') && (
+              <label className="row small fx-stack" title="Off: only counts when it's your best proficiency for that roll (the normal rule). On: adds on top of any other proficiency.">
+                <input type="checkbox" checked={!!e.stacks} onChange={(ev) => set(e.id, { stacks: ev.target.checked || undefined })} /> stacks
+              </label>
             )}
             <input className="box-input grow" style={{ minWidth: 90 }} placeholder="note (optional)" value={e.note ?? ''} onChange={(ev) => set(e.id, { note: ev.target.value })} />
             <button className="btn icon sm" onClick={() => onChange(effects.filter((x) => x.id !== e.id))}>✕</button>

@@ -197,7 +197,7 @@ export function FeatureChangesEditor({ f }: { f: Feature }) {
   const [addingSpell, setAddingSpell] = useState(false)
   const upF = (fn: (x: Feature) => void) => patch((d) => { const x = d.features.find((y) => y.id === f.id); if (x) fn(x) })
   const spells = c.spells.filter((sp) => sp.grantedBy === f.id).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
-  const nothing = !f.effects.length && !spells.length && !f.masteries.length && !addingSpell && !f.actionMods.length
+  const nothing = !f.effects.some((e) => e.formula === undefined) && !spells.length && !f.masteries.length && !addingSpell && !f.actionMods.length
   const choices = actionChoices(c, f.id)
   const upM = (id: string, fn: (m: ActionMod) => void) => upF((x) => { const m = x.actionMods.find((y) => y.id === id); if (m) fn(m) })
 
@@ -224,7 +224,8 @@ export function FeatureChangesEditor({ f }: { f: Feature }) {
       </div>
       <div className="fx">
         {nothing && <div className="muted small" style={{ marginBottom: 6 }}>Nothing yet. Add a bonus or proficiency, a spell it grants, weapon mastery, or something it adds to another feature's action.</div>}
-        <EffectsEditor bare effects={f.effects} onChange={(e) => upF((x) => { x.effects = e })} />
+        <EffectsEditor bare effects={f.effects.filter((e) => e.formula === undefined)}
+          onChange={(e) => upF((x) => { x.effects = [...e, ...x.effects.filter((y) => y.formula !== undefined)] })} />
 
         {spells.map((sp) => (
           <div key={sp.id} className="fx-row change-row">

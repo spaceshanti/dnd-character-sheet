@@ -17,7 +17,7 @@ import { longRestOn } from '../rest'
 import type { AbilityKey, Attack, Effect } from '../types'
 
 const effectText = (e: Effect) =>
-  `${targetName(e.target)} ${e.type === 'bonus' ? signed(e.value ?? 0) : e.type === 'minScore' ? `≥ ${e.value}` : e.type}`
+  `${targetName(e.target)} ${e.formula !== undefined ? `= ${e.formula}` : e.type === 'bonus' ? signed(e.value ?? 0) : e.type === 'minScore' ? `≥ ${e.value}` : e.type === 'halfProf' ? '½ proficiency' : e.type}`
 
 export function Overview() {
   const c = useChar()

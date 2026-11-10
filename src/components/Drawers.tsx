@@ -12,6 +12,8 @@ import { RichArea, RichText } from './RichText'
 import { FeatureChangesEditor, FeatureUsage, FeatureUsageEditor } from './FeatureParts'
 import { targetName } from '../constants'
 import type { Effect, Feature, FeatureCategory, Spell } from '../types'
+import { FormulaModifiers, formulaText } from './FormulaEditor'
+import { formulaVars } from '../calc'
 
 export function DrawerHost() {
   const drawer = useUI((s) => s.drawer)
@@ -20,12 +22,15 @@ export function DrawerHost() {
 }
 
 function EffectSummary({ effects }: { effects: Effect[] }) {
+  const c = useChar()
   if (!effects.length) return null
+  const vars = effects.some((e) => e.formula !== undefined) ? formulaVars(c) : {}
   return (
     <div className="row" style={{ flexWrap: 'wrap', gap: 5 }}>
       {effects.map((e) => (
         <span key={e.id} className={`chip ${e.type === 'advantage' ? 'adv' : e.type === 'disadvantage' ? 'dis' : 'accent'}`}>
-          {targetName(e.target)}: {e.type === 'bonus' ? (e.value ?? 0) >= 0 ? `+${e.value ?? 0}` : e.value : e.type === 'minScore' ? `≥ ${e.value}` : e.type}
+          {targetName(e.target)}: {e.formula !== undefined ? formulaText(e, vars) : e.type === 'bonus' ? (e.value ?? 0) >= 0 ? `+${e.value ?? 0}` : e.value : e.type === 'minScore' ? `≥ ${e.value}` : e.type === 'halfProf' ? '½ proficiency' : e.type}
+          {e.stacks ? ' (stacks)' : ''}
           {e.note ? ` (${e.note})` : ''}
         </span>
       ))}
@@ -327,6 +332,7 @@ export function FeatureDrawer({ id }: { id: string }) {
           </label>
           <FeatureChangesEditor f={f} />
           <FeatureUsageEditor f={f} />
+          <FormulaModifiers f={f} />
           <div className="row" style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
             <span className="grow" />
             {remove}
