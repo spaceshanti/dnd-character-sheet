@@ -183,7 +183,7 @@
 /* top bar */
 [data-skin='honkai'] .topbar { background: var(--hi-topbar); box-shadow: 0 6px 20px var(--shadow); border-bottom: 3px solid transparent; border-image: var(--hi-grad-pink) 1; }
 [data-skin='honkai'] .top-portrait { border: 2px solid var(--accent); border-radius: 0; clip-path: var(--cut); box-shadow: none; }
-[data-skin='honkai'] .name-banner input { font-weight: 800; font-style: italic; font-size: 21px; letter-spacing: 0.03em; border-bottom: 2px solid var(--accent); }
+[data-skin='honkai'] .name-banner .name-in { font-weight: 800; font-style: italic; font-size: 21px; letter-spacing: 0.03em; border-bottom: 2px solid var(--accent); }
 [data-skin='honkai'] .name-banner label { color: var(--accent); font-weight: 700; }
 [data-skin='honkai'] .vbox {
   border: none; border-radius: 0; box-shadow: none; background: var(--hi-card); clip-path: var(--cut-sm);

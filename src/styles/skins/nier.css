@@ -73,7 +73,7 @@
 /* top bar */
 [data-skin='nier'] .topbar { background: var(--panel); border-bottom: 1px solid var(--ink2); box-shadow: 0 4px 0 rgba(74, 71, 64, 0.12); }
 [data-skin='nier'] .top-portrait { border-radius: 0; border-width: 1px; box-shadow: 4px 4px 0 rgba(74, 71, 64, 0.2); }
-[data-skin='nier'] .name-banner input { font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-size: 18px; border-bottom-width: 1px; }
+[data-skin='nier'] .name-banner .name-in { font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-size: 18px; border-bottom-width: 1px; }
 [data-skin='nier'] .vbox { border-radius: 0; border-width: 1px; box-shadow: var(--nier-drop); }
 [data-skin='nier'] .vbox:hover { background: var(--accent-soft); border-color: var(--ink); }
 [data-skin='nier'] .vbox .v { font-weight: 600; }

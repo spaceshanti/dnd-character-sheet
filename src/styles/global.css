@@ -191,11 +191,11 @@ input[type='number']::-webkit-inner-spin-button { display: none; }
 .top-main { min-width: 0; }
 .banner { display: flex; align-items: center; gap: 12px; padding: 5px 12px 2px; }
 .name-banner { flex: 0 0 230px; display: flex; flex-direction: column; justify-content: center; }
-.name-banner input {
+.name-banner .name-in {
   font-family: var(--font-head); font-size: 19px; font-weight: 700; letter-spacing: 0.02em; width: 100%;
   border-bottom: 2px solid var(--ink); padding: 0 2px 1px; text-overflow: ellipsis;
 }
-.name-banner input:focus { background: var(--accent-soft); border-bottom-color: var(--accent); }
+.name-banner .name-in:focus { background: var(--accent-soft); border-bottom-color: var(--accent); }
 .name-banner label { font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink2); font-family: var(--font-head); }
 .details { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px 12px; align-content: center; }
 .details .field > input, .details .line-input { font-size: 13px; font-weight: 600; }
@@ -820,3 +820,6 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 .name-banner .codename { font-family: var(--font-head); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); line-height: 1.1; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .name-label-row { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
 .name-label-row .nickname { font-size: 11px; font-style: italic; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* the name: a box that wraps instead of cutting the name off (see NameBox) */
+.name-banner textarea.name-in { resize: none; overflow: hidden; display: block; line-height: 1.15; background: transparent; color: inherit; border-left: none; border-right: none; border-top: none; border-radius: 0; outline: none; white-space: pre-wrap; overflow-wrap: anywhere; }

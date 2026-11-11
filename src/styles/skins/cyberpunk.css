@@ -106,7 +106,7 @@
 /* top bar */
 [data-skin='cyberpunk'] .topbar { background: rgba(9, 11, 15, 0.97); border-bottom: 1px solid var(--cp-red); box-shadow: 0 0 22px rgba(255, 70, 85, 0.25); }
 [data-skin='cyberpunk'] .top-portrait { border-radius: 0; border: 1px solid var(--cp-red); box-shadow: 0 0 12px rgba(255, 70, 85, 0.35); clip-path: var(--cut); }
-[data-skin='cyberpunk'] .name-banner input {
+[data-skin='cyberpunk'] .name-banner .name-in {
   color: var(--accent); text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; font-size: 21px;
   border-bottom: 1px solid var(--cp-red); text-shadow: 0 0 10px rgba(252, 238, 10, 0.35);
 }

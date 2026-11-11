@@ -142,7 +142,7 @@
 [data-skin='arknights'] .topbar::after { content: ''; position: absolute; left: 0; right: 0; bottom: -8px; height: 6px; background: var(--rk-stripe); opacity: .55; pointer-events: none; }
 [data-skin='arknights'] .topbar { --ink: #f0f0ee; --ink2: #a9adb4; --muted: #6c7078; --line: #34373e; --panel: #1c1e22; --panel2: #24272c; --accent: #ffd23f; --accent-soft: rgba(255, 210, 63, 0.13); color-scheme: dark; }
 [data-skin='arknights'] .top-portrait { border-radius: 0; border: 1px solid #3b3f46; clip-path: var(--rk-cut); }
-[data-skin='arknights'] .name-banner input { font-family: var(--font-head); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 22px; border-bottom: 2px solid #ffd23f; }
+[data-skin='arknights'] .name-banner .name-in { font-family: var(--font-head); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 22px; border-bottom: 2px solid #ffd23f; }
 [data-skin='arknights'] .name-banner label { color: var(--ink2); letter-spacing: .2em; }
 [data-skin='arknights'] .vbox { border-radius: 0; border: 1px solid var(--line); box-shadow: none; background: var(--panel); clip-path: var(--rk-cut-sm); }
 [data-skin='arknights'] .vbox:hover { border-color: #ffd23f; }

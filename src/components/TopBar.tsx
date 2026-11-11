@@ -137,7 +137,7 @@ export function TopBar() {
           <div className="name-banner">
             {/* Arknights: the operator codename, when one's been assigned, sits just above the name */}
             {ak && c.ak.codename.trim() && <div className="codename" title="Operator codename (set on the Character page)">{c.ak.codename}</div>}
-            <FitInput minSize={12} value={c.name} placeholder="Character name" onChange={(e) => patch((d) => { d.name = e.target.value })} />
+            <NameBox value={c.name} onChange={(v) => patch((d) => { d.name = v })} />
             <div className="name-label-row">
               <label>Character Name</label>
               {c.nickname?.trim() && <span className="nickname" title="Nickname (set on the Character page)">“{c.nickname.trim()}”</span>}
@@ -433,5 +433,43 @@ function HitDiceEditor({ anchor, onClose }: { anchor: HTMLElement | null; onClos
       <button className="btn sm" onClick={() => patch((d) => { d.hitDice.push({ id: uid(), die: 8, total: Math.max(1, d.level), spent: 0 }) })}>＋ Add hit die</button>
       <div className="muted small" style={{ marginTop: 6 }}>Filled circle = still available. Click to spend one.</div>
     </Popover>
+  )
+}
+
+/**
+ * The character's name, never cut off: the text shrinks to fit the line, then wraps onto a second line (shrinking
+ * more if it has to), and a very long name gets a third line rather than losing its end.
+ */
+function NameBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const fit = () => {
+      el.style.fontSize = ''
+      el.style.height = 'auto'
+      const base = parseFloat(getComputedStyle(el).fontSize)
+      const lines = () => {
+        el.style.height = 'auto'
+        const lh = parseFloat(getComputedStyle(el).lineHeight) || parseFloat(el.style.fontSize || String(base)) * 1.2
+        return Math.round((el.scrollHeight - parseFloat(getComputedStyle(el).paddingTop) - parseFloat(getComputedStyle(el).paddingBottom)) / lh)
+      }
+      let size = base
+      // one line, down to a readable size
+      while (lines() > 1 && size > 13) { size -= 0.5; el.style.fontSize = `${size}px` }
+      // then two lines, smaller again if it must
+      while (lines() > 2 && size > 9) { size -= 0.5; el.style.fontSize = `${size}px` }
+      // the box's own underline isn't part of scrollHeight
+      el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`
+    }
+    fit()
+    const ro = new ResizeObserver(fit)
+    ro.observe(el.parentElement ?? el)
+    return () => ro.disconnect()
+  }, [value])
+  return (
+    <textarea ref={ref} className="name-in" rows={1} value={value} placeholder="Character name" spellCheck={false}
+      onChange={(e) => onChange(e.target.value.replace(/\n/g, ' '))}
+      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() } }} />
   )
 }
