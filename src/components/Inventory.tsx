@@ -71,6 +71,22 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
   const [q, setQ] = useState('')
   const [over, setOver] = useState('')
   const [draft, setDraft] = useState('')
+  // older items, added before weights / worth were filled in: look them up in the books
+  const lookup = (it: Item) => {
+    const sys = systemOf(c)
+    const lib = bestItemFor(it.name, sys)
+    const kind = it.weapon?.kind || ''
+    const base = kind ? bestItemFor(kind, sys) : undefined
+    return { w: lib?.w || baseItemWeight(lib?.d ?? it.description, sys) || base?.w || 0, c: lib?.c || base?.c || '' }
+  }
+  const missing = c.items.filter((it) => { if (it.weight && it.value) return false; const l = lookup(it); return (!it.weight && l.w) || (!it.value && l.c) }).length
+  const fillMissing = () => patch((d) => {
+    for (const it of d.items) {
+      const l = lookup(it)
+      if (!it.weight && l.w) it.weight = l.w
+      if (!it.value && l.c) it.value = l.c
+    }
+  })
 
   const w = totalWeight(c)
   const cap = carryCapacity(c)
@@ -119,6 +135,7 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
         </div>
       }
     >
+      <div className="inv-wrap">
       <div className="inv">
         {/* equipped */}
         <div>
@@ -163,7 +180,7 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
             onDrop={(e) => { e.preventDefault(); setOver(''); const id = e.dataTransfer.getData('text/item'); if (id) equip(id, '') }}
           >
             <div className="gear-list">
-              <div className="gear-row head"><span /><span>Item</span><span style={{ textAlign: 'center' }}>Qty</span><span style={{ textAlign: 'right' }}>lb ea.</span><span /><span /></div>
+              <div className="gear-row head"><span /><span>Item</span><span style={{ textAlign: 'center' }}>Qty</span><span style={{ textAlign: 'right' }}>lb ea.</span><span style={{ textAlign: 'right' }}>Worth</span><span /><span /></div>
               {list.map((it) => (
                 <div key={it.id} className={`gear-row ${it.id === sel ? 'sel' : ''} ${it.slot ? 'worn' : ''}`} onClick={() => set({ inventorySelected: it.id })}>
                   <span className={`grip ${rarityClass(it)}`} title="Drag to an equipment slot" {...drag(it)}><Icon name={itemIcon(it)} className="gico" /></span>
@@ -183,6 +200,8 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
                     </span>
                   </span>
                   <Num min={0} className="lb-in" value={it.weight} onChange={(n) => up(it.id, (x) => { x.weight = n })} />
+                  <input className="worth-in" value={it.value} placeholder="—" title={it.value ? `Worth ${it.value} each` : 'Worth (e.g. 15 gp)'}
+                    onClick={(e) => e.stopPropagation()} onChange={(e) => up(it.id, (x) => { x.value = e.target.value })} />
                   <button className="btn sm ghost" title="Details" onClick={(e) => { e.stopPropagation(); set({ inventorySelected: it.id }) }}>›</button>
                   <button className="btn sm ghost" title="Remove"
                     onClick={(e) => { e.stopPropagation(); if (sel === it.id) set({ inventorySelected: '' }); patch((d) => { d.items = d.items.filter((y) => y.id !== it.id) }) }}>✕</button>
@@ -194,7 +213,14 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
                   onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} />
               </div>
             </div>
-            <div className="muted small" style={{ marginTop: 6 }}>Standard weapons and armor fill in their stats automatically. Click a line to add more detail.</div>
+            <div className="row" style={{ marginTop: 6, gap: 8 }}>
+              <span className="muted small grow">Standard weapons and armor fill in their stats automatically. Click a line to add more detail.</span>
+              {missing > 0 && (
+                <button className="btn sm ghost" title="Look up items without a weight or worth in the books (SRD / Arknights 5e)" onClick={fillMissing}>
+                  Fill in missing weights &amp; worth ({missing})
+                </button>
+              )}
+            </div>
           </div>
 
           {isAK(c) ? (
@@ -223,6 +249,7 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
           {selected ? <ItemEditor key={selected.id} item={selected} />
             : <div className="empty">Click an item to expand it: weapon stats, armor, magic properties, notes.</div>}
         </div>
+      </div>
       </div>
     </Modal>
   )

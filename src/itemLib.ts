@@ -35,8 +35,10 @@ export function bestItemFor(name: string, sys: SystemId): LibItem | undefined {
   return dnd && { ...dnd, c: toLmd(dnd.c) }
 }
 
-/** "Crossbow Bolts" / "crossbow bolt", "Rope, hempen (50 feet)" / "rope": compare loosely. */
-const key = (n: string) => n.toLowerCase().replace(/[’']/g, "'").replace(/\s*\(.*?\)\s*/g, ' ').replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ').trim()
+/** "Crossbow Bolts" / "crossbow bolt", "Rope, hempen (50 feet)" / "rope", "Travelers Clothes" / "Traveler's Clothes": compare loosely. */
+const key = (n: string) => n.toLowerCase().replace(/[’']/g, '').replace(/armour/g, 'armor').replace(/\s*\(.*?\)\s*/g, ' ').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim()
+/** an item name's words, singular, without filler words, in a fixed order */
+const words = (k: string) => singular(k).split(' ').filter((w) => w && !['of', 'the', 'a', 'an', 'set'].includes(w)).sort().join(' ')
 const singular = (k: string) => k.split(' ').map((w) => (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w)).join(' ')
 
 /** Best library entry for a name: exact name first, then singular/plural, then the part before a comma. Prefers text, then 2024. */
@@ -60,7 +62,14 @@ function bestIn(lib: LibItem[], name: string): LibItem | undefined {
   if (m.length) return pick(m)
   m = lib.filter((i) => singular(key(i.n)) === singular(k))
   if (m.length) return pick(m)
+  // "Clothes, Traveler's" in the book is "Traveler's Clothes" on a sheet
+  m = lib.filter((i) => i.n.includes(',') && singular(key(i.n.split(',').slice(1).join(' ') + ' ' + i.n.split(',')[0])) === singular(k))
+  if (m.length) return pick(m)
   m = lib.filter((i) => singular(key(i.n.split(',')[0])) === singular(k))
+  if (m.length) return pick(m)
+  // the same words in any order, ignoring "of" / "the": "Healing Potion" is a "Potion of Healing", "Hempen Rope" a "Rope, hempen"
+  const bag = words(k)
+  m = lib.filter((i) => words(key(i.n.replace(/\(.*?\)/g, ' '))) === bag)
   if (m.length) return pick(m)
   // magic "+N" versions: only when the name had a +N
   if (/\+[1-3]\b/.test(name)) { m = lib.filter((i) => /\+1\/\+2\/\+3/.test(i.n) && base(i.n) === k); if (m.length) return pick(m) }

@@ -353,7 +353,16 @@ table.t tr.hov:hover td { background: var(--panel2); cursor: pointer; }
 .seg button.on { background: var(--ink); color: var(--panel); }
 
 /* ---------- inventory ---------- */
-.inv { display: grid; grid-template-columns: 250px 1fr 300px; gap: 14px; min-height: 480px; }
+.inv { display: grid; grid-template-columns: 230px minmax(0, 1fr) 300px; gap: 14px; min-height: 480px; }
+/* the item list never gets squeezed: on a narrower window the details go below it, then everything stacks */
+.inv-wrap { container: inv / inline-size; }
+@container inv (max-width: 1000px) {
+  .inv { grid-template-columns: 210px minmax(0, 1fr); }
+  .inv > :nth-child(3) { grid-column: 1 / -1; }
+}
+@container inv (max-width: 640px) {
+  .inv { grid-template-columns: minmax(0, 1fr); }
+}
 .slot-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
 .eq-slot, .tile {
   position: relative; background: var(--slot); border: 2px solid var(--slot-border); border-radius: 9px; aspect-ratio: 1; display: grid; place-items: center;
@@ -539,7 +548,8 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 .char-new .plus { font-size: 40px; line-height: 1; }
 
 /* ---------- inventory item details ---------- */
-.gear-row { grid-template-columns: 22px minmax(0, 1fr) 60px 54px 22px 22px; cursor: pointer; }
+.gear-row { grid-template-columns: 22px minmax(120px, 1fr) 54px 44px 64px 20px 20px; gap: 5px; cursor: pointer; }
+.gear-row .worth-in { text-align: right; color: var(--ink2); font-size: 12px; }
 .gear-row.worn input { font-weight: 600; }
 .gear-row .grip { width: 22px; height: 22px; border-radius: 5px; background: var(--slot); color: var(--slot-ink); border: 1px solid var(--slot-border); }
 .gear-row .grip .gico { color: inherit; font-size: 14px; }
