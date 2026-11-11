@@ -8,6 +8,8 @@
  */
 
 export const AK5E_SOURCE_URL = 'https://homebrewery.naturalcrit.com/source/mt8mcG6iRDbv'
+/** bumped when reading the book improves: a book already downloaded is read again (from the copy on this computer) */
+export const AK5E_PARSE_VERSION = 2
 const BOOK = 'Arknights 5e'
 
 /* ---------- small helpers that behave like Python's string methods ---------- */
@@ -337,7 +339,9 @@ function h5Features(block: string) {
 
 /** each '### Name' heading's block, to the next one */
 function headBlocks(ch: string) {
-  const heads = [...ch.matchAll(/^### (.+?)\s*$/gm)]
+  // a summon's stat block has its own "### Actions" / "### Reactions": those belong to the species around them
+  // (Gargoyle's To Speak with Stone comes after its Earthen Golem stat block)
+  const heads = [...ch.matchAll(/^### (.+?)\s*$/gm)].filter((m) => !/^(Bonus |Legendary )?(Actions|Reactions)$/i.test(m[1].trim()))
   return heads.map((m, i) => ({ name: m[1].trim(), block: ch.slice(m.index! + m[0].length, i + 1 < heads.length ? heads[i + 1].index : ch.length) }))
 }
 
@@ -423,7 +427,7 @@ export function parseAk5e(src: string) {
   const spells = newArts(ch5)
   for (const levels of Object.values(pools)) for (const rows of Object.values(levels)) for (const r of rows) delete r.new
   return {
-    source: BOOK, system: 'ak5e', spells, classLists: pools, opSkills: operatorSkills(src), gear: equipment(src),
+    source: BOOK, system: 'ak5e', version: AK5E_PARSE_VERSION, spells, classLists: pools, opSkills: operatorSkills(src), gear: equipment(src),
     rules: { classes: classes(src), species: species(src), nationalities: nationalities(src), backgrounds: backgrounds(src) },
   }
 }

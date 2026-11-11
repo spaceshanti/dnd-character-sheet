@@ -17,6 +17,10 @@ import { SettingsPage } from './pages/Settings'
 import { OperatorSkillsPage } from './pages/OperatorSkills'
 import { BookViewer } from './components/BookViewer'
 import { DialogHost } from './components/Dialog'
+import { installDerivedSync } from './derived'
+
+// resource maximums, Arts Points etc. follow level and ability score changes
+installDerivedSync()
 import { systemOf } from './systems'
 import { downloadAk5e, hasAkData, reloadSoon } from './components/BookSetup'
 

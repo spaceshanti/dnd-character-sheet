@@ -118,12 +118,18 @@ Arknights wiki into the app's data folder (`%APPDATA%/Character Sheet/symbols/ak
 
 ## Filling in features
 
-Type a class, subclass / branch, species, background or (Arknights) nationality in the top bar and, if the character has no
-features of that kind yet, the sheet offers to fill them in up to your level: features with their resources (maximums from
-the class table, recharge from the text), the actions that spend them, spell slots / Arts Points and max Art level,
-always-prepared spells, hit dice and HP, saving throws and proficiencies. Undo is offered right after. D&D uses
-`src/data/srd52.json` (built from the SRD 5.2.1 PDF with `python tools/build_srd_data.py SRD_CC_v5.2.1.pdf`); Arknights uses
-the classes, branches, species, nationalities and backgrounds from the downloaded book.
+Type a class, branch / subclass, species, background or (Arknights) nationality in the top bar and, if the character has no
+features of that kind yet, the sheet offers to fill them in up to your level. Choices come first in the same box
+(spellcasting ability, saving throws, skills, Ancient Versatility, ability score increases…), and Undo is offered right after.
+
+**Arknights 5e** uses hand-made blocks for every class, branch, species, nationality and background feature
+(`src/ak5e/blocks.ts`): the book's text for each feature (without its tables), plus how it's wired up: its uses and when
+they come back, the actions that spend them (Shelter's bonus-action version spends Resilience…), effects, rest reminders and
+the Arts it grants. Uses that grow with level (Resilience, Life Support, Aggression, Arts Points, max Art level…) follow a
+formula or the class table, and keep up when you level up. The blocks hold no book text, only names and numbers.
+
+**D&D** reads the SRD 5.2.1 (`src/data/srd52.json`, built with `python tools/build_srd_data.py SRD_CC_v5.2.1.pdf`); hand-made
+blocks for D&D are still to come.
 
 ## The Arknights 5e book data
 

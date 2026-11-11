@@ -207,6 +207,10 @@ export interface Resource {
   die: string
   /** the feature this resource belongs to ('' = standalone) */
   featureId: string
+  /** the maximum follows this formula as the character changes (e.g. "prof", "max(1, con)") */
+  maxFormula?: string
+  /** …or this column of an Arknights class / branch table at the character's level */
+  fromTable?: { cls: string; branch?: string; col: string }
 }
 
 export interface HitDie {
@@ -389,6 +393,8 @@ export interface Character {
   ak: AkData
   /** deletion protection: a locked character can't be deleted until it's unlocked (on by default) */
   locked: boolean
+  /** Arknights: the class / branch table Arts Points and max Art level follow when levelling up */
+  artsTable?: { cls: string; branch?: string }
   /** Arknights optional rule: a second class you can switch to at a long rest (from 7th level) */
   altClass?: AltClass | null
   /** how things were just before the last long / short rest, so it can be undone */

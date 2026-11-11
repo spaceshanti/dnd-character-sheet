@@ -810,3 +810,8 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 .dc-box .override b { font-family: var(--font-head); }
 /* the Conditions box gives way first when the top bar is tight (a later .vbox rule had pinned it) */
 .vitals .cond-box { flex: 1 1 150px; min-width: 64px; }
+
+/* fill-in prompt: the choices a feature needs */
+.fill-choices { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; max-height: 210px; overflow: auto; }
+.fill-choice { display: flex; flex-direction: column; gap: 2px; }
+.fill-choice select { font-size: 12px; max-width: 100%; }

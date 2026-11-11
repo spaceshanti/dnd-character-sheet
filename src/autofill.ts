@@ -6,6 +6,7 @@ import { bestLib, fromLib } from './spellLib'
 import { isAK } from './systems'
 import { extraFiles } from './data/runtime'
 import type { AbilityKey, ActionType, Character, Effect, Feature, Recharge, Resource, Spell } from './types'
+import { defaultAnswer, planAk, type Answers, type PlanChoice } from './ak5e/fill'
 
 /*
  * Filling in a character's features from the rules: type a class, subclass / branch, species, background or
@@ -162,13 +163,18 @@ export interface FillPlan {
   kind: FillKind
   /** the rules entry that matched what was typed */
   name: string
+  /** a preview (with the choices' first answers) */
   features: Feature[]
   resources: Resource[]
   spells: Spell[]
   /** the other things it sets, listed for the prompt ("hit dice d12", "spell slots"…) */
   notes: string[]
-  apply: (d: Character) => void
+  /** things to choose first (Arknights blocks: spellcasting ability, skills, Ancient Versatility…) */
+  choices: PlanChoice[]
+  /** add it all; returns what was added, for Undo */
+  apply: (d: Character, answers?: Answers) => Applied
 }
+export interface Applied { features: string[]; resources: string[]; spells: string[] }
 
 /** the pieces a class table column can give a feature */
 const NOT_RESOURCES = /^(level|proficiency bonus|(class )?features|cantrips|prepared spells|spell slots|slot level|[1-9]|weapon mastery|eldritch invocations|maximum art level|arts points( \(ap\))?|arts known)$/i
@@ -281,12 +287,13 @@ const SKIP_FEATURE = /^(ability score improvement|epic boon|subclass feature|\w+
 
 function finish(kind: FillKind, name: string, b: Builder): FillPlan {
   return {
-    kind, name, features: b.features, resources: b.resources, spells: b.spells, notes: b.notes,
+    kind, name, features: b.features, resources: b.resources, spells: b.spells, notes: b.notes, choices: [],
     apply: (d) => {
       d.features.push(...b.features)
       d.resources.push(...b.resources)
       d.spells.push(...b.spells)
       for (const s of b.sets) s(d)
+      return { features: b.features.map((x) => x.id), resources: b.resources.map((x) => x.id), spells: b.spells.map((x) => x.id) }
     },
   }
 }
@@ -358,71 +365,24 @@ export function planFill(c: Character, kind: FillKind, typed: string): FillPlan 
     return null
   }
 
-  // ---------- Arknights 5e
+  // ---------- Arknights 5e: the hand-made blocks (src/ak5e/blocks.ts)
   if (!AK) return null
-  if (kind === 'class' || kind === 'subclass') {
-    const cls = pick(AK.classes, kind === 'class' ? typed : c.className, AK_CLASS_NAMES)
-    if (!cls) return null
-    const artsFrom = (table: Table | null) => {
-      const row = table?.rows[String(level)]
-      if (!table || !row) return
-      const ap = table.columns.findIndex((x) => /^arts points/i.test(x.trim()))
-      const mal = table.columns.findIndex((x) => /^maximum art level$/i.test(x.trim()))
-      if (ap >= 0 && parseInt(row[ap])) { b.notes.push('Arts Points'); b.sets.push((d) => { d.ak.ap.max = parseInt(row[ap]) }) }
-      if (mal >= 0 && parseInt(row[mal])) { b.notes.push('max Art level'); b.sets.push((d) => { d.ak.maxArtLevel = parseInt(row[mal]) }) }
-    }
-    if (kind === 'class') {
-      for (const f of cls.features) if (f.level <= level && !SKIP_FEATURE.test(f.name)) addFeature(b, c, f, 'class', `${cls.name} ${f.level}`, 'class', level, pb)
-      linkTable(b, cls.table, level)
-      artsFrom(cls.table)
-      setHitDie(b, cls.hitDie)
-      setSaves(b, cls.saves)
-      addProf(b, 'armor', cls.armor)
-      addProf(b, 'weapons', cls.weapons)
-      addProf(b, 'tools', cls.tools)
-      const opts = cls.features.find((f) => /Spellcasting Ability:/i.test(f.text))
-      if (opts) b.notes.push('(choose your spellcasting ability)')
-      return finish(kind, cls.name, b)
-    }
-    const br = pick(cls.branches, typed, AK_BRANCH_NAMES)
-    if (!br) return null
-    for (const f of br.features) if (f.level <= level) addFeature(b, c, f, 'class', `${br.name} ${cls.name} ${f.level}`, 'subclass', level, pb)
-    linkTable(b, br.table, level)
-    artsFrom(br.table)
-    return finish(kind, `${br.name} (${cls.name})`, b)
+  const ap = planAk(c, kind, typed, pick, { cls: AK_CLASS_NAMES, branch: AK_BRANCH_NAMES })
+  if (!ap) return null
+  const defaults: Answers = Object.fromEntries(ap.choices.map((ch) => [ch.key, defaultAnswer(ch.def)]))
+  const preview = ap.build(c, defaults)
+  return {
+    kind, name: ap.name, features: preview.features, resources: preview.resources, spells: preview.spells, notes: ap.notes, choices: ap.choices,
+    apply: (d, answers) => {
+      const built = ap.build(d, { ...defaults, ...answers })
+      for (const f of built.features) f.auto = kind
+      d.features.push(...built.features)
+      d.resources.push(...built.resources)
+      d.spells.push(...built.spells)
+      for (const set of built.sets) set(d)
+      return { features: built.features.map((x) => x.id), resources: built.resources.map((x) => x.id), spells: built.spells.map((x) => x.id) }
+    },
   }
-  if (kind === 'species') {
-    const sp = pick(AK.species, typed)
-    if (!sp) return null
-    const parent = sp.parent ? AK.species.find((x) => x.name === sp.parent) : undefined
-    const base = parent ?? sp
-    const traits = [base.size && `Size. ${base.size}`, base.speed && `Speed. ${base.speed}`, (sp.asi || base.asi) && `Ability Score Improvement. ${sp.asi || base.asi}`].filter(Boolean).join('\n\n')
-    if (traits) addFeature(b, c, { name: `${sp.name} Traits`, text: traits }, 'species', sp.name, 'species', level, pb)
-    for (const f of [...(parent?.features ?? []), ...sp.features]) addFeature(b, c, f, 'species', parent && parent.features.includes(f) ? parent.name : sp.name, 'species', level, pb)
-    const size = base.size.match(/size is (Tiny|Small|Medium|Large)/i)?.[1]
-    const speed = parseInt(base.speed.match(/Walking Speed is (\d+)/i)?.[1] ?? '')
-    if (size) { b.notes.push('size'); b.sets.push((d) => { d.size = size[0].toUpperCase() + size.slice(1).toLowerCase() }) }
-    if (speed) { b.notes.push('speed'); b.sets.push((d) => { d.speed.base = speed }) }
-    return finish(kind, sp.name, b)
-  }
-  if (kind === 'nationality') {
-    const nat = pick(AK.nationalities, typed)
-    if (!nat) return null
-    const choose = nat.profChoices.length ? `\n\nProficiencies. ${nat.proficiencies} ${nat.profChoices.join(', ')}` : ''
-    if (nat.feat) addFeature(b, c, { name: nat.feat.name, text: nat.feat.text + choose }, 'feat', `${nat.name} (nationality feat)`, 'nationality', level, pb)
-    if (nat.languages) { b.notes.push('languages'); addProf(b, 'languages', nat.languages) }
-    return finish(kind, nat.name, b)
-  }
-  if (kind === 'background') {
-    const all = [...AK.backgrounds, ...AK.nationalities.flatMap((n) => (n.background ? [n.background] : []))]
-    const bg = pick(all, typed)
-    if (!bg) return null
-    if (bg.feat) addFeature(b, c, { name: bg.feat.name, text: `${bg.text}\n\nProficiencies. ${bg.proficiencies}\n\n${bg.feat.text}` }, 'background', `${bg.name} (background feat)`, 'background', level, pb)
-    const skills = bg.feat ? skillKeys((bg.feat.text.match(/Proficient in the ([\w ]+) Skill/i) ?? [])[1] ?? '') : []
-    if (skills.length) { b.notes.push('skill proficiencies'); b.sets.push((d) => { for (const k of skills) d.skillProf[k as keyof Character['skillProf']] ||= 1 }) }
-    return finish(kind, bg.name, b)
-  }
-  return null
 }
 
 /** Has this character already got features of this kind? (then the sheet doesn't offer to fill them in) */
@@ -439,10 +399,10 @@ export function hasFeaturesFor(c: Character, kind: FillKind): boolean {
 }
 
 /** Remove what a fill added (the prompt's Undo). */
-export function undoFill(d: Character, plan: FillPlan, before: Pick<Character, 'hitDice' | 'hpMax' | 'hp' | 'saveProf' | 'skillProf' | 'slots' | 'spellAbility' | 'proficiencies' | 'size' | 'speed' | 'ak'>) {
-  const f = new Set(plan.features.map((x) => x.id))
-  const r = new Set(plan.resources.map((x) => x.id))
-  const s = new Set(plan.spells.map((x) => x.id))
+export function undoFill(d: Character, added: Applied, before: Pick<Character, 'hitDice' | 'hpMax' | 'hp' | 'saveProf' | 'skillProf' | 'slots' | 'spellAbility' | 'proficiencies' | 'size' | 'speed' | 'ak'>) {
+  const f = new Set(added.features)
+  const r = new Set(added.resources)
+  const s = new Set(added.spells)
   d.features = d.features.filter((x) => !f.has(x.id))
   d.resources = d.resources.filter((x) => !r.has(x.id))
   d.spells = d.spells.filter((x) => !s.has(x.id))

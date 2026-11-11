@@ -60,7 +60,7 @@ export function longRestOn(d: Character, opts: { hitDice?: boolean } = {}): stri
     let regain = Math.max(1, Math.floor(d.hitDice.reduce((s, h) => s + h.total, 0) / 2))
     for (const h of d.hitDice) { const r = Math.min(h.spent, regain); h.spent -= r; regain -= r }
   }
-  for (const r of d.resources) r.used = 0
+  for (const r of d.resources) if (r.recharge !== 'none') r.used = 0
   return restEffects(d, 'long')
 }
 

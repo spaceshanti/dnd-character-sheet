@@ -103,7 +103,8 @@ def _h5_features(block):
 def species(src):
     ch = src[src.index("## Species"):src.index("## Nationality")]
     out, parent = [], None
-    heads = list(re.finditer(r"^### (.+?)\s*$", ch, re.M))
+    # a summon's stat block "### Actions" / "### Reactions" belongs to the species around it
+    heads = [m for m in re.finditer(r"^### (.+?)\s*$", ch, re.M) if not re.match(r"^(Bonus |Legendary )?(Actions|Reactions)$", m.group(1).strip(), re.I)]
     for i, m in enumerate(heads):
         block = ch[m.end():heads[i + 1].start() if i + 1 < len(heads) else len(ch)]
         t = re.search(r"^#### [^\n]*Traits\s*$", block, re.M)

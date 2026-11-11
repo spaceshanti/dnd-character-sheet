@@ -5,6 +5,8 @@
  * In the browser preview (development only) the copies under src/data/extra and src/data/book are used instead.
  */
 
+import { AK5E_PARSE_VERSION, parseAk5e } from '../ak5e/parse'
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ExtraData = Record<string, any>
 
@@ -25,6 +27,15 @@ export async function loadRuntimeData() {
       for (const f of list) { try { extras[f.name] = JSON.parse(f.text) } catch { /* a broken file: skip it */ } }
       const md = await window.sheetApi.bookTextGet('ak5e')
       if (md) books.ak5e = md
+      // a book read by an older version of the app: read it again from the copy on this computer
+      const ak = extras['ak5e.json']
+      if (md && ak && (ak.version ?? 1) < AK5E_PARSE_VERSION) {
+        try {
+          const fresh = parseAk5e(md)
+          extras['ak5e.json'] = fresh
+          await window.sheetApi.extraSave('ak5e.json', JSON.stringify(fresh))
+        } catch { /* keep the old reading */ }
+      }
     } catch { /* an older desktop build without these: nothing extra */ }
     return
   }
