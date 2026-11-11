@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('sheetApi', {
   setZoom: (factor) => webFrame.setZoomFactor(factor),
   extraList: () => ipcRenderer.invoke('extra:list'),
   extraSave: (name, text) => ipcRenderer.invoke('extra:save', name, text),
+  extraRemove: (name) => ipcRenderer.invoke('extra:remove', name),
   bookTextGet: (id) => ipcRenderer.invoke('booktext:get', id),
   bookTextSave: (id, text) => ipcRenderer.invoke('booktext:save', id, text),
   fetchUrl: (url, binary) => ipcRenderer.invoke('net:fetch', url, !!binary),

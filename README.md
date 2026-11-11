@@ -52,14 +52,18 @@ The installed apps check `latest.yml` there to update themselves; the plain-name
 
 - Spell descriptions can always be typed or pasted. Fetch (by name or wikidot link) and the built-in SRD library are optional helpers.
 
-## Importing spells from a UA / class PDF you own
+## Extra spell lists (e.g. the UA Psion)
+
+Settings → Sourcebooks → **＋ Add a spell list file…** loads a `.json` spell list: its class shows in the Spell Library's
+filter and its spells are written out in full. To make one from an Unearthed Arcana class PDF you own:
 
 ```
 python tools/import_ua_spells.py "C:\path\to\UA2025-ThePsion.pdf"
 ```
 
-Reads the class spell list and any full spell write-ups from the PDF and writes `<name>.json` into the app's data folder
-(`%APPDATA%/Character Sheet/extra`). The app merges every file there into the Spell Library (filter Class → Psion).
+Reads the class spell list and any full spell write-ups from the PDF (formatted for the sheet: paragraphs, bold run-in
+headings, stat blocks laid out) and writes `<name>.json` into the app's data folder (`%APPDATA%/Character Sheet/extra`);
+share that file with your party and they add it the same way. The app merges every file there into the Spell Library (filter Class → Psion).
 Restart the app after importing.
 Spells on the list that aren't in the SRD and aren't written out in the PDF appear as "name only" entries.
 
@@ -87,6 +91,7 @@ Every character gets a **📖 Sourcebooks** reader (Ctrl + B for a side pane, Ct
 pages with its contents, page-accurate headings, on-page search highlights and your bookmarks (★ at the top of the
 contents; ☆ on any heading or in the header adds one). Books are added from **Settings → Sourcebooks** (see Download above)
 and kept in the app's data folder (`%APPDATA%/Character Sheet/sourcebook/<id>`), never in the app or this repository.
+**＋ Add another book (PDF)…** there takes any PDF you have (pick a title and which characters see it).
 With more than one, switch books from the reader's header.
 
 Other PDFs you own can be added with `python tools/import_book_pdf.py <id> "<title>" <games> "book.pdf"`, for example

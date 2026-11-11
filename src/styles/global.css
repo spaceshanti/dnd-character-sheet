@@ -755,3 +755,20 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 /* Characters screen: update button */
 .update-ctl { display: inline-flex; align-items: center; gap: 6px; }
 .update-ctl .bad, .row .bad { color: var(--dis); }
+
+/* the prepare circle on a spell line: an easier target than the 13px dot itself */
+.sline button.pip { position: relative; cursor: pointer; }
+.sline button.pip::after { content: ''; position: absolute; inset: -8px -9px; }
+
+/* cantrips: the damage you roll at your level */
+.prose mark, .rich mark { background: var(--accent-soft); color: inherit; font-weight: 700; padding: 0 3px; border-radius: 3px; box-shadow: 0 0 0 1px var(--accent); }
+.cantrip-now { font-size: 13px; padding: 5px 9px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; }
+.cantrip-chip { font-size: 10.5px; padding: 0 5px; margin-left: 4px; }
+.prep-toggle { gap: 5px; }
+
+/* Actions page: spells look like spells (a tinted card with the spell-level tag) */
+.act-item.act-spell { border-left: 3px solid var(--accent); background: linear-gradient(90deg, var(--accent-soft), transparent 70%); }
+.act-item.act-spell .k { color: var(--accent); }
+.act-item.act-hidden { opacity: .5; border-left-style: dashed; }
+.act-item .act-eye { opacity: .5; }
+.act-item:hover .act-eye { opacity: 1; }

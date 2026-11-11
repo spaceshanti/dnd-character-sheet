@@ -1,7 +1,7 @@
 import { ALL_SKILLS } from './constants'
 import { isAK } from './systems'
 import { tryFormula } from './formula'
-import type { AbilityKey, Attack, Character, Effect, Item, ProfLevel, SkillKey, Stat, WeaponStats } from './types'
+import type { AbilityKey, Attack, Character, Effect, Item, ProfLevel, SkillKey, Spell, Stat, WeaponStats } from './types'
 
 export interface Part {
   label: string
@@ -309,6 +309,9 @@ export function spellActionType(castingTime: string): 'action' | 'bonus' | 'reac
   if (!t.trim()) return 'action'
   return 'special'
 }
+
+/** shown on the Actions page unless set otherwise: bonus-action and reaction spells are, action spells aren't */
+export const spellOnActions = (s: Spell) => s.onActions ?? ['bonus', 'reaction'].includes(spellActionType(s.castingTime))
 
 /** The feature (if any) that lets this character use the weapon's mastery property. */
 export function masterySource(c: Character, w: WeaponStats): string {

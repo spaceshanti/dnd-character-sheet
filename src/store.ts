@@ -28,6 +28,7 @@ declare global {
       setZoom?: (factor: number) => void
       extraList: () => Promise<{ name: string; text: string }[]>
       extraSave: (name: string, text: string) => Promise<void>
+      extraRemove: (name: string) => Promise<void>
       bookTextGet: (id: string) => Promise<string>
       bookTextSave: (id: string, text: string) => Promise<void>
       fetchUrl: <B extends boolean = false>(url: string, binary?: B) => Promise<B extends true ? Uint8Array : string>

@@ -4,10 +4,12 @@
 
 Reads, from your copy of the PDF:
   * the class spell list ("CANTRIPS (LEVEL 0 PSION SPELLS)", "LEVEL 1 PSION SPELLS", ...)
-  * full spell write-ups in the PDF's SPELLS section
+  * full spell write-ups in the PDF's SPELLS section, formatted for the sheet (paragraphs, bold run-in
+    headings, italic names, stat blocks laid out) rather than the PDF's hard-wrapped lines
 and writes <pdf-name>.json into the app's data folder (%APPDATA%/Character Sheet/extra), which the app merges into
 its library on the next start. Nothing is uploaded anywhere, and nothing goes into this project.
 """
+import html
 import json
 import os
 import re
@@ -75,73 +77,172 @@ def parse_list(lines):
     return result
 
 
-def reflow(body):
-    """Join hard-wrapped PDF lines into paragraphs. New paragraph when a line is indented."""
-    paras = []
-    for raw in body:
-        line = raw.rstrip()
-        indented = raw.startswith((" ", "\t", "\u2022"))
-        is_head = line.strip().isupper() and len(line.strip()) > 3
-        if not paras or indented or is_head or paras[-1].isupper():
-            paras.append(line.strip())
+def _span_html(span):
+    t = html.escape(span["text"])
+    f = span["font"]
+    if not t.strip():
+        return t
+    lead = t[: len(t) - len(t.lstrip())]
+    trail = t[len(t.rstrip()):]
+    core = t.strip()
+    if "Bold" in f:
+        core = f"<b>{core}</b>"
+    elif "Italic" in f:
+        core = f"<i>{core}</i>"
+    return lead + core + trail
+
+
+def _caps(spans):
+    """'I' 'NTELLECT ' 'F' 'ORTRESS' (small caps) -> 'Intellect Fortress'"""
+    raw = "".join(s["text"] for s in spans).replace("’", "'").strip()
+    words = raw.lower().split()
+    small = {"of", "the", "and", "a", "an", "to", "in", "on", "for"}
+    out = [w if (i and w in small) else w[:1].upper() + w[1:] for i, w in enumerate(words)]
+    return re.sub(r"'S\b", "'s", " ".join(out))
+
+
+def doc_lines(doc, first_page, last_page):
+    """Every text line on those pages (0-based), in reading order, with its spans; footers dropped."""
+    out = []
+    for pn in range(first_page, last_page + 1):
+        for b in doc[pn].get_text("dict")["blocks"]:
+            for l in b.get("lines", []):
+                spans = [s for s in l["spans"] if s["text"]]
+                text = "".join(s["text"] for s in spans)
+                if not text.strip() or text.strip().startswith("©") or "Wizards of the Coast LLC" in text or re.fullmatch(r"\s*\d{1,3}\s*", text):
+                    continue
+                out.append({"spans": spans, "text": text, "size": max(s["size"] for s in spans), "font": spans[0]["font"]})
+    return out
+
+
+def is_spell_title(line):
+    s = line["spans"][0]
+    return "Cambria" in s["font"] and s["size"] >= 12 and line["text"].strip()[:1].isupper()
+
+
+ABIL = ("Str", "Dex", "Con", "Int", "Wis", "Cha")
+
+
+def body_html(lines):
+    """A spell's description lines -> simple HTML (paragraphs, bold run-in headings, a stat block if there is one)."""
+    paras = []  # list of [kind, html]
+    abilities = []
+    for ln in lines:
+        spans = ln["spans"]
+        text = ln["text"]
+        first = spans[0]
+        # stat block pieces
+        if "Bold" in first["font"] and first["size"] >= 14:
+            paras.append(["h", f"<h4>{html.escape(_caps(spans))}</h4>"])
+            continue
+        if "Bold" in first["font"] and first["size"] >= 11.5 and text.strip().replace(" ", "").isalpha() and len(text.strip()) < 14:
+            paras.append(["h", f"<p><b>{html.escape(_caps(spans))}</b></p>"])
+            continue
+        if first["size"] < 7:  # MOD / SAVE column labels
+            continue
+        if first["text"].strip() in ABIL and "Bold" in first["font"]:
+            m = re.match(r"\s*(\d+)(?:\s+([+-]\d+))?", "".join(s["text"] for s in spans[1:]))
+            if m:
+                # the modifier sometimes sits in its own column: work it out from the score
+                mod = m.group(2) or f"{(int(m.group(1)) - 10) // 2:+d}"
+                abilities.append(f"<b>{first['text'].strip()}</b> {m.group(1)} ({mod})")
+            continue
+        if re.fullmatch(r"\s*[+-]\d+\s*", text):  # a save value on its own
+            continue
+        if abilities:
+            paras.append(["p", "<p>" + " · ".join(abilities) + "</p>"])
+            abilities = []
+        h = "".join(_span_html(s) for s in spans)
+        # a bold run-in heading that wrapped onto this line ("…(Ectoplasmic Entity and Ghostly" / "Entity Only).") continues it
+        heading_wraps = bool(paras) and paras[-1][1].endswith("</b>") and not re.search(r"[.:]</b>$", paras[-1][1])
+        starts_para = not heading_wraps and (
+            not paras or paras[-1][0] == "h"
+            or text.startswith((" ", "•"))
+            or ("Bold" in first["font"] and first["text"].strip())
+            or (first["font"].endswith("Italic") and "Bold" not in first["font"] and paras[-1][0] == "meta")
+        )
+        if "Italic" in first["font"] and "Bold" not in first["font"] and re.match(r"(Medium|Small|Large|Tiny|Huge) ", text.strip()):
+            paras.append(["meta", f"<p><i>{html.escape(text.strip())}</i></p>"])
+            continue
+        if starts_para:
+            paras.append(["p", h.strip()])
         else:
-            prev = paras[-1]
-            paras[-1] = prev[:-1] + line.strip() if prev.endswith("-") and not prev.endswith(" -") else prev + " " + line.strip()
-    return "\n\n".join(p for p in paras if p)
+            prev = paras[-1][1]
+            # rejoin a word hyphenated across lines
+            if re.search(r"[a-z]-$", prev) and not prev.endswith(" -"):
+                paras[-1][1] = prev[:-1] + h.lstrip()
+            else:
+                paras[-1][1] = prev.rstrip() + " " + h.strip()
+    if abilities:
+        paras.append(["p", "<p>" + " · ".join(abilities) + "</p>"])
+    out = []
+    for kind, h in paras:
+        if h.startswith("<p>") or h.startswith("<h4>"):
+            out.append(h)
+        else:
+            # bullets
+            if h.startswith("•"):
+                out.append(f"<ul><li>{h.lstrip(chr(0x2022)).strip()}</li></ul>")
+            else:
+                out.append(f"<p>{h}</p>")
+    s = "".join(out)
+    s = s.replace("</ul><ul>", "")
+    # tidy: double spaces, spaces before punctuation, curly quotes the PDF split
+    s = re.sub(r"\s{2,}", " ", s)
+    # a bold / italic run split across lines or spans becomes one
+    s = re.sub(r"</b>( ?)<b>", r"\1", s)
+    s = re.sub(r"</i>( ?)<i>", r"\1", s)
+    return s
 
 
-def parse_spells(lines):
-    """Full spell blocks: TITLE / 'Level N School (Classes)' or 'School Cantrip (Classes)' / stats / text."""
+def parse_spells_html(doc):
+    """The SPELLS chapter: title / 'Level N School (Classes)' / Casting Time… Duration / text, to the FEATS chapter."""
+    toc = doc.get_toc()
+    first = next(p for l, t, p in toc if t.strip().lower() == "spells") - 1
+    last = next((p for l, t, p in toc if t.strip().lower() == "feats"), doc.page_count) - 1
+    lines = doc_lines(doc, first, last)
+    # stop at the Feats chapter
+    for i, ln in enumerate(lines):
+        if ln["text"].strip().upper().replace(" ", "") == "FEATS" and ln["size"] >= 15:
+            lines = lines[:i]
+            break
+    starts = [i for i, ln in enumerate(lines) if is_spell_title(ln) and i + 1 < len(lines) and re.match(r"\s*(Level \d|[A-Z][a-z]+ Cantrip)", lines[i + 1]["text"])]
     lvl_re = re.compile(r"^(?:Level (?P<l>\d) (?P<s>[A-Z][a-z]+)|(?P<s0>[A-Z][a-z]+) Cantrip)\s*\((?P<cl>.*)$")
-    starts = []
-    for i in range(len(lines) - 1):
-        t = lines[i].strip()
-        if t.isupper() and len(t) > 3 and lvl_re.match(lines[i + 1].strip()):
-            starts.append(i)
-    end_markers = re.compile(r"^(FEATS|.* FEATS)$")
     spells = []
     for n, i in enumerate(starts):
-        stop = starts[n + 1] if n + 1 < len(starts) else len(lines)
-        for j in range(i + 2, stop):
-            if end_markers.match(lines[j].strip()):
-                stop = j
-                break
-        block = lines[i:stop]
-        title = block[0].strip().title().replace("’S ", "’s ").replace("'S ", "'s ")
-        m = lvl_re.match(block[1].strip())
-        k = 2
-        classes = m.group("cl")
-        while not classes.rstrip().endswith(")") and k < len(block):
-            classes += " " + block[k].strip()
+        block = lines[i:(starts[n + 1] if n + 1 < len(starts) else len(lines))]
+        name = _caps(block[0]["spans"])
+        k = 1
+        meta = block[k]["text"].strip()
+        while not meta.rstrip().endswith(")") and k + 1 < len(block):
             k += 1
-        classes = [c.strip() for c in classes.rstrip(") ").split(",") if c.strip()]
-        stats = {}
-        current = None
+            meta += " " + block[k]["text"].strip()
+        m = lvl_re.match(meta)
+        classes = [c.strip() for c in m.group("cl").rstrip(") ").split(",") if c.strip()]
+        k += 1
+        stats, cur = {}, None
         while k < len(block):
-            s = block[k].strip()
-            sm = re.match(r"^(Casting Time|Range|Components|Duration):\s*(.*)$", s)
+            t = block[k]["text"].strip()
+            sm = re.match(r"^(Casting Time|Range|Components|Duration):\s*(.*)$", t)
             if sm:
-                current = sm.group(1)
-                stats[current] = sm.group(2)
-            elif current and current != "Duration" and not block[k].startswith(" "):
-                stats[current] += " " + s  # wrapped stat line
+                cur = sm.group(1)
+                stats[cur] = sm.group(2).strip()
+            elif cur and cur != "Duration":
+                stats[cur] += " " + t
             else:
                 break
             k += 1
-            if current == "Duration":
+            if cur == "Duration":
                 break
-        comps = stats.get("Components", "")
         ct = stats.get("Casting Time", "")
         if ct in ("Action", "Bonus Action", "Reaction"):
             ct = "1 " + ct.lower()
         dur = stats.get("Duration", "")
-        desc = reflow(block[k:])
-        desc = re.sub(r"\n\nUsing a Higher-Level Spell Slot\.", "\n\nUsing a Higher-Level Spell Slot.", desc)
         spells.append({
-            "n": title, "l": int(m.group("l")) if m.group("l") else 0, "s": m.group("s") or m.group("s0"),
-            "ct": ct, "r": stats.get("Range", ""), "c": comps, "d": dur,
-            "co": "concentration" in dur.lower(), "ri": "ritual" in ct.lower(),
-            "cl": classes, "e": "UA", "t": desc,
+            "n": name, "l": int(m.group("l")) if m.group("l") else 0, "s": m.group("s") or m.group("s0"),
+            "ct": ct, "r": stats.get("Range", ""), "c": stats.get("Components", ""), "d": dur,
+            "co": "concentration" in dur.lower(), "ri": "ritual" in ct.lower(), "m": bool(re.search(r"worth|consume", stats.get("Components", ""), re.I)),
+            "cl": classes, "e": "UA", "t": body_html(block[k:]),
         })
     return spells
 
@@ -153,7 +254,7 @@ def main():
     doc = pymupdf.open(pdf)
     lines = page_lines(doc)
     lists = parse_list(lines)
-    spells = parse_spells(lines)
+    spells = parse_spells_html(doc)
     title = os.path.splitext(os.path.basename(pdf))[0]
     data = {
         "source": title,

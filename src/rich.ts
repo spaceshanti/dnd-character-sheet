@@ -1,6 +1,6 @@
 /** Rich text helpers. Text boxes store simple HTML; older saves (and fetched spell text) are plain text. */
 
-const ALLOWED = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'STRIKE', 'DEL', 'BR', 'P', 'DIV', 'UL', 'OL', 'LI', 'H3', 'H4', 'BLOCKQUOTE', 'SPAN', 'SUB', 'SUP'])
+const ALLOWED = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'STRIKE', 'DEL', 'BR', 'P', 'DIV', 'UL', 'OL', 'LI', 'H3', 'H4', 'BLOCKQUOTE', 'SPAN', 'SUB', 'SUP', 'MARK'])
 const DROP = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'IMG', 'SVG', 'VIDEO', 'AUDIO', 'CANVAS', 'LINK', 'META', 'TEMPLATE', 'BUTTON', 'INPUT', 'TEXTAREA', 'SELECT', 'FORM'])
 
 export const isHtml = (s: string) => /<(\/?)(p|div|br|b|i|u|s|strong|em|ul|ol|li|h3|h4|span|strike|del|blockquote|sub|sup)\b[^>]*>/i.test(s)

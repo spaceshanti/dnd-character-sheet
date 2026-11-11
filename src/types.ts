@@ -66,6 +66,8 @@ export interface Spell {
   active: boolean
   /** id of the feature that grants this spell ('' = added by hand) */
   grantedBy: string
+  /** shown on the Actions page? unset = by casting time (bonus actions and reactions yes, actions no) */
+  onActions?: boolean
   /** inventory item used up per cast (e.g. Telekinetic Fling's ammunition), '' = none */
   ammoId: string
   ammoCost: number

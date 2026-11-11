@@ -13,8 +13,10 @@ import { FeatureChangesEditor, FeatureUsage, FeatureUsageEditor } from './Featur
 import { targetName } from '../constants'
 import type { Effect, Feature, FeatureCategory, Spell } from '../types'
 import { FormulaModifiers, formulaText } from './FormulaEditor'
-import { formulaVars } from '../calc'
+import { formulaVars, spellOnActions } from '../calc'
 import { askConfirm } from './Dialog'
+import { cantripScale, markCantrip } from '../cantrip'
+import { toHtml } from '../rich'
 
 export function DrawerHost() {
   const drawer = useUI((s) => s.drawer)
@@ -106,6 +108,8 @@ export function SpellDrawer({ id }: { id: string }) {
     toast.show(used || (sp.level > 0 ? `Cast ${sp.name} using a level ${castLevel} slot` : `${sp.name} cast`))
   }
   const libEntry = customSpells.find((x) => x.n.toLowerCase() === sp.name.toLowerCase())
+  // cantrips that grow with your level: what you roll now
+  const cantrip = sp.level === 0 ? cantripScale(sp.description, c.level) : null
 
   const levelOptions = Array.from({ length: 10 }, (_, i) => ({ id: String(i), name: i === 0 ? 'Cantrip' : `Level ${i}` }))
 
@@ -127,7 +131,11 @@ export function SpellDrawer({ id }: { id: string }) {
             {sp.concentration && <span className="tag alt">Concentration</span>}
             {sp.ritual && <span className="tag alt">Ritual</span>}
             {sp.materialConsumed && !ak && <span className="tag alt">Material consumed</span>}
-            {ak ? null : sp.alwaysPrepared ? <span className="chip accent">Always prepared</span> : sp.prepared && <span className="chip accent">Prepared</span>}
+            {ak ? null : sp.alwaysPrepared ? <span className="chip accent">Always prepared</span> : sp.level > 0 && (
+              <label className="row small prep-toggle" title="Prepared spells can be cast with your slots">
+                <Switch on={sp.prepared} onChange={(b) => up((x) => { x.prepared = b })} /> Prepared
+              </label>
+            )}
             {sp.grantedBy && <span className="chip">From {c.features.find((f) => f.id === sp.grantedBy)?.name || 'a feature'}</span>}
           </div>
           <div className="kv">
@@ -137,7 +145,13 @@ export function SpellDrawer({ id }: { id: string }) {
             {sp.duration && <><b>Duration</b><span>{sp.duration}</span></>}
             {sp.ammoId && <><b>Uses up</b><span>{ammoText(c, sp.ammoId, sp.ammoCost) || 'a missing item'} per cast</span></>}
           </div>
-          {sp.description ? <RichText className="prose" value={sp.description} /> : (
+          {cantrip && (
+            <div className="cantrip-now" title={cantrip.tiers.filter((x) => x[1]).map(([l, d]) => `Level ${l}+: ${d}`).join('\n')}>
+              Your damage at level {c.level}: <b>{cantrip.now || 'no extra yet'}</b>
+              <span className="muted small"> · {cantrip.tiers.filter((x) => x[1]).map(([l, d]) => `${l}: ${d}`).join(' · ')}</span>
+            </div>
+          )}
+          {sp.description ? <RichText className="prose" value={cantrip ? markCantrip(toHtml(sp.description), cantrip) : sp.description} /> : (
             <div className="empty">
               No description stored yet.<br />
               <button className="btn sm" style={{ marginTop: 8 }} onClick={() => setEditing(true)}>Paste one in</button>
@@ -149,6 +163,9 @@ export function SpellDrawer({ id }: { id: string }) {
             <RichArea className="box-input" minRows={2} value={sp.notes} onChange={(v) => up((x) => { x.notes = v })}
               placeholder="What it looks like when you cast it, or a homebrew change to how it works…" />
           </div>
+          <label className="row small" style={{ gap: 6 }} title="Bonus-action and reaction spells show there unless you hide them; action spells only if you show them">
+            <Switch on={spellOnActions(sp)} onChange={(b) => up((x) => { x.onActions = b })} /> Show on the Actions page
+          </label>
           {sp.effects.length > 0 && (
             <div className="col">
               <div className="row">

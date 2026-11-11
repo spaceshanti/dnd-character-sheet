@@ -19,7 +19,7 @@ export function SettingsPage() {
   const [path, setPath] = useState('')
   useEffect(() => { window.sheetApi?.dataPath().then(setPath) }, [])
   const auto = 2 + Math.floor((Math.max(1, c.level) - 1) / 4)
-  const { zoom, setZoom } = useZoom()
+  const { zoom, setZoom, unlocked, setUnlocked } = useZoom()
 
   return (
     <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', alignItems: 'start' }}>
@@ -104,11 +104,17 @@ export function SettingsPage() {
             <SkinPicker />
           </div>
           <div className="row" style={{ gap: 8 }}>
-            <span className="field-lbl">Zoom <span className="kbd">Ctrl + scroll</span></span>
-            <button className="btn sm" onClick={() => setZoom(zoom - 0.1)}>−</button>
-            <b style={{ minWidth: 44, textAlign: 'center' }}>{Math.round(zoom * 100)}%</b>
-            <button className="btn sm" onClick={() => setZoom(zoom + 0.1)}>＋</button>
-            <button className="btn sm" disabled={zoom === 1} onClick={() => setZoom(1)}>Reset zoom</button>
+            <label className="row small" title="Off: the sheet stays at normal size and Ctrl + scroll does nothing">
+              <Switch on={unlocked} onChange={setUnlocked} /> Allow zooming <span className="kbd">Ctrl + scroll</span>
+            </label>
+            {unlocked && (
+              <>
+                <button className="btn sm" onClick={() => setZoom(zoom - 0.1)}>−</button>
+                <b style={{ minWidth: 44, textAlign: 'center' }}>{Math.round(zoom * 100)}%</b>
+                <button className="btn sm" onClick={() => setZoom(zoom + 0.1)}>＋</button>
+                <button className="btn sm" disabled={zoom === 1} onClick={() => setZoom(1)}>Reset zoom</button>
+              </>
+            )}
           </div>
           <div className="small muted">
             Saves automatically{path ? <> to <code style={{ wordBreak: 'break-all' }}>{path}</code> (a <code>.bak</code> copy is kept beside it)</> : ' in this browser'}.
@@ -152,7 +158,7 @@ const SHORTCUTS: [string, string][] = [
   ['Ctrl + T', 'UI style menu'],
   ['Ctrl + B', 'Sourcebooks in a side pane: open / close'],
   ['Ctrl + F', 'Search the sourcebook (opens the side pane if it\'s closed)'],
-  ['Ctrl + scroll', 'Zoom in / out (Ctrl + = / − too; Ctrl + 0 resets)'],
+  ['Ctrl + scroll', 'Zoom in / out, once Allow zooming is on (Ctrl + = / − too; Ctrl + 0 resets)'],
   ['← / →', 'Sourcebook: previous / next page'],
   ['Esc', 'Close the open window, side panel or popup'],
   ['F11', 'Full screen on / off'],

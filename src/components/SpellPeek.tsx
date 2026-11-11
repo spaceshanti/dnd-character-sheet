@@ -5,6 +5,8 @@ import { spellNamed } from '../book/spellLinks'
 import { useChar, useStore } from '../store'
 import { isAK } from '../systems'
 import { RichText } from './RichText'
+import { cantripScale, markCantrip } from '../cantrip'
+import { toHtml } from '../rich'
 
 const LEVEL = (l: number, ak: boolean) => (l === 0 ? 'Cantrip' : `${['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'][l]}-level ${ak ? 'Art' : 'spell'}`)
 
@@ -20,6 +22,7 @@ export function SpellPeek({ name, at, onClose }: { name: string; at: { x: number
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
   const mine = sp ? c.spells.find((x) => nameKey(x.name) === nameKey(sp.n)) : undefined
+  const cantrip = sp && sp.l === 0 ? cantripScale(sp.t, c.level) : null
 
   // beside the click, kept on screen
   useEffect(() => {
@@ -72,7 +75,8 @@ export function SpellPeek({ name, at, onClose }: { name: string; at: { x: number
         </div>
       )}
       <div className="spell-peek-text">
-        {sp.t ? <RichText className="prose small-prose" value={sp.t} /> : (
+        {cantrip?.now && <div className="cantrip-now">Your damage at level {c.level}: <b>{cantrip.now}</b></div>}
+        {sp.t ? <RichText className="prose small-prose" value={cantrip ? markCantrip(toHtml(sp.t), cantrip) : sp.t} /> : (
           <div className="muted small">
             Only the name is in the book{sp.stub ? ' (it reuses the regular D&D spell)' : ''}.
             {sp.stub && (window.sheetApi

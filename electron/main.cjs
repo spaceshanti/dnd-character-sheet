@@ -128,6 +128,9 @@ ipcMain.handle('extra:save', (_e, name, text) => {
   fs.mkdirSync(extraDir(), { recursive: true })
   fs.writeFileSync(path.join(extraDir(), plainFile(name)), text, 'utf-8')
 })
+ipcMain.handle('extra:remove', (_e, name) => {
+  try { fs.unlinkSync(path.join(extraDir(), plainFile(name))) } catch { /* already gone */ }
+})
 ipcMain.handle('booktext:get', (_e, id) => {
   try { return fs.readFileSync(path.join(bookTextDir(), plainFile(id) + '.md'), 'utf-8') } catch { return '' }
 })

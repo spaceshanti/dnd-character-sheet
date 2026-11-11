@@ -10,6 +10,7 @@ import { RichArea } from '../components/RichText'
 import type { CustomSpell, Spell } from '../types'
 import { RichText } from '../components/RichText'
 import { askConfirm } from '../components/Dialog'
+import { cantripScale } from '../cantrip'
 
 type View = 'mine' | 'library' | string
 
@@ -213,6 +214,7 @@ function SpellSection({ level, spells, editable, filtering, onOpen, onToggle, on
               />
             ) : <span className="pip-dot" />}
             <span className="nm">{s.name || 'Unnamed'}</span>
+            {level === 0 && <CantripChip s={s} />}
             {s.effects.length > 0 && <span className="chip accent fx-chip" style={{ opacity: s.active ? 1 : 0.55 }} title="Linked to your sheet">{s.active ? 'active' : 'fx'}</span>}
             {!s.description && editable && <span className="muted small" title="No description stored yet">no desc</span>}
             <Crm s={s} />
@@ -545,4 +547,12 @@ function PeekSpells({ id }: { id: string }) {
       <Toast msg={toast.msg} />
     </div>
   )
+}
+
+/** a cantrip's damage at the character's level, on its line in the list */
+function CantripChip({ s }: { s: Spell }) {
+  const level = useChar().level
+  const sc = cantripScale(s.description, level)
+  if (!sc || !sc.now) return null
+  return <span className="chip cantrip-chip" title={`At level ${level}. ${sc.tiers.filter((x) => x[1]).map(([l, d]) => `${l}+: ${d}`).join(' · ')}`}>{sc.now}</span>
 }

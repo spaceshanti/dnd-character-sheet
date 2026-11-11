@@ -48,7 +48,12 @@ function bestIn(lib: LibItem[], name: string): LibItem | undefined {
   const k = key(name.replace(/(?:^|\s)\+[1-3]\b/, ' '))
   if (!k) return undefined
   const rank = (i: LibItem) => (i.d ? 0 : 2) + (i.e === '2024' || i.e === 'AK5e' ? 0 : 1)
-  const pick = (list: LibItem[]) => list.sort((a, b) => rank(a) - rank(b))[0]
+  // the best text, with a weight from another edition when that one has none (packs only have one in 2024)
+  const pick = (list: LibItem[]) => {
+    const best = list.sort((a, b) => rank(a) - rank(b))[0]
+    const w = best.w || list.find((i) => i.w)?.w || 0
+    return w === best.w ? best : { ...best, w }
+  }
   // "Arts Staff +1/+2/+3" in the book matches "Arts Staff +2"
   const base = (n: string) => key(n.replace(/\s*\+1\/\+2\/\+3/, ''))
   let m = lib.filter((i) => key(i.n) === k)
@@ -70,4 +75,11 @@ export function searchItems(q: string, opts: { magic: 'all' | 'magic' | 'mundane
     (opts.magic === 'all' || (opts.magic === 'magic') === i.m) &&
     (opts.edition === 'all' || i.e === opts.edition),
   ).slice(0, 200)
+}
+
+/** what a magic weapon / armour is made from ("Weapon (longsword)", "Armor (plate)"), for its weight */
+export function baseItemWeight(text: string, sys: SystemId): number {
+  const base = /^(?:Weapon|Armou?r)\s*\(([^)]+)\)/i.exec(text.trim())?.[1]?.split(/,| or /)[0]?.trim()
+  if (!base || /^any\b/i.test(base)) return 0
+  return bestItemFor(base, sys)?.w || bestItemFor(`${base} armor`, sys)?.w || 0
 }

@@ -3,7 +3,7 @@ import { ABILITIES, ACTION_TYPES, ITEM_CATEGORIES, RARITIES, SLOT_IDS } from '..
 import { attackInfo, carryCapacity, itemAttacks, masterySource, signed, totalWeight } from '../calc'
 import { newItem } from '../blank'
 import { isAK } from '../systems'
-import { bestItemFor } from '../itemLib'
+import { baseItemWeight, bestItemFor } from '../itemLib'
 import { systemOf, type SystemId } from '../systems'
 import { ammoOptions, ammoText } from '../consume'
 import { MASTERIES, MASTERY_INFO, akGearExtras, lookupArmor, lookupWeapon, weaponNames } from '../data/gear'
@@ -53,7 +53,10 @@ function itemFromText(text: string, sys: SystemId): Item {
   return {
     ...newItem(), name, qty, weapon, armor,
     category: weapon ? 'Weapon' : armor ? 'Armor' : lib?.k ?? 'Misc',
-    description: lib?.d || ak?.description || '', weight: lib?.w || ak?.weight || 0, value: lib?.m ? lib.c : lib?.c || ak?.value || '',
+    description: lib?.d || ak?.description || '', value: lib?.m ? lib.c : lib?.c || ak?.value || '',
+    // the item's own weight, else its base weapon / armour's (magic items rarely list one)
+    weight: lib?.w || ak?.weight || baseItemWeight(lib?.d ?? '', sys) || (base ? bestItemFor(base, sys)?.w || akGearExtras(base)?.weight || 0 : 0)
+      || (weapon || armor ? bestItemFor(weapon?.kind || name, sys)?.w || 0 : 0),
     effects: ak?.effects ?? [],
     rarity: plus ? (plus === 1 ? 'uncommon' : plus === 2 ? 'rare' : 'very rare') : lib?.r ?? 'common',
     attunement: lib?.a ?? false,
@@ -419,6 +422,8 @@ function ItemTextSource({ item }: { item: Item }) {
     if (!(await replaceOk())) return
     up((x) => {
       x.description = r.description || x.description
+      // wikidot pages rarely give a weight: take the base weapon / armour's, or the standard item's
+      if (!x.weight) x.weight = baseItemWeight(r.description || '', systemOf(c)) || bestItemFor(x.name, systemOf(c))?.w || 0
       if (r.url) x.url = r.url
       if (r.rarity) x.rarity = r.rarity as Item['rarity']
       if (r.attunement) x.attunement = true

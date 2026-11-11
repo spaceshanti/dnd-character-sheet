@@ -13,6 +13,8 @@ let books: Record<string, string> = {}
 
 /** every imported data file (ak5e.json, your UA spell lists…) */
 export const extraFiles = (): ExtraData[] => Object.values(extras)
+/** the same, with the file name each came from */
+export const extraEntries = (): [string, ExtraData][] => Object.entries(extras)
 /** a book's markdown text (the Arknights 5e book's text view), if downloaded */
 export const bookText = (id: string): string | undefined => books[id]
 

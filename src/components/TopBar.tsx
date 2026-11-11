@@ -3,7 +3,7 @@ import { ALIGNMENTS, conditionsFor } from '../constants'
 import { isAK, systemOf } from '../systems'
 import { DEATHS_DOOR } from '../ak'
 import { longRestOn, rememberRest, restEffects, restSnapshot } from '../rest'
-import { activeEffects, damageReduction, netAdvantage, signed, statInfo, type StatKey } from '../calc'
+import { activeEffects, damageReduction, netAdvantage, signed, spellStats, statInfo, type StatKey } from '../calc'
 import { uid } from '../blank'
 import { useChar, useStore, useUI, type PageId } from '../store'
 import { Field, FitInput, Num, Pips, Popover, Toast, useToast } from './ui'
@@ -251,6 +251,7 @@ function Vitals() {
   const ak = isAK(c)
   const conditions = conditionsFor(systemOf(c))
   const dr = damageReduction(c, fx)
+  const spell = spellStats(c, fx)
 
   return (
     <div className="vitals">
@@ -269,6 +270,14 @@ function Vitals() {
         <div className="v">{spd.total}<span style={{ fontSize: 11 }}>ft</span></div>
         <div className="sub">{addsText(spd)}</div>
       </div>
+      {/* spell save DC (and attack bonus): features use it too, so it's here as well as on the Spells page */}
+      {spell.dc != null && (
+        <div className="vbox spell-box" style={{ cursor: 'default' }} title={`Spell save DC ${spell.dc} · spell attack ${signed(spell.attack ?? 0)} (8 + proficiency + ${(c.spellAbility || '').toUpperCase()} modifier, plus any bonuses)`}>
+          <div className="l">Spell DC</div>
+          <div className="v">{spell.dc}</div>
+          <div className="sub">atk {signed(spell.attack ?? 0)}</div>
+        </div>
+      )}
       {ak ? (
         <div className="vbox" style={{ cursor: 'default' }} title={'Damage Reduction: a flat cut to damage taken, before resistance (never below 1).' + (dr.adds.length ? '\n' + dr.adds.map((a) => `${a.label} ${signed(a.value)}`).join('\n') : '')}>
           <div className="l">Dmg Red.</div>

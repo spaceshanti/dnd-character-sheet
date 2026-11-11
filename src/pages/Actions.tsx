@@ -1,15 +1,20 @@
 import { useState, type ReactNode } from 'react'
 import { WeaponTags } from '../components/WeaponTags'
-import { attackInfo, itemAttacks, signed } from '../calc'
-import { useChar, useUI } from '../store'
+import { attackInfo, itemAttacks, signed, spellActionType, spellOnActions } from '../calc'
+import { useChar, useStore, useUI } from '../store'
+import { cantripScale } from '../cantrip'
 import { isAK } from '../systems'
 import { activateOp } from '../ak'
 import { Frame, Toast, useToast } from '../components/ui'
 import { costText, modsFor, spendAction } from '../components/FeatureParts'
 import { ammoText, useItem } from '../consume'
-import type { ActionType } from '../types'
+import type { ActionType, Character, Spell } from '../types'
 
-interface Row { key: string; kind: string; name: string; right: string; onClick: () => void; onUse?: () => void; tags?: ReactNode }
+interface Row { key: string; kind: string; name: string; right: string; onClick: () => void; onUse?: () => void; tags?: ReactNode; cls?: string; side?: ReactNode }
+
+/** spells you can cast right now: cantrips, prepared and always-prepared spells (every Art you know on Arknights sheets) */
+const castable = (c: Character, s: Spell) => isAK(c) || s.level === 0 || s.prepared || s.alwaysPrepared
+
 
 const STANDARD: Record<string, string> = {
   Attack: 'Make one melee or ranged attack (or more with Extra Attack).',
@@ -31,6 +36,8 @@ export function ActionsPage() {
   const set = useUI((s) => s.set)
   const go = useUI((s) => s.go)
   const [std, setStd] = useState('')
+  const [showHidden, setShowHidden] = useState(false)
+  const patch = useStore((s) => s.patch)
   const toast = useToast()
 
   const rows: Record<'action' | 'bonus' | 'reaction' | 'other', Row[]> = { action: [], bonus: [], reaction: [], other: [] }
@@ -79,6 +86,24 @@ export function ActionsPage() {
       })
     }
   }
+  // spells / Arts, marked as such; each can be shown or hidden here
+  const spellWord = isAK(c) ? 'Art' : 'Spell'
+  const setOnActions = (id: string, on: boolean) => patch((d) => { const x = d.spells.find((y) => y.id === id); if (x) x.onActions = on })
+  for (const s of [...c.spells].filter((x) => castable(c, x)).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))) {
+    const on = spellOnActions(s)
+    if (!on && !showHidden) continue
+    const dmg = s.level === 0 ? cantripScale(s.description, c.level)?.now : ''
+    put(spellActionType(s.castingTime), {
+      key: s.id, kind: s.level === 0 ? (isAK(c) ? 'Art · 0' : 'Cantrip') : `${spellWord} · ${s.level}`, name: s.name || 'Unnamed',
+      right: [s.range, s.duration, dmg, s.concentration ? 'Concentration' : ''].filter(Boolean).join(' · '),
+      onClick: () => set({ drawer: { kind: 'spell', id: s.id } }),
+      cls: `act-spell ${on ? '' : 'act-hidden'}`,
+      side: (
+        <button className="btn icon sm ghost act-eye" title={on ? 'Hide from the Actions page' : 'Show on the Actions page'}
+          onClick={(e) => { e.stopPropagation(); setOnActions(s.id, !on) }}>{on ? '✕' : '＋'}</button>
+      ),
+    })
+  }
   for (const i of c.items) {
     if (i.actionType === 'none' || i.qty <= 0) continue
     put(i.actionType, { key: i.id, kind: 'Item', name: i.name, right: i.qty > 1 ? `×${i.qty}` : '', onClick: () => set({ inventoryOpen: true, inventorySelected: i.id }) })
@@ -90,16 +115,22 @@ export function ActionsPage() {
 
   return (
     <div className="col" style={{ gap: 14 }}>
-      <div className="muted small">
-        {ak ? 'Built automatically from your attacks, Operator Skills, and any feature or item you\'ve given an action type. Arts are on the Arts page.'
-          : 'Built automatically from your attacks and any feature or item you\'ve given an action type. Spells are on the Spells page.'}
+      <div className="row" style={{ gap: 10 }}>
+        <span className="muted small grow">
+          {ak ? 'Built automatically from your attacks, Operator Skills, Arts, and any feature or item you\'ve given an action type.'
+            : 'Built automatically from your attacks, spells, and any feature or item you\'ve given an action type.'}
+          {' '}Bonus-action and reaction {ak ? 'Arts' : 'spells'} show by default; ✕ hides one.
+        </span>
+        <label className="row small" style={{ gap: 6 }}>
+          <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} /> Show hidden {ak ? 'Arts' : 'spells'}
+        </label>
       </div>
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', alignItems: 'start' }}>
         {cols.map((col) => (
           <Frame key={col.id} title={col.title} className="action-col">
             {rows[col.id].length === 0 && <div className="empty">Nothing yet</div>}
             {rows[col.id].map((r) => (
-              <div key={r.key} className="act-item" onClick={r.onClick}>
+              <div key={r.key} className={`act-item ${r.cls ?? ''}`} onClick={r.onClick}>
                 <span className="k">{r.kind}</span>
                 <span className="grow" style={{ minWidth: 0 }}>
                   <b>{r.name || 'Unnamed'}</b>
@@ -107,6 +138,7 @@ export function ActionsPage() {
                   {r.tags}
                 </span>
                 {r.onUse && <button className="btn sm primary" onClick={(e) => { e.stopPropagation(); r.onUse!() }}>Use</button>}
+                {r.side}
               </div>
             ))}
           </Frame>
