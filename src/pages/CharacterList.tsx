@@ -3,6 +3,7 @@ import { SYSTEMS, systemName, systemOf, type SystemId } from '../systems'
 import { downloadJson, TRASH_DAYS, useStore, useUI } from '../store'
 import { Toast, useToast } from '../components/ui'
 import type { Character } from '../types'
+import { askConfirm } from '../components/Dialog'
 
 function ago(t: number): string {
   const s = Math.max(0, (Date.now() - t) / 1000)
@@ -91,7 +92,7 @@ export function CharacterList() {
                   <button className={`btn sm ghost lock-btn ${c.locked ? 'on' : ''}`} onClick={() => setLocked(id, !c.locked)}
                     title={c.locked ? 'Protected from deletion. Click to unlock' : 'Unlocked: can be deleted. Click to protect it again'}>{c.locked ? '🔒' : '🔓'}</button>
                   <button className="btn sm danger" disabled={c.locked} title={c.locked ? 'Unlock it (🔒) to delete' : 'Delete'}
-                    onClick={() => { if (window.confirm(`Delete ${c.name || 'this character'}? You can restore it from Recently deleted for ${TRASH_DAYS} days.`)) deleteChar(id) }}>✕</button>
+                    onClick={async () => { if ((await askConfirm(`Delete ${c.name || 'this character'}? You can restore it from Recently deleted for ${TRASH_DAYS} days.`))) deleteChar(id) }}>✕</button>
                 </div>
               </div>
             </div>
@@ -118,7 +119,7 @@ export function CharacterList() {
                   <span className="muted small grow">{[t.char.level ? `Level ${t.char.level}` : '', t.char.className].filter(Boolean).join(' · ')} · deleted {ago(t.deletedAt)}</span>
                   <button className="btn sm" onClick={() => restoreChar(t.char.id)}>Restore</button>
                   <button className="btn sm ghost" title="Delete for good"
-                    onClick={() => { if (window.confirm(`Delete ${t.char.name || 'this character'} for good? This can't be undone.`)) purgeChar(t.char.id) }}>Delete forever</button>
+                    onClick={async () => { if ((await askConfirm(`Delete ${t.char.name || 'this character'} for good? This can't be undone.`))) purgeChar(t.char.id) }}>Delete forever</button>
                 </div>
               ))}
             </div>

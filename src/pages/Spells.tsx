@@ -9,6 +9,7 @@ import { Frame, Modal, Num, Pips, Switch, Toast, useToast } from '../components/
 import { RichArea } from '../components/RichText'
 import type { CustomSpell, Spell } from '../types'
 import { RichText } from '../components/RichText'
+import { askConfirm } from '../components/Dialog'
 
 type View = 'mine' | 'library' | string
 
@@ -421,7 +422,7 @@ function Library() {
             {sel.e === 'Custom' && sel.id && (
               <>
                 <button className="btn" onClick={() => { const x = customSpells.find((y) => y.id === sel.id); if (x) { setEditing(x); setSel(null) } }}>Edit</button>
-                <button className="btn danger" onClick={() => { if (window.confirm(`Remove ${sel.n} from your library? Characters that already have it keep their copy.`)) { deleteCustomSpell(sel.id!); setSel(null) } }}>Delete from library</button>
+                <button className="btn danger" onClick={async () => { if ((await askConfirm(`Remove ${sel.n} from your library? Characters that already have it keep their copy.`))) { deleteCustomSpell(sel.id!); setSel(null) } }}>Delete from library</button>
                 <span className="grow" />
               </>
             )}

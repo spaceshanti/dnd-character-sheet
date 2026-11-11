@@ -14,6 +14,7 @@ import { targetName } from '../constants'
 import type { Effect, Feature, FeatureCategory, Spell } from '../types'
 import { FormulaModifiers, formulaText } from './FormulaEditor'
 import { formulaVars } from '../calc'
+import { askConfirm } from './Dialog'
 
 export function DrawerHost() {
   const drawer = useUI((s) => s.drawer)
@@ -66,7 +67,7 @@ export function SpellDrawer({ id }: { id: string }) {
     const r = await window.sheetApi.fetchSpell(sp.url || sp.name)
     setBusy(false)
     if (r.error) { setFetchMsg(`${r.error} You can always paste the description yourself.`); return }
-    if (sp.description.trim() && !window.confirm('Replace the stored description with the fetched one?')) return
+    if (sp.description.trim() && !(await askConfirm('Replace the stored description with the fetched one?'))) return
     up((x) => {
       if (r.name && !x.name) x.name = r.name
       if (r.url) x.url = r.url
@@ -190,7 +191,7 @@ export function SpellDrawer({ id }: { id: string }) {
               </button>
             )}
             <span className="grow" />
-            <button className="btn danger" onClick={() => { if (window.confirm(`Remove ${sp.name || 'this spell'}?`)) { close(); patch((d) => { d.spells = d.spells.filter((y) => y.id !== id) }) } }}>Delete</button>
+            <button className="btn danger" onClick={async () => { if ((await askConfirm(`Remove ${sp.name || 'this spell'}?`))) { close(); patch((d) => { d.spells = d.spells.filter((y) => y.id !== id) }) } }}>Delete</button>
           </div>
         </div>
       ) : (
@@ -210,8 +211,8 @@ export function SpellDrawer({ id }: { id: string }) {
               <div className="row small" style={{ marginBottom: 6, flexWrap: 'wrap' }}>
                 <span>Built-in library:</span>
                 {matches.map((m) => (
-                  <button key={m.e + (m.src ?? '')} className="btn sm" onClick={() => {
-                    if (sp.description.trim() && !window.confirm('Replace the stored description?')) return
+                  <button key={m.e + (m.src ?? '')} className="btn sm" onClick={async () => {
+                    if (sp.description.trim() && !(await askConfirm('Replace the stored description?'))) return
                     up((x) => Object.assign(x, applyLib(x, m)))
                   }}>Use {libLabel(m.e)} text</button>
                 ))}
@@ -277,8 +278,8 @@ export function FeatureDrawer({ id }: { id: string }) {
   const close = () => set({ drawer: null })
   // offered while reading and while editing (new features open straight into editing)
   const remove = (
-    <button className="btn danger" onClick={() => {
-      if (!window.confirm(`Remove ${f.name || 'this feature'}? Spells it grants are removed too; its resources stay under Class Resources.`)) return
+    <button className="btn danger" onClick={async () => {
+      if (!(await askConfirm(`Remove ${f.name || 'this feature'}? Spells it grants are removed too; its resources stay under Class Resources.`))) return
       close()
       patch((d) => {
         d.features = d.features.filter((y) => y.id !== id)

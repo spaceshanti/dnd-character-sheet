@@ -27,6 +27,9 @@ function createWindow() {
     },
   })
   Menu.setApplicationMenu(null)
+  // Electron on Windows can leave the page unable to take typing after a native dialog (file pickers, Save PDF):
+  // whenever the window comes back to the front, give the keyboard back to the page
+  win.on('focus', () => { if (!win.webContents.isFocused()) win.webContents.focus() })
   // open maximized; F11 toggles true full screen
   win.once('ready-to-show', () => { win.maximize(); win.show() })
   win.webContents.on('before-input-event', (e, input) => {

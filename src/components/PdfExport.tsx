@@ -3,6 +3,7 @@ import { useChar } from '../store'
 import { isAK } from '../systems'
 import { Toast, useToast } from './ui'
 import type { TemplateKind } from '../pdf/export'
+import { askConfirm } from './Dialog'
 
 /*
  * Export the open character onto a printable sheet. The sheets themselves are other people's PDFs / images,
@@ -140,7 +141,7 @@ export function PdfExport() {
                   <b>{name}</b><br /><span className="muted small">{KIND_NAMES[kind as TemplateKind] ?? kind}</span>
                 </span>
                 <button className="btn sm primary" disabled={!!busy} onClick={() => exportPdf(f)}>{busy === f ? 'Exporting…' : 'Export'}</button>
-                <button className="btn icon sm ghost" title="Remove this sheet" onClick={async () => { if (window.confirm(`Remove ${name}? (Only the app's copy.)`)) { await api.remove(f); refresh() } }}>✕</button>
+                <button className="btn icon sm ghost" title="Remove this sheet" onClick={async () => { if ((await askConfirm(`Remove ${name}? (Only the app's copy.)`))) { await api.remove(f); refresh() } }}>✕</button>
               </div>
             )
           })}

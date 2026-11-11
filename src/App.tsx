@@ -16,6 +16,7 @@ import { GalleryPage } from './pages/Gallery'
 import { SettingsPage } from './pages/Settings'
 import { OperatorSkillsPage } from './pages/OperatorSkills'
 import { BookViewer } from './components/BookViewer'
+import { DialogHost } from './components/Dialog'
 import { systemOf } from './systems'
 import { downloadAk5e, hasAkData, reloadSoon } from './components/BookSetup'
 
@@ -101,6 +102,7 @@ export default function App() {
     <>
       <CharacterList />
       <ThemeMenu />
+      <DialogHost />
     </>
   )
   return (
@@ -124,6 +126,7 @@ export default function App() {
       <ImagePicker />
       <DrawerHost />
       <BookViewer />
+      <DialogHost />
       {akDownload && <div className="toast show" onClick={() => setAkDownload('')}>{akDownload}</div>}
     </div>
   )

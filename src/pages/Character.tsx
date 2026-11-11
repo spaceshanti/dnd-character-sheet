@@ -4,6 +4,7 @@ import { Field, Frame } from '../components/ui'
 import { RichArea } from '../components/RichText'
 import { ImageBox } from '../components/ImageBox'
 import { isAK } from '../systems'
+import { askConfirm, askText } from '../components/Dialog'
 
 export function CharacterPage() {
   const c = useChar()
@@ -51,7 +52,7 @@ export function CharacterPage() {
       <div className="col" style={{ gap: 12 }}>
         <Frame
           title={st.alliesTitle || 'Allies & Organizations'} tight
-          tools={<button className="btn sm ghost" title="Rename this box" onClick={() => { const t = window.prompt('Box title', st.alliesTitle); if (t != null) patch((d) => { d.story.alliesTitle = t }) }}>✎</button>}
+          tools={<button className="btn sm ghost" title="Rename this box" onClick={async () => { const t = (await askText('Box title', st.alliesTitle)); if (t != null) patch((d) => { d.story.alliesTitle = t }) }}>✎</button>}
         >
           <div className="row" style={{ alignItems: 'flex-start', gap: 10 }}>
             <div style={{ width: 96, flex: 'none' }}>
@@ -67,16 +68,16 @@ export function CharacterPage() {
         {c.extraNotes.map((n) => (
           <Frame key={n.id} title={n.title || 'Notes'} tight tools={
             <>
-              <button className="btn sm ghost" onClick={() => { const t = window.prompt('Box title', n.title); if (t != null) patch((d) => { const x = d.extraNotes.find((y) => y.id === n.id); if (x) x.title = t }) }}>✎</button>
-              <button className="btn sm ghost" onClick={() => { if (window.confirm('Delete this box?')) patch((d) => { d.extraNotes = d.extraNotes.filter((y) => y.id !== n.id) }) }}>✕</button>
+              <button className="btn sm ghost" onClick={async () => { const t = (await askText('Box title', n.title)); if (t != null) patch((d) => { const x = d.extraNotes.find((y) => y.id === n.id); if (x) x.title = t }) }}>✎</button>
+              <button className="btn sm ghost" onClick={async () => { if ((await askConfirm('Delete this box?'))) patch((d) => { d.extraNotes = d.extraNotes.filter((y) => y.id !== n.id) }) }}>✕</button>
             </>
           }>
             <RichArea className="sheet-ta free" minRows={4} value={n.text} onChange={(v) => patch((d) => { const x = d.extraNotes.find((y) => y.id === n.id); if (x) x.text = v })} />
           </Frame>
         ))}
         <div>
-          <button className="btn sm" onClick={() => {
-            const t = window.prompt('Title for the new box (e.g. Family, Secrets, Session notes)', 'Notes')
+          <button className="btn sm" onClick={async () => {
+            const t = (await askText('Title for the new box (e.g. Family, Secrets, Session notes)', 'Notes'))
             if (t != null) patch((d) => { d.extraNotes.push({ id: uid(), title: t, text: '' }) })
           }}>＋ Add another box</button>
         </div>

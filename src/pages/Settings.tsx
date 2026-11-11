@@ -8,6 +8,7 @@ import { ago, undoRest } from '../rest'
 import { useZoom } from '../zoom'
 import { BookSetup } from '../components/BookSetup'
 import { convertSkills, isAK, SYSTEMS, systemName, systemOf, type SystemId } from '../systems'
+import { askConfirm } from '../components/Dialog'
 
 export function SettingsPage() {
   const c = useChar()
@@ -46,8 +47,8 @@ export function SettingsPage() {
             return (
               <div key={kind} className="row">
                 <span className="grow">{kind === 'long' ? 'Long rest' : 'Short rest'}{u ? <span className="muted small"> · taken {ago(u.at)}</span> : <span className="muted small"> · nothing to undo</span>}</span>
-                <button className="btn sm" disabled={!u} onClick={() => {
-                  if (!window.confirm(`Undo the last ${kind} rest? HP, hit dice, spell slots / Arts Points, resources, death saves and inspiration go back to how they were just before it (anything you changed in those since is lost).`)) return
+                <button className="btn sm" disabled={!u} onClick={async () => {
+                  if (!(await askConfirm(`Undo the last ${kind} rest? HP, hit dice, spell slots / Arts Points, resources, death saves and inspiration go back to how they were just before it (anything you changed in those since is lost).`))) return
                   patch((d) => undoRest(d, kind))
                 }}>↶ Undo {kind} rest</button>
               </div>
@@ -60,9 +61,9 @@ export function SettingsPage() {
         <div className="col" style={{ gap: 12 }}>
           <div className="row">
             <span className="grow">This character is for</span>
-            <select value={systemOf(c)} onChange={(e) => {
+            <select value={systemOf(c)} onChange={async (e) => {
               const to = e.target.value as SystemId
-              if (!window.confirm(`Move ${c.name || 'this character'} to ${systemName(to)}? Skills are merged or split to match (e.g. History + Religion ↔ Lore); nothing else is deleted, and you can switch back.`)) return
+              if (!(await askConfirm(`Move ${c.name || 'this character'} to ${systemName(to)}? Skills are merged or split to match (e.g. History + Religion ↔ Lore); nothing else is deleted, and you can switch back.`))) return
               patch((d) => { d.system = to; d.skillProf = convertSkills(d.skillProf, to) })
             }}>
               {SYSTEMS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}

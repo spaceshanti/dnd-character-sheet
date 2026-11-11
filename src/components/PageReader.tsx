@@ -214,7 +214,7 @@ export function PageReader({ book, pb, layout, onClose, extra, searchTick }: Rea
     const k = (e: KeyboardEvent) => {
       if (!keyInScope(layout, e)) return
       const typing = /INPUT|TEXTAREA/.test((e.target as HTMLElement).tagName)
-      if (e.key === 'Escape' && document.querySelector('.spell-peek')) return
+      if (e.key === 'Escape' && document.querySelector('.spell-peek, .ask-box')) return
       if (e.key === 'Escape') { e.stopImmediatePropagation(); if (q && document.activeElement === search.current) setQ(''); else onClose() }
       else if (!typing && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) { e.preventDefault(); scrollToPage(page + (e.key === 'ArrowRight' ? 1 : -1)) }
     }

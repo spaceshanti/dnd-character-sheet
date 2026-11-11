@@ -7,6 +7,7 @@ import { useChar, useStore } from '../store'
 import { Frame, Modal, Num, Toast, useToast } from '../components/ui'
 import { RichArea, RichText } from '../components/RichText'
 import type { OperatorSkill, SkillTier } from '../types'
+import { askConfirm } from '../components/Dialog'
 
 const ACTIVATIONS = ['Action', 'Bonus Action', 'Reaction', 'No Action', 'Special']
 
@@ -80,7 +81,7 @@ function OpCard({ s, onMsg }: { s: OperatorSkill; onMsg: (m: string) => void }) 
           <div className="row">
             <button className="btn sm primary" onClick={() => setEdit(false)}>✓ Done</button>
             <span className="grow" />
-            <button className="btn sm danger" onClick={() => { if (window.confirm(`Remove ${s.name || 'this skill'}?`)) patch((d) => { d.ak.opSkills = d.ak.opSkills.filter((y) => y.id !== s.id); if (d.ak.activeSkill === s.id) d.ak.activeSkill = '' }) }}>Delete</button>
+            <button className="btn sm danger" onClick={async () => { if ((await askConfirm(`Remove ${s.name || 'this skill'}?`))) patch((d) => { d.ak.opSkills = d.ak.opSkills.filter((y) => y.id !== s.id); if (d.ak.activeSkill === s.id) d.ak.activeSkill = '' }) }}>Delete</button>
           </div>
         </div>
       ) : (

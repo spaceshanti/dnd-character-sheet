@@ -9,6 +9,7 @@ import { systemOf } from '../systems'
 import { listBooks, sectionsFromToc, type BookInfo } from '../book/books'
 import { BookContents } from './BookContents'
 import { PageReader } from './PageReader'
+import { askText } from './Dialog'
 
 /*
  * In-app reader for the Arknights 5e sourcebook: contents on the left (chapters → sections → sub-headings),
@@ -136,7 +137,7 @@ export function useBookmarks(bookId: string) {
   return {
     marks: all.filter((b) => b.book === bookId).sort((a, b) => a.page - b.page || a.y - b.y),
     add: (page: number, title: string, y = 0) => add({ book: bookId, page, title, y }),
-    rename: (id: string, old: string) => { const t = window.prompt('Bookmark name', old); if (t != null && t.trim()) update(id, { title: t.trim() }) },
+    rename: async (id: string, old: string) => { const t = (await askText('Bookmark name', old)); if (t != null && t.trim()) update(id, { title: t.trim() }) },
     remove,
   }
 }
@@ -217,7 +218,7 @@ function TextReader({ layout, onClose, extra, searchTick }: ReaderProps) {
   useEffect(() => { if (searchTick) { search.current?.focus(); search.current?.select() } }, [searchTick])
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && document.querySelector('.spell-peek')) return
+      if (e.key === 'Escape' && document.querySelector('.spell-peek, .ask-box')) return
       if (e.key === 'Escape' && keyInScope(layout, e)) { e.stopImmediatePropagation(); if (q && document.activeElement === search.current) setQ(''); else onClose() }
     }
     window.addEventListener('keydown', k, true)

@@ -15,6 +15,7 @@ import { newSide, otherName, setSwap, switchClass } from '../altClass'
 import { hasFeaturesFor, planFill, ruleNames, type FillPlan } from '../autofill'
 import { longRestOn } from '../rest'
 import type { AbilityKey, Attack, Effect } from '../types'
+import { askConfirm } from '../components/Dialog'
 
 const effectText = (e: Effect) =>
   `${targetName(e.target)} ${e.formula !== undefined ? `= ${e.formula}` : e.type === 'bonus' ? signed(e.value ?? 0) : e.type === 'minScore' ? `≥ ${e.value}` : e.type === 'halfProf' ? '½ proficiency' : e.type}`
@@ -101,11 +102,11 @@ function AltClassPanel() {
     setForm(null)
     toast.show(`Added ${label(form.cls.trim(), form.branch.trim())} as your alternate class`)
   }
-  const doSwitch = (rest: boolean) => {
+  const doSwitch = async (rest: boolean) => {
     const msg = rest
       ? `Take a long rest and switch to ${other}? You don't regain any hit dice on this rest.`
       : `Switch to ${other} without resting? (The rule is to switch as part of a long rest.)`
-    if (!window.confirm(msg)) return
+    if (!(await askConfirm(msg))) return
     let done: string[] = []
     patch((d) => { switchClass(d); if (rest) done = longRestOn(d, { hitDice: false }) })
     toast.show(`Now playing ${other}${rest ? ' · long rest taken, no hit dice regained' : ''}${done.length ? ' · ' + done.join(' · ') : ''}`)
@@ -179,7 +180,7 @@ function AltClassPanel() {
             <button className="btn sm ghost grow" onClick={() => doSwitch(false)} title="For fixing things up; the rule is to switch on a long rest">Switch without resting</button>
             {!alt.active && (
               <button className="btn sm ghost" title="Remove the alternate class (its features and so on are deleted)"
-                onClick={() => { if (window.confirm(`Remove ${other} and everything on it?`)) patch((d) => { d.altClass = null }) }}>Remove</button>
+                onClick={async () => { if ((await askConfirm(`Remove ${other} and everything on it?`))) patch((d) => { d.altClass = null }) }}>Remove</button>
             )}
           </div>
           {plans.length > 0 && <button className="btn sm" onClick={fill}>Fill in {plans.map((p) => p.name).join(' / ')} features</button>}

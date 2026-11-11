@@ -12,6 +12,7 @@ import { useAutoFill } from './AutoFill'
 import { dropImagesOn, Lightbox } from './ImagePicker'
 import { StatEditor } from './StatEditor'
 import { Icon } from './Icon'
+import { askConfirm } from './Dialog'
 
 const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']
 
@@ -59,10 +60,10 @@ export function TopBar() {
   const ak = isAK(c)
   // Arknights sheets show the game's class / branch icons automatically (downloaded once onto this computer)
   useEffect(() => { if (ak) ensureIcons() }, [ak, ensureIcons])
-  const longRest = () => {
-    if (!window.confirm(ak
+  const longRest = async () => {
+    if (!(await askConfirm(ak
       ? 'Take a long rest? This refills HP, Arts Points, hit dice (half) and resources, tops SP up to your start SP, and removes one failed death save.'
-      : 'Take a long rest? This refills HP, spell slots, hit dice (half), resources and clears death saves.')) return
+      : 'Take a long rest? This refills HP, spell slots, hit dice (half), resources and clears death saves.'))) return
     let done: string[] = []
     const before = restSnapshot(c)
     patch((d) => {
@@ -71,8 +72,8 @@ export function TopBar() {
     })
     report('Long', done)
   }
-  const shortRest = () => {
-    if (!window.confirm('Take a short rest? Resources that recharge on a short rest are refilled.')) return
+  const shortRest = async () => {
+    if (!(await askConfirm('Take a short rest? Resources that recharge on a short rest are refilled.'))) return
     let done: string[] = []
     const before = restSnapshot(c)
     patch((d) => {

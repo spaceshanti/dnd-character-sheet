@@ -13,6 +13,7 @@ import { EffectsEditor, Modal, Num, Select, Switch } from './ui'
 import { RichArea } from './RichText'
 import { Icon, ICONS, itemIcon } from './Icon'
 import type { ArmorStats, Item, WeaponStats } from '../types'
+import { askConfirm } from './Dialog'
 
 const rarityClass = (i: Item) => `r-${i.rarity.replace(' ', '-')}`
 const slotName = (id: string) => SLOT_IDS.find((s) => s.id === id)?.name ?? ''
@@ -390,8 +391,8 @@ function ItemEditor({ item }: { item: Item }) {
         <RichArea className="box-input" minRows={3} placeholder="Description / properties" value={item.description} onChange={(v) => up((x) => { x.description = v })} />
       </Section>
 
-      <button className="btn danger" onClick={() => {
-        if (!window.confirm(`Delete ${item.name || 'this item'}?`)) return
+      <button className="btn danger" onClick={async () => {
+        if (!(await askConfirm(`Delete ${item.name || 'this item'}?`))) return
         set({ inventorySelected: '' })
         patch((d) => { d.items = d.items.filter((y) => y.id !== item.id) })
       }}>Delete item</button>
@@ -407,7 +408,7 @@ function ItemTextSource({ item }: { item: Item }) {
   const [msg, setMsg] = useState('')
   const up = (fn: (i: Item) => void) => patch((d) => { const x = d.items.find((y) => y.id === item.id); if (x) fn(x) })
   const lib = bestItemFor(item.name, systemOf(c))
-  const replaceOk = () => !item.description.trim() || window.confirm('Replace the current description?')
+  const replaceOk = async () => !item.description.trim() || (await askConfirm('Replace the current description?'))
   const fetchIt = async () => {
     setMsg('')
     if (!window.sheetApi?.fetchItem) { setMsg('Fetching only works in the desktop app.'); return }
@@ -415,7 +416,7 @@ function ItemTextSource({ item }: { item: Item }) {
     const r = await window.sheetApi.fetchItem(item.url || item.name)
     setBusy(false)
     if (r.error) { setMsg(r.error); return }
-    if (!replaceOk()) return
+    if (!(await replaceOk())) return
     up((x) => {
       x.description = r.description || x.description
       if (r.url) x.url = r.url
@@ -433,7 +434,7 @@ function ItemTextSource({ item }: { item: Item }) {
       {lib && lib.d && (
         <div className="row small" style={{ gap: 4 }}>
           <span className="muted">Built-in library:</span>
-          <button className="btn sm" onClick={() => { if (replaceOk()) up((x) => { x.description = lib.d; if (!x.weight && lib.w) x.weight = lib.w; if (!x.value && lib.c) x.value = lib.c; if (lib.m) { x.rarity = lib.r; x.attunement = lib.a } }) }}>
+          <button className="btn sm" onClick={async () => { if (await replaceOk()) up((x) => { x.description = lib.d; if (!x.weight && lib.w) x.weight = lib.w; if (!x.value && lib.c) x.value = lib.c; if (lib.m) { x.rarity = lib.r; x.attunement = lib.a } }) }}>
             Use {lib.n} ({lib.e} SRD)
           </button>
         </div>

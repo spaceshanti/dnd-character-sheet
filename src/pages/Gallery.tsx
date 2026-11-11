@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { uid } from '../blank'
 import { imageToDataUrl, useChar, useStore, useUI } from '../store'
 import { Frame } from '../components/ui'
+import { askConfirm } from '../components/Dialog'
 
 export function GalleryPage() {
   const c = useChar()
@@ -39,7 +40,7 @@ export function GalleryPage() {
                 <button className="btn sm" onClick={() => patch((d) => { d.portrait = g.src })} title="Top-left corner image">Use as portrait</button>
                 <button className="btn sm" onClick={() => patch((d) => { d.appearanceImage = g.src })} title="Appearance box on the Character page">Use in Appearance</button>
                 <span className="grow" />
-                <button className="btn sm danger" onClick={() => { if (window.confirm('Remove this image?')) patch((d) => { d.gallery = d.gallery.filter((y) => y.id !== g.id) }) }}>✕</button>
+                <button className="btn sm danger" onClick={async () => { if ((await askConfirm('Remove this image?'))) patch((d) => { d.gallery = d.gallery.filter((y) => y.id !== g.id) }) }}>✕</button>
               </div>
             </div>
           </Frame>
