@@ -338,6 +338,12 @@ export interface Character {
   skillProf: Record<SkillKey, ProfLevel>
   halfProfAll: boolean
   profOverride: number | null
+  /** typed-in values that replace the calculated ones (unset / null = calculated) */
+  spellDcOverride?: number | null
+  spellAttackOverride?: number | null
+  martialDcOverride?: number | null
+  /** how many spells you can have prepared (you type it in; filling in a class sets it from the class table) */
+  maxPrepared?: number
 
   hp: { current: number; temp: number }
   hpMax: Stat

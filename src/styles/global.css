@@ -772,3 +772,14 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 .act-item.act-hidden { opacity: .5; border-left-style: dashed; }
 .act-item .act-eye { opacity: .5; }
 .act-item:hover .act-eye { opacity: 1; }
+
+/* calculated values you can type over */
+.override { display: inline-flex; align-items: center; gap: 2px; }
+.override b { cursor: text; border-bottom: 1px dashed transparent; }
+.override b:hover { border-bottom-color: var(--accent); }
+.override.typed b { color: var(--accent); }
+.override-reset { border: none; background: none; padding: 0 2px; font-size: 11px; color: var(--muted); cursor: pointer; line-height: 1; }
+.override-reset:hover { color: var(--accent); }
+.override-in { width: 46px; text-align: center; font-weight: 700; font-size: 16px; border: 1px solid var(--accent); border-radius: 4px; background: var(--panel); color: var(--ink); padding: 0 2px; }
+.spell-stat .prep-max { width: 46px; text-align: center; font-weight: 700; font-size: 17px; font-family: var(--font-head); border: none; background: transparent; color: var(--ink); padding: 0; }
+.vbox .override { font: inherit; }

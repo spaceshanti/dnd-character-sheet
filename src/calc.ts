@@ -240,16 +240,22 @@ export function statInfo(c: Character, key: StatKey, effects = activeEffects(c))
 }
 
 export function spellStats(c: Character, effects = activeEffects(c)) {
-  if (!c.spellAbility) return { dc: null as number | null, attack: null as number | null, mod: 0 }
+  const typed = { dc: c.spellDcOverride ?? null, attack: c.spellAttackOverride ?? null }
+  if (!c.spellAbility) return { dc: typed.dc, attack: typed.attack, mod: 0, auto: { dc: null as number | null, attack: null as number | null } }
   const m = ability(c, c.spellAbility, effects).mod
   const pb = profBonus(c)
   const dcB = collect(effects, ['spellDc']).bonuses.reduce((s, p) => s + p.value, 0)
   const atB = collect(effects, ['spellAttack']).bonuses.reduce((s, p) => s + p.value, 0)
-  return { dc: 8 + pb + m + dcB, attack: pb + m + atB, mod: m }
+  const auto = { dc: 8 + pb + m + dcB, attack: pb + m + atB }
+  return { dc: typed.dc ?? auto.dc, attack: typed.attack ?? auto.attack, mod: m, auto }
 }
 
 /** AK5e: 8 + STR or DEX (the better one) + proficiency */
 export function martialDc(c: Character, effects = activeEffects(c)) {
+  return c.martialDcOverride ?? martialDcAuto(c, effects)
+}
+
+export function martialDcAuto(c: Character, effects = activeEffects(c)) {
   const m = Math.max(ability(c, 'str', effects).mod, ability(c, 'dex', effects).mod)
   return 8 + profBonus(c) + m + collect(effects, ['martialDc']).bonuses.reduce((s, p) => s + p.value, 0)
 }

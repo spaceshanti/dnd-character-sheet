@@ -237,6 +237,8 @@ function slotsFromTable(b: Builder, table: Table | null, level: number) {
   const pact = table.columns.findIndex((x) => /^spell slots$/i.test(x.trim()))
   const pactLvl = table.columns.findIndex((x) => /^slot level$/i.test(x.trim()))
   if (pact >= 0 && pactLvl >= 0) slots[parseInt(row[pactLvl]) || 1] = parseInt(row[pact]) || 0
+  const prep = table.columns.findIndex((x) => /^prepared spells$/i.test(x.trim()))
+  if (prep >= 0 && parseInt(row[prep])) { b.notes.push('max prepared spells'); b.sets.push((d) => { d.maxPrepared = parseInt(row[prep]) }) }
   if (!Object.values(slots).some(Boolean)) return
   b.notes.push('spell slots')
   b.sets.push((d) => { for (let l = 1; l <= 9; l++) d.slots[l] = { total: slots[l] ?? 0, used: Math.min(d.slots[l]?.used ?? 0, slots[l] ?? 0) } })

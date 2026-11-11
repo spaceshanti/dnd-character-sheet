@@ -6,7 +6,7 @@ import { longRestOn, rememberRest, restEffects, restSnapshot } from '../rest'
 import { activeEffects, damageReduction, netAdvantage, signed, spellStats, statInfo, type StatKey } from '../calc'
 import { uid } from '../blank'
 import { useChar, useStore, useUI, type PageId } from '../store'
-import { Field, FitInput, Num, Pips, Popover, Toast, useToast } from './ui'
+import { Field, FitInput, Num, OverrideNum, Pips, Popover, Toast, useToast } from './ui'
 import { akClassOf, autoFactionFor, autoSymbolFor, SymbolMark, SymbolPicker, useAkIcons } from './ClassSymbol'
 import { useAutoFill } from './AutoFill'
 import { dropImagesOn, Lightbox } from './ImagePicker'
@@ -272,10 +272,10 @@ function Vitals() {
       </div>
       {/* spell save DC (and attack bonus): features use it too, so it's here as well as on the Spells page */}
       {spell.dc != null && (
-        <div className="vbox spell-box" style={{ cursor: 'default' }} title={`Spell save DC ${spell.dc} · spell attack ${signed(spell.attack ?? 0)} (8 + proficiency + ${(c.spellAbility || '').toUpperCase()} modifier, plus any bonuses)`}>
+        <div className="vbox spell-box" style={{ cursor: 'default' }}>
           <div className="l">Spell DC</div>
-          <div className="v">{spell.dc}</div>
-          <div className="sub">atk {signed(spell.attack ?? 0)}</div>
+          <div className="v"><OverrideNum value={c.spellDcOverride} auto={spell.auto.dc} title="Spell save DC" onChange={(v) => patch((d) => { d.spellDcOverride = v })} /></div>
+          <div className="sub" />
         </div>
       )}
       {ak ? (

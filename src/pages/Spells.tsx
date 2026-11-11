@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import { ABILITIES, SPELL_LEVEL_NAMES } from '../constants'
-import { activeEffects, martialDc, preparedCount, signed, spellStats } from '../calc'
+import { activeEffects, martialDcAuto, preparedCount, signed, spellStats } from '../calc'
 import { isAK } from '../systems'
 import { isConsumed, newSpell, uid } from '../blank'
 import { applyLib, bestLib, bundledLib, fetchStub, fromLib, isPool, nameKey, LIB, LIB_DND_CLASSES, LIB_POOLS, LIB_SCHOOLS, libLabel, searchLib, type LibSpell } from '../spellLib'
 import { useChar, useStore, useUI } from '../store'
-import { Frame, Modal, Num, Pips, Switch, Toast, useToast } from '../components/ui'
+import { Frame, Modal, Num, Pips, Switch, Toast, useToast, OverrideNum } from '../components/ui'
 import { RichArea } from '../components/RichText'
 import type { CustomSpell, Spell } from '../types'
 import { RichText } from '../components/RichText'
@@ -31,7 +31,7 @@ export function SpellsPage() {
       <div className="row" style={{ flexWrap: 'wrap', gap: 10 }}>
         <div className="seg">
           <button className={view === 'mine' ? 'on' : ''} onClick={() => setView('mine')}>{ak ? 'My Arts' : 'My spells'}</button>
-          <button className={view === 'library' ? 'on' : ''} onClick={() => setView('library')}>{ak ? 'Arts library' : `Spell library (${LIB.length})`}</button>
+          <button className={view === 'library' ? 'on' : ''} onClick={() => setView('library')}>{ak ? 'Arts library' : 'Spell library'}</button>
         </div>
         {others.length > 0 && (
           <select value={others.includes(view) ? view : ''} onChange={(e) => e.target.value && setView(e.target.value)}>
@@ -49,11 +49,25 @@ export function SpellsPage() {
               </select>
               <span className="field-lbl">Casting ability</span>
             </div>
-            <div className="spell-stat"><b>{ss.dc ?? '—'}</b><span className="field-lbl">Spell save DC</span></div>
-            <div className="spell-stat"><b>{ss.attack == null ? '—' : signed(ss.attack)}</b><span className="field-lbl">Spell attack</span></div>
-            {ak
-              ? <div className="spell-stat" title="8 + STR or DEX (better) + proficiency"><b>{martialDc(c, fx)}</b><span className="field-lbl">Martial DC</span></div>
-              : <div className="spell-stat"><b>{preparedCount(c)}</b><span className="field-lbl">Prepared</span></div>}
+            <div className="spell-stat">
+              <OverrideNum value={c.spellDcOverride} auto={ss.auto.dc} title="8 + proficiency + casting ability modifier" onChange={(v) => patch((d) => { d.spellDcOverride = v })} />
+              <span className="field-lbl">Spell save DC</span>
+            </div>
+            <div className="spell-stat">
+              <OverrideNum value={c.spellAttackOverride} auto={ss.auto.attack} format={signed} title="Proficiency + casting ability modifier" onChange={(v) => patch((d) => { d.spellAttackOverride = v })} />
+              <span className="field-lbl">Spell attack</span>
+            </div>
+            {ak ? (
+              <div className="spell-stat">
+                <OverrideNum value={c.martialDcOverride} auto={martialDcAuto(c, fx)} title="8 + STR or DEX (the better) + proficiency" onChange={(v) => patch((d) => { d.martialDcOverride = v })} />
+                <span className="field-lbl">Martial DC</span>
+              </div>
+            ) : (
+              <div className="spell-stat" title={`How many spells you can have prepared. ${preparedCount(c)} prepared now.`}>
+                <Num min={0} max={99} className="prep-max" value={c.maxPrepared ?? 0} onChange={(n) => patch((d) => { d.maxPrepared = n })} />
+                <span className="field-lbl">Max prepared</span>
+              </div>
+            )}
           </>
         )}
       </div>

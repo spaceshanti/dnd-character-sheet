@@ -323,3 +323,43 @@ export function useToast() {
   }
   return { msg, show }
 }
+
+/**
+ * A calculated number you can type over (spell save DC, spell attack…): click to type your own; ↺ goes back to the
+ * calculated value. Shown as text otherwise, so it reads like the rest of the sheet.
+ */
+export function OverrideNum({ value, auto, onChange, format = String, title }: {
+  /** the typed-in value, or null when it's calculated */
+  value: number | null | undefined
+  auto: number | null
+  onChange: (v: number | null) => void
+  format?: (n: number) => string
+  title?: string
+}) {
+  const [editing, setEditing] = useState(false)
+  const [text, setText] = useState('')
+  const typed = value != null
+  const shown = typed ? value : auto
+  if (editing) {
+    const done = () => {
+      setEditing(false)
+      const n = parseInt(text.replace(/[^\d-]/g, ''), 10)
+      if (text.trim() === '') onChange(null)
+      else if (!Number.isNaN(n)) onChange(n === auto ? null : n)
+    }
+    return (
+      <input className="override-in" autoFocus value={text} onChange={(e) => setText(e.target.value)} onBlur={done}
+        onKeyDown={(e) => { if (e.key === 'Enter') done(); if (e.key === 'Escape') setEditing(false) }} />
+    )
+  }
+  return (
+    <span className={`override ${typed ? 'typed' : ''}`}>
+      <b role="button" tabIndex={0} title={`${title ? title + '. ' : ''}${typed ? `Typed in (calculated: ${auto == null ? '—' : format(auto)}).` : 'Calculated.'} Click to type your own.`}
+        onClick={() => { setText(shown == null ? '' : String(shown)); setEditing(true) }}
+        onKeyDown={(e) => { if (e.key === 'Enter') { setText(shown == null ? '' : String(shown)); setEditing(true) } }}>
+        {shown == null ? '—' : format(shown)}
+      </b>
+      {typed && <button className="override-reset" title={`Back to the calculated value (${auto == null ? '—' : format(auto)})`} onClick={() => onChange(null)}>↺</button>}
+    </span>
+  )
+}
