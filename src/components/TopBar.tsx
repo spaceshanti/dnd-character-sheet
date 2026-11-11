@@ -3,7 +3,7 @@ import { ALIGNMENTS, conditionsFor } from '../constants'
 import { isAK, systemOf } from '../systems'
 import { DEATHS_DOOR } from '../ak'
 import { longRestOn, rememberRest, restEffects, restSnapshot } from '../rest'
-import { activeEffects, damageReduction, netAdvantage, signed, spellStats, statInfo, type StatKey } from '../calc'
+import { activeEffects, damageReduction, martialDcAuto, netAdvantage, signed, spellStats, statInfo, type StatKey } from '../calc'
 import { uid } from '../blank'
 import { useChar, useStore, useUI, type PageId } from '../store'
 import { Field, FitInput, Num, OverrideNum, Pips, Popover, Toast, useToast } from './ui'
@@ -271,7 +271,14 @@ function Vitals() {
         <div className="sub">{addsText(spd)}</div>
       </div>
       {/* spell save DC (and attack bonus): features use it too, so it's here as well as on the Spells page */}
-      {spell.dc != null && (
+      {/* save DCs features use: the spell DC, and on Arknights sheets the martial DC in the same box (both can be typed over) */}
+      {ak ? (
+        <div className="vbox dc-box" style={{ cursor: 'default' }}>
+          <div className="l">DC</div>
+          <div className="dc-line"><span>Spell</span><OverrideNum value={c.spellDcOverride} auto={spell.auto.dc} title="Spell save DC" onChange={(v) => patch((d) => { d.spellDcOverride = v })} /></div>
+          <div className="dc-line"><span>Martial</span><OverrideNum value={c.martialDcOverride} auto={martialDcAuto(c, fx)} title="Martial DC: 8 + STR or DEX (the better) + proficiency" onChange={(v) => patch((d) => { d.martialDcOverride = v })} /></div>
+        </div>
+      ) : spell.dc != null && (
         <div className="vbox spell-box" style={{ cursor: 'default' }}>
           <div className="l">Spell DC</div>
           <div className="v"><OverrideNum value={c.spellDcOverride} auto={spell.auto.dc} title="Spell save DC" onChange={(v) => patch((d) => { d.spellDcOverride = v })} /></div>

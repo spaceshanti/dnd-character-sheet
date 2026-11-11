@@ -793,3 +793,20 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 .override-in { width: 46px; text-align: center; font-weight: 700; font-size: 16px; border: 1px solid var(--accent); border-radius: 4px; background: var(--panel); color: var(--ink); padding: 0 2px; }
 .spell-stat .prep-max { width: 46px; text-align: center; font-weight: 700; font-size: 17px; font-family: var(--font-head); border: none; background: transparent; color: var(--ink); padding: 0; }
 .vbox .override { font: inherit; }
+
+/* Spells / Arts page header: one line; the left side gives way before the stat boxes do */
+.spell-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.spell-head-left { display: flex; align-items: center; gap: 8px; flex: 1 1 0; min-width: 150px; }
+.spell-head-left .seg { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+.spell-head-left .seg button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.spell-head-left .peek-pick { flex: 0 1 190px; min-width: 40px; text-overflow: ellipsis; }
+.spell-head-stats { display: flex; gap: 8px; flex: none; margin-left: auto; }
+.spell-head-stats .spell-stat { min-width: 62px; padding: 2px 8px; }
+
+/* Arknights top bar: spell and martial DC stacked in one box */
+.dc-box { min-width: 66px; justify-content: center; }
+.dc-box .dc-line { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 15px; line-height: 1.15; }
+.dc-box .dc-line > span { font-size: 8.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink2); font-family: var(--font-head); }
+.dc-box .override b { font-family: var(--font-head); }
+/* the Conditions box gives way first when the top bar is tight (a later .vbox rule had pinned it) */
+.vitals .cond-box { flex: 1 1 150px; min-width: 64px; }

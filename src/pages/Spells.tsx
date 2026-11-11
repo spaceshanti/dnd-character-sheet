@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ABILITIES, SPELL_LEVEL_NAMES } from '../constants'
-import { activeEffects, martialDcAuto, preparedCount, signed, spellStats } from '../calc'
+import { activeEffects, preparedCount, signed, spellStats } from '../calc'
 import { isAK } from '../systems'
 import { isConsumed, newSpell, uid } from '../blank'
 import { applyLib, bestLib, bundledLib, fetchStub, fromLib, isPool, nameKey, LIB, LIB_DND_CLASSES, LIB_POOLS, LIB_SCHOOLS, libLabel, searchLib, type LibSpell } from '../spellLib'
@@ -28,20 +28,22 @@ export function SpellsPage() {
 
   return (
     <div className="col" style={{ gap: 12 }}>
-      <div className="row" style={{ flexWrap: 'wrap', gap: 10 }}>
-        <div className="seg">
-          <button className={view === 'mine' ? 'on' : ''} onClick={() => setView('mine')}>{ak ? 'My Arts' : 'My spells'}</button>
-          <button className={view === 'library' ? 'on' : ''} onClick={() => setView('library')}>{ak ? 'Arts library' : 'Spell library'}</button>
+      {/* one line: the page switch (and party peek) shrink first; the stat boxes stay together on the right */}
+      <div className="spell-head">
+        <div className="spell-head-left">
+          <div className="seg">
+            <button className={view === 'mine' ? 'on' : ''} onClick={() => setView('mine')}>{ak ? 'My Arts' : 'My spells'}</button>
+            <button className={view === 'library' ? 'on' : ''} onClick={() => setView('library')}>{ak ? 'Arts library' : 'Spell library'}</button>
+          </div>
+          {others.length > 0 && (
+            <select className="peek-pick" value={others.includes(view) ? view : ''} onChange={(e) => e.target.value && setView(e.target.value)}>
+              <option value="">Peek at party member…</option>
+              {others.map((id) => <option key={id} value={id}>{chars[id].name || 'Unnamed'} ({chars[id].spells.length})</option>)}
+            </select>
+          )}
         </div>
-        {others.length > 0 && (
-          <select value={others.includes(view) ? view : ''} onChange={(e) => e.target.value && setView(e.target.value)}>
-            <option value="">Peek at party member…</option>
-            {others.map((id) => <option key={id} value={id}>{chars[id].name || 'Unnamed'} ({chars[id].spells.length})</option>)}
-          </select>
-        )}
         {view === 'mine' && (
-          <>
-            <span className="grow" />
+          <div className="spell-head-stats">
             <div className="spell-stat">
               <select value={c.spellAbility} onChange={(e) => patch((d) => { d.spellAbility = e.target.value as typeof c.spellAbility })}>
                 <option value="">—</option>
@@ -57,18 +59,14 @@ export function SpellsPage() {
               <OverrideNum value={c.spellAttackOverride} auto={ss.auto.attack} format={signed} title="Proficiency + casting ability modifier" onChange={(v) => patch((d) => { d.spellAttackOverride = v })} />
               <span className="field-lbl">Spell attack</span>
             </div>
-            {ak ? (
-              <div className="spell-stat">
-                <OverrideNum value={c.martialDcOverride} auto={martialDcAuto(c, fx)} title="8 + STR or DEX (the better) + proficiency" onChange={(v) => patch((d) => { d.martialDcOverride = v })} />
-                <span className="field-lbl">Martial DC</span>
-              </div>
-            ) : (
+            {/* Arknights: Arts are always prepared (martial DC is in the top bar) */}
+            {!ak && (
               <div className="spell-stat" title={`How many spells you can have prepared. ${preparedCount(c)} prepared now.`}>
                 <Num min={0} max={99} className="prep-max" value={c.maxPrepared ?? 0} onChange={(n) => patch((d) => { d.maxPrepared = n })} />
                 <span className="field-lbl">Max prepared</span>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
       {view === 'mine' && ak && <ArtsPoints />}
