@@ -7,6 +7,7 @@ import { PdfExport } from '../components/PdfExport'
 import { ago, undoRest } from '../rest'
 import { useZoom } from '../zoom'
 import { BookSetup } from '../components/BookSetup'
+import { UpdateControl } from '../components/UpdateControl'
 import { convertSkills, isAK, SYSTEMS, systemName, systemOf, type SystemId } from '../systems'
 import { askConfirm } from '../components/Dialog'
 
@@ -118,7 +119,7 @@ export function SettingsPage() {
             <button className="btn" onClick={() => downloadJson('all-characters.json', { version: 1, chars, order })}>Export everything (backup)</button>
           </div>
           <div className="muted small">Import files from the 👥 Characters window.</div>
-          <UpdateLine />
+          <UpdateControl />
         </div>
       </Frame>
 
@@ -174,29 +175,6 @@ function ShortcutList() {
         </tbody>
       </table>
       <div className="muted small">Tab, Ctrl + I, Ctrl + T and Ctrl + B work whenever you're not typing in a box.</div>
-    </div>
-  )
-}
-
-/** the app's version, and a manual check for a newer one (it also checks by itself at start-up) */
-function UpdateLine() {
-  const [version, setVersion] = useState('')
-  const [msg, setMsg] = useState('')
-  useEffect(() => { window.sheetApi?.appVersion?.().then(setVersion) }, [])
-  if (!window.sheetApi?.checkUpdate) return null
-  const check = async () => {
-    setMsg('Checking…')
-    try {
-      const r = await window.sheetApi!.checkUpdate()
-      setMsg(r.status === 'dev' ? 'Updates only work in the installed app.' : r.status === 'downloading'
-        ? `Version ${r.latest} is downloading; it installs when you close the app.` : 'You have the latest version.')
-    } catch (e) { setMsg(`Couldn't check: ${e instanceof Error ? e.message : String(e)}`) }
-  }
-  return (
-    <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-      <span className="small">Version {version}</span>
-      <button className="btn sm" onClick={check}>Check for updates</button>
-      {msg && <span className="small muted">{msg}</span>}
     </div>
   )
 }

@@ -34,7 +34,10 @@ declare global {
       bookWrite: (id: string, rel: string, data: string | Uint8Array) => Promise<void>
       bookRemove: (id: string) => Promise<void>
       appVersion: () => Promise<string>
-      checkUpdate: () => Promise<{ status: 'dev' | 'current' | 'downloading'; latest?: string }>
+      checkUpdate: () => Promise<UpdateState>
+      updateState: () => Promise<UpdateState>
+      installUpdate: () => Promise<void>
+      onUpdateStatus: (cb: (s: UpdateState) => void) => () => void
       /** every imported sourcebook (folders under <userData>/sourcebook) */
       bookList: () => Promise<{ id: string; title: string; games?: string[]; pages: number; aspect: number; ext: string; toc?: [number, string, number][] }[]>
     }
@@ -66,6 +69,9 @@ export interface SpellLookup {
   source?: string
   description?: string
 }
+
+/** the desktop app's self-update, as the main process reports it */
+export interface UpdateState { status: 'idle' | 'dev' | 'checking' | 'current' | 'downloading' | 'ready' | 'error'; latest: string; percent: number; error: string }
 
 const LS_KEY = 'dnd-sheet-data'
 

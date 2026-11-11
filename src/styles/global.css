@@ -751,3 +751,7 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 .ask-box { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 14px 44px rgba(0, 0, 0, .4);
   padding: 16px 18px; width: min(440px, 100%); display: flex; flex-direction: column; gap: 10px; }
 .ask-msg { font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
+
+/* Characters screen: update button */
+.update-ctl { display: inline-flex; align-items: center; gap: 6px; }
+.update-ctl .bad, .row .bad { color: var(--dis); }

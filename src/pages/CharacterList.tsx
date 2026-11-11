@@ -4,6 +4,7 @@ import { downloadJson, TRASH_DAYS, useStore, useUI } from '../store'
 import { Toast, useToast } from '../components/ui'
 import type { Character } from '../types'
 import { askConfirm } from '../components/Dialog'
+import { UpdateControl } from '../components/UpdateControl'
 
 function ago(t: number): string {
   const s = Math.max(0, (Date.now() - t) / 1000)
@@ -58,6 +59,7 @@ export function CharacterList() {
           </div>
         )}
         <span className="grow" />
+        <UpdateControl compact />
         <button className="btn" onClick={() => file.current?.click()}>Import…</button>
         {order.length > 0 && <button className="btn" onClick={() => downloadJson('all-characters.json', { version: 1, chars, order })}>Export all</button>}
         <button className="btn ghost" onClick={() => set({ themeOpen: true })} title="UI style (Ctrl + T)">◐</button>

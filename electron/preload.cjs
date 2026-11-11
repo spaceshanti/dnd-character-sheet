@@ -26,4 +26,11 @@ contextBridge.exposeInMainWorld('sheetApi', {
   bookRemove: (id) => ipcRenderer.invoke('book:remove', id),
   appVersion: () => ipcRenderer.invoke('app:version'),
   checkUpdate: () => ipcRenderer.invoke('update:check'),
+  updateState: () => ipcRenderer.invoke('update:state'),
+  installUpdate: () => ipcRenderer.invoke('update:install'),
+  onUpdateStatus: (cb) => {
+    const h = (_e, s) => cb(s)
+    ipcRenderer.on('update:status', h)
+    return () => ipcRenderer.removeListener('update:status', h)
+  },
 })

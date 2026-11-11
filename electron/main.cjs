@@ -147,12 +147,28 @@ ipcMain.handle('net:fetch', async (_e, url, binary) => {
 
 /* ---------- version & updates ---------- */
 ipcMain.handle('app:version', () => app.getVersion())
+// where the update stands, shown on the Characters screen and in Settings
+let updateState = { status: 'idle', latest: '', percent: 0, error: '' }
+const sendUpdate = (patch) => {
+  updateState = { ...updateState, ...patch }
+  for (const w of BrowserWindow.getAllWindows()) w.webContents.send('update:status', updateState)
+}
+autoUpdater.on('checking-for-update', () => sendUpdate({ status: 'checking', error: '' }))
+autoUpdater.on('update-available', (i) => sendUpdate({ status: 'downloading', latest: i.version, percent: 0 }))
+autoUpdater.on('update-not-available', (i) => sendUpdate({ status: 'current', latest: i.version }))
+autoUpdater.on('download-progress', (p) => sendUpdate({ status: 'downloading', percent: Math.round(p.percent) }))
+autoUpdater.on('update-downloaded', (i) => sendUpdate({ status: 'ready', latest: i.version, percent: 100 }))
+autoUpdater.on('error', (e) => sendUpdate({ status: 'error', error: String(e?.message || e).split('\n')[0].slice(0, 160) }))
+ipcMain.handle('update:state', () => (app.isPackaged ? updateState : { ...updateState, status: 'dev' }))
 ipcMain.handle('update:check', async () => {
-  if (!app.isPackaged) return { status: 'dev' }
-  const r = await autoUpdater.checkForUpdates()
-  const latest = r?.updateInfo?.version
-  return { status: latest && latest !== app.getVersion() ? 'downloading' : 'current', latest }
+  if (!app.isPackaged) return { ...updateState, status: 'dev' }
+  // a download that's already running or finished just reports where it is
+  if (updateState.status === 'downloading' || updateState.status === 'ready') return updateState
+  try { await autoUpdater.checkForUpdates() } catch (e) { sendUpdate({ status: 'error', error: String(e?.message || e).split('\n')[0].slice(0, 160) }) }
+  return updateState
 })
+// close, install the downloaded version, and open it again
+ipcMain.handle('update:install', () => { if (updateState.status === 'ready') setImmediate(() => autoUpdater.quitAndInstall(false, true)) })
 
 /* ---------- spell lookup from wikidot ---------- */
 const { fetchSpell, fetchItem } = require('./spells.cjs')
@@ -246,7 +262,7 @@ app.whenReady().then(() => {
   })
   createWindow()
   // new versions come from the GitHub Releases page: downloaded in the background, installed when you close the app
-  if (app.isPackaged) autoUpdater.checkForUpdatesAndNotify().catch(() => { /* offline: try next time */ })
+  if (app.isPackaged) autoUpdater.checkForUpdates().catch(() => { /* offline: try next time */ })
   app.on('activate', () => BrowserWindow.getAllWindows().length === 0 && createWindow())
 })
 app.on('window-all-closed', () => app.quit())
