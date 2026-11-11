@@ -315,6 +315,8 @@ export interface Character {
   /** which game this sheet is for; older saves are D&D 5e */
   system: 'dnd5e' | 'ak5e'
   name: string
+  /** what friends call them; shown by the name in the top bar */
+  nickname?: string
   className: string
   subclass: string
   /** class / subclass symbols: a built-in mark id or your own picture (data URL); '' = from the name */

@@ -21,12 +21,13 @@ export function CharacterPage() {
       {/* left: who they are */}
       <div className="col" style={{ gap: 12 }}>
         <Frame title="Appearance" tight>
-          {isAK(c) && (
-            <div style={{ marginBottom: 8 }}>
+          <div className="grid" style={{ gridTemplateColumns: isAK(c) ? '1fr 1fr' : '1fr', gap: 8, marginBottom: 8 }}>
+            <Field label="Nickname" value={c.nickname ?? ''} placeholder="none" onChange={(v) => patch((d) => { d.nickname = v })} />
+            {isAK(c) && (
               <Field label="Operator codename" value={c.ak.codename} placeholder="not assigned yet"
                 onChange={(v) => patch((d) => { d.ak.codename = v })} />
-            </div>
-          )}
+            )}
+          </div>
           <ImageBox target="appearanceImage" contain maxHeight={c.appearanceImage ? 420 : 160} placeholder="Click to choose a full-body / appearance image" />
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 8 }}>
             {(['age', 'height', 'weight', 'eyes', 'skin', 'hair'] as const).map((k) => (

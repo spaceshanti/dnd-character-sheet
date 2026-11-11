@@ -815,3 +815,8 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 .fill-choices { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; max-height: 210px; overflow: auto; }
 .fill-choice { display: flex; flex-direction: column; gap: 2px; }
 .fill-choice select { font-size: 12px; max-width: 100%; }
+
+/* top bar: operator codename above the name, nickname beside its label */
+.name-banner .codename { font-family: var(--font-head); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); line-height: 1.1; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.name-label-row { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.name-label-row .nickname { font-size: 11px; font-style: italic; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }

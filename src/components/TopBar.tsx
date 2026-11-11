@@ -135,8 +135,13 @@ export function TopBar() {
       <div className="top-main" ref={mainRef}>
         <div className="banner">
           <div className="name-banner">
+            {/* Arknights: the operator codename, when one's been assigned, sits just above the name */}
+            {ak && c.ak.codename.trim() && <div className="codename" title="Operator codename (set on the Character page)">{c.ak.codename}</div>}
             <FitInput minSize={12} value={c.name} placeholder="Character name" onChange={(e) => patch((d) => { d.name = e.target.value })} />
-            <label>Character Name</label>
+            <div className="name-label-row">
+              <label>Character Name</label>
+              {c.nickname?.trim() && <span className="nickname" title="Nickname (set on the Character page)">“{c.nickname.trim()}”</span>}
+            </div>
           </div>
           <div className="details">
             <Field label="Class" value={c.className} onChange={(v) => patch((d) => { d.className = v })}
