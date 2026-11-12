@@ -85,26 +85,27 @@ export function SpellsPage() {
 function SpellFeatures() {
   const c = useChar()
   const set = useUI((s) => s.set)
-  const [opened, setOpened] = useState<Set<string>>(new Set())
+  // one fold for the whole block (folded by default), remembered on this computer
+  const [open, setOpenRaw] = useState(() => { try { return localStorage.getItem('spell-feats-open') === '1' } catch { return false } })
+  const setOpen = (v: boolean) => { setOpenRaw(v); try { localStorage.setItem('spell-feats-open', v ? '1' : '0') } catch { /* private mode */ } }
   const list = c.features.filter((f) => f.onSpellPage)
   if (!list.length) return null
   return (
-    <Frame title={isAK(c) ? 'Features for my Arts' : 'Spellcasting features'} tight>
-      <div className="spell-feats">
-        {list.map((f) => {
-          const open = opened.has(f.id)
-          return (
+    <Frame title={isAK(c) ? 'Features for my Arts' : 'Spellcasting features'} tight
+      tools={<button className="btn sm ghost" title={open ? 'Fold' : 'Unfold'} onClick={() => setOpen(!open)}>{open ? '▾ Fold' : `▸ Show (${list.length})`}</button>}>
+      {open && (
+        <div className="spell-feats">
+          {list.map((f) => (
             <div key={f.id} className="spell-feat">
               <div className="row" style={{ gap: 6 }}>
-                <button className="btn icon sm ghost" title={open ? 'Fold' : 'Unfold'} onClick={() => setOpened((s) => { const n = new Set(s); if (open) n.delete(f.id); else n.add(f.id); return n })}>{open ? '▾' : '▸'}</button>
                 <b className="grow" style={{ cursor: 'pointer' }} onClick={() => set({ drawer: { kind: 'feature', id: f.id } })}>{f.name || 'Unnamed feature'}</b>
                 {f.source && <span className="muted small">{f.source}</span>}
               </div>
-              {open && (f.description ? <RichText className="prose small-prose" value={f.description} /> : <div className="muted small">No description yet.</div>)}
+              {f.description ? <RichText className="prose small-prose" value={f.description} /> : <div className="muted small">No description yet.</div>}
             </div>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </Frame>
   )
 }

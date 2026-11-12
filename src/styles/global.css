@@ -819,7 +819,7 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 /* top bar: operator codename above the name, nickname beside its label */
 .name-banner .codename { font-family: var(--font-head); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); line-height: 1.1; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .name-label-row { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.name-label-row .nickname { font-size: 11px; font-style: italic; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.name-label-row .nickname { font-size: 14px; line-height: 1.1; font-style: italic; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
 /* the name: a box that wraps instead of cutting the name off (see NameBox) */
 .name-banner textarea.name-in { resize: none; overflow: hidden; display: block; line-height: 1.15; background: transparent; color: inherit; border-left: none; border-right: none; border-top: none; border-radius: 0; outline: none; white-space: pre-wrap; overflow-wrap: anywhere; }
