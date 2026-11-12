@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, Menu, dialog, protocol, net } = require('electron')
+const { app, BrowserWindow, ipcMain, shell, Menu, dialog, protocol, net, nativeImage } = require('electron')
 const fs = require('fs')
 const path = require('path')
 const { pathToFileURL } = require('url')
@@ -150,6 +150,13 @@ ipcMain.handle('net:fetch', async (_e, url, binary) => {
 
 /* ---------- version & updates ---------- */
 ipcMain.handle('app:version', () => app.getVersion())
+// the window / taskbar icon follows the UI style (drawn by the page as a PNG)
+ipcMain.on('win:icon', (e, dataUrl) => {
+  try {
+    const img = nativeImage.createFromDataURL(String(dataUrl))
+    if (!img.isEmpty()) BrowserWindow.fromWebContents(e.sender)?.setIcon(img)
+  } catch { /* keep the icon it has */ }
+})
 // where the update stands, shown on the Characters screen and in Settings
 let updateState = { status: 'idle', latest: '', percent: 0, error: '' }
 const sendUpdate = (patch) => {

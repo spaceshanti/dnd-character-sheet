@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { variantOf } from './skins'
+import { applyAppIcon } from './appIcon'
 import { useStore, useUI } from './store'
 import { TopBar } from './components/TopBar'
 import { LeftDock } from './components/LeftDock'
@@ -57,6 +58,8 @@ export default function App() {
     if (variant) document.documentElement.dataset.variant = variant
     else delete document.documentElement.dataset.variant
   }, [variant])
+  // the window / taskbar icon in the style's colours
+  useEffect(() => { if (loaded) applyAppIcon(skin, variant) }, [skin, variant, loaded])
   // each game keeps its own UI style: opening an Arknights character switches to its look, and back
   useEffect(() => {
     const st = useStore.getState()

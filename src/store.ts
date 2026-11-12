@@ -38,6 +38,7 @@ declare global {
       checkUpdate: () => Promise<UpdateState>
       updateState: () => Promise<UpdateState>
       installUpdate: () => Promise<void>
+      setIcon?: (dataUrl: string) => void
       onUpdateStatus: (cb: (s: UpdateState) => void) => () => void
       /** every imported sourcebook (folders under <userData>/sourcebook) */
       bookList: () => Promise<{ id: string; title: string; games?: string[]; pages: number; aspect: number; ext: string; toc?: [number, string, number][] }[]>

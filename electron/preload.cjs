@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('sheetApi', {
   bookWrite: (id, rel, data) => ipcRenderer.invoke('book:write', id, rel, data),
   bookRemove: (id) => ipcRenderer.invoke('book:remove', id),
   appVersion: () => ipcRenderer.invoke('app:version'),
+  setIcon: (dataUrl) => ipcRenderer.send('win:icon', dataUrl),
   checkUpdate: () => ipcRenderer.invoke('update:check'),
   updateState: () => ipcRenderer.invoke('update:state'),
   installUpdate: () => ipcRenderer.invoke('update:install'),
