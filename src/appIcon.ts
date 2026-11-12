@@ -161,9 +161,13 @@ export function iconPng(skin: SkinId, variant?: string, size = 256): Promise<str
 }
 
 /** set the window / taskbar icon (desktop app) and the favicon to the style's own icon */
+let applying = 0
 export async function applyAppIcon(skin: SkinId, variant?: string) {
+  // switching styles quickly: only the newest one gets through (a slower, older drawing mustn't land last)
+  const mine = ++applying
   try {
     const url = await iconPng(skin, variant)
+    if (mine !== applying) return
     window.sheetApi?.setIcon?.(url)
     let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
     if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link) }
