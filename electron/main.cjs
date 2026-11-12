@@ -4,6 +4,10 @@ const path = require('path')
 const { pathToFileURL } = require('url')
 const { autoUpdater } = require('electron-updater')
 
+// the same id as the installer's shortcuts, so the window groups with them on the taskbar
+const APP_ID = 'local.dnd.charsheet'
+if (process.platform === 'win32') app.setAppUserModelId(APP_ID)
+
 // sheetbook://ak5e/pages/001.jpg → <userData>/sourcebook/ak5e/pages/001.jpg (the book pages you imported)
 protocol.registerSchemesAsPrivileged([
   { scheme: 'sheetbook', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } },
@@ -151,10 +155,73 @@ ipcMain.handle('net:fetch', async (_e, url, binary) => {
 /* ---------- version & updates ---------- */
 ipcMain.handle('app:version', () => app.getVersion())
 // the window / taskbar icon follows the UI style (drawn by the page as a PNG)
+// Windows' taskbar button ignores setIcon once the app has a Start-menu shortcut: it shows the shortcut's icon.
+// Giving the window its own relaunch icon (an .ico file) is what changes the taskbar button too.
+function icoFrom(img) {
+  const sizes = [16, 24, 32, 48, 64, 128, 256]
+  const pngs = sizes.map((s) => img.resize({ width: s, height: s, quality: 'best' }).toPNG())
+  const head = Buffer.alloc(6 + 16 * sizes.length)
+  head.writeUInt16LE(0, 0); head.writeUInt16LE(1, 2); head.writeUInt16LE(sizes.length, 4)
+  let offset = head.length
+  sizes.forEach((s, i) => {
+    const o = 6 + 16 * i
+    head.writeUInt8(s >= 256 ? 0 : s, o); head.writeUInt8(s >= 256 ? 0 : s, o + 1)
+    head.writeUInt16LE(1, o + 4); head.writeUInt16LE(32, o + 6)
+    head.writeUInt32LE(pngs[i].length, o + 8); head.writeUInt32LE(offset, o + 12)
+    offset += pngs[i].length
+  })
+  return Buffer.concat([head, ...pngs])
+}
+// The app's own shortcuts (Start menu, desktop, taskbar pin) point at this copy of the app; the taskbar button takes its
+// icon from them, so they're switched to the style's icon. Only shortcuts that open this very program are touched.
+function themeShortcuts(ico) {
+  if (!app.isPackaged) return false
+  const exe = path.resolve(process.execPath).toLowerCase()
+  const roaming = app.getPath('appData')
+  const dirs = [
+    path.join(roaming, 'Microsoft', 'Windows', 'Start Menu', 'Programs'),
+    path.join(roaming, 'Microsoft', 'Internet Explorer', 'Quick Launch', 'User Pinned', 'TaskBar'),
+    path.join(roaming, 'Microsoft', 'Internet Explorer', 'Quick Launch'),
+    app.getPath('desktop'),
+  ]
+  let changed = false
+  const visit = (d, depth) => {
+    let list = []
+    try { list = fs.readdirSync(d, { withFileTypes: true }) } catch { return }
+    for (const f of list) {
+      const full = path.join(d, f.name)
+      if (f.isDirectory() && depth > 0) { visit(full, depth - 1); continue }
+      if (!f.name.toLowerCase().endsWith('.lnk')) continue
+      try {
+        const link = shell.readShortcutLink(full)
+        if (!link.target || path.resolve(link.target).toLowerCase() !== exe) continue
+        if (link.icon === ico) { changed = true; continue }
+        if (shell.writeShortcutLink(full, 'update', { icon: ico, iconIndex: 0 })) changed = true
+      } catch { /* not ours / can't read */ }
+    }
+  }
+  for (const d of dirs) visit(d, 1)
+  // ask Explorer to redraw icons now rather than at the next sign-in
+  if (changed) { try { require('child_process').spawn('ie4uinit.exe', ['-show'], { detached: true, stdio: 'ignore', windowsHide: true }).unref() } catch { /* older Windows */ } }
+  return changed
+}
 ipcMain.on('win:icon', (e, dataUrl) => {
   try {
     const img = nativeImage.createFromDataURL(String(dataUrl))
-    if (!img.isEmpty()) BrowserWindow.fromWebContents(e.sender)?.setIcon(img)
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (img.isEmpty() || !win) return
+    win.setIcon(img)
+    if (process.platform !== 'win32') return
+    const ico = icoFrom(img)
+    // a new file name per look, so Windows' icon cache can't hand back the previous one
+    const name = `taskbar-${require('crypto').createHash('md5').update(ico).digest('hex').slice(0, 10)}.ico`
+    const dir = path.join(app.getPath('userData'), 'icons')
+    fs.mkdirSync(dir, { recursive: true })
+    const file = path.join(dir, name)
+    if (!fs.existsSync(file)) fs.writeFileSync(file, ico)
+    if (themeShortcuts(file)) {
+      for (const f of fs.readdirSync(dir)) if (f.startsWith('taskbar-') && f !== name) { try { fs.unlinkSync(path.join(dir, f)) } catch { /* in use */ } }
+    }
   } catch { /* keep the icon it has */ }
 })
 // where the update stands, shown on the Characters screen and in Settings
