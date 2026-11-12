@@ -53,10 +53,10 @@ export function CharacterList() {
         {current && <button className="btn" onClick={() => set({ charListOpen: false })}>← Back to {current.name || 'character'}</button>}
         <h1>Characters</h1>
         {order.length > 0 && (
-          <div className="seg game-seg">
-            <button className={game === 'all' ? 'on' : ''} onClick={() => setGame('all')}>All games ({order.length})</button>
-            {SYSTEMS.map((s) => <button key={s.id} className={game === s.id ? 'on' : ''} onClick={() => setGame(s.id)}>{s.short} ({count(s.id)})</button>)}
-          </div>
+          <select className="game-pick" value={game} title="Show characters from" onChange={(e) => setGame(e.target.value as SystemId | 'all')}>
+            <option value="all">All games ({order.length})</option>
+            {SYSTEMS.map((s) => <option key={s.id} value={s.id}>{s.short} ({count(s.id)})</option>)}
+          </select>
         )}
         <span className="grow" />
         <UpdateControl compact />

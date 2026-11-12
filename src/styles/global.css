@@ -667,7 +667,7 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 .vbox.dying { border-color: var(--dis); box-shadow: 0 0 0 2px color-mix(in srgb, var(--dis) 30%, transparent); }
 .vbox.dying .l { color: var(--dis); }
 .dr-v input { width: 40px; text-align: center; font: inherit; color: inherit; }
-.game-seg button { white-space: nowrap; }
+.game-pick { width: auto; max-width: 220px; font-size: 13px; padding: 4px 8px; }
 .game-tag { align-self: flex-start; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; padding: 0 6px; border-radius: 3px; border: 1px solid var(--line); color: var(--ink2); margin: 1px 0 2px; }
 .game-tag.sys-ak5e { border-color: var(--accent); color: var(--accent); }
 .char-new.sys-ak5e { border-style: dashed; }
