@@ -1,0 +1,211 @@
+/* ============ Foundation — inspired by the SCP Foundation's containment files ============
+   Light = a typed dossier: off-white paper, black type, black title strips set in a typewriter mono, dashed rules,
+   red classification marks and redaction-black bars.
+   Dark = a facility terminal: near-black screens, grey rules, white mono type, the same warning red. */
+
+:root[data-skin='scp'] {
+  --paper: #e9e7e1;
+  --paper2: rgba(0, 0, 0, 0.035);
+  --panel: #fbfaf7;
+  --panel2: #f0eee8;
+  --ink: #111111;
+  --ink2: #3f3f3f;
+  --muted: #7a7a76;
+  --line: #bdbab2;
+  --accent: #9c1414;
+  --accent-soft: rgba(156, 20, 20, 0.09);
+  --good: #2d6b3a;
+  --warn: #9a6a00;
+  --adv: #2d6b3a;
+  --dis: #9c1414;
+  --slot: #1a1a1a;
+  --slot-border: #444;
+  --slot-ink: #f4f4f4;
+  --slot-drop: #4a1515;
+  --img-bg: #f4f3ef;
+  --shadow: rgba(0, 0, 0, 0.18);
+  --font-head: 'Share Tech Mono', 'Consolas', monospace;
+  --font-body: 'Source Sans 3 Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-num: 'Share Tech Mono', 'Consolas', monospace;
+  --scp-strip: #111111;
+  --scp-strip-ink: #f4f4f2;
+  --scp-red: #9c1414;
+  --scp-redact: #111111;
+  color-scheme: light;
+}
+:root[data-skin='scp'][data-theme='dark'] {
+  --paper: #0b0b0c;
+  --paper2: rgba(255, 255, 255, 0.025);
+  --panel: #141416;
+  --panel2: #1b1b1e;
+  --ink: #e8e8e6;
+  --ink2: #b2b2ae;
+  --muted: #6f6f6c;
+  --line: #34343a;
+  --accent: #e0403a;
+  --accent-soft: rgba(224, 64, 58, 0.14);
+  --good: #5fbf74;
+  --warn: #d9a43a;
+  --adv: #5fbf74;
+  --dis: #e0403a;
+  --slot: #0a0a0b;
+  --slot-border: #3e3e44;
+  --img-bg: #101012;
+  --shadow: rgba(0, 0, 0, 0.6);
+  --scp-strip: #e8e8e6;
+  --scp-strip-ink: #0b0b0c;
+  --scp-red: #e0403a;
+  --scp-redact: #e8e8e6;
+  color-scheme: dark;
+}
+
+[data-skin='scp'] body {
+  font-size: 13.5px;
+  background-color: var(--paper);
+  background-image:
+    repeating-linear-gradient(0deg, var(--paper2) 0 1px, transparent 1px 26px),
+    radial-gradient(ellipse at 50% 30%, transparent 60%, rgba(0, 0, 0, 0.06));
+  background-size: auto;
+}
+[data-skin='scp'][data-theme='dark'] body {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(0, 0, 0, 0.55));
+}
+[data-skin='scp'] h1, [data-skin='scp'] h2, [data-skin='scp'] h3 { font-family: var(--font-head); font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; }
+[data-skin='scp'] ::-webkit-scrollbar-thumb { background: var(--ink2); border-radius: 0; border: 4px solid transparent; background-clip: content-box; }
+[data-skin='scp'] ::selection { background: var(--scp-redact); color: var(--paper); }
+
+/* panels: file cards with a black title strip and a red classification mark */
+[data-skin='scp'] .frame { clip-path: none; background: transparent; padding: 0; filter: none; position: relative; }
+[data-skin='scp'] .frame > .frame-in { clip-path: none; border-radius: 0; background: var(--panel); border: 1px solid var(--ink); box-shadow: 3px 3px 0 var(--shadow); }
+[data-skin='scp'] .frame-title {
+  justify-content: flex-start; margin: -10px -12px 10px; padding: 4px 10px; background: var(--scp-strip); color: var(--scp-strip-ink);
+  font-family: var(--font-head); font-size: 12px; font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase;
+}
+[data-skin='scp'] .frame.tight .frame-title { margin: -7px -9px 8px; }
+[data-skin='scp'] .frame-title::before { content: '■'; flex: none; width: auto; height: auto; background: none; color: var(--scp-red); font-size: 10px; }
+[data-skin='scp'] .frame-title::after { flex: 1; height: 0; background: none; border-top: 1px dashed currentColor; opacity: 0.35; }
+[data-skin='scp'] .frame-title .btn { color: var(--scp-strip-ink); border-color: transparent; background: transparent; }
+[data-skin='scp'] .frame-title .btn:hover { background: var(--scp-strip-ink); color: var(--scp-strip); }
+
+/* controls: typed labels, square boxes */
+[data-skin='scp'] .btn { border-radius: 0; border: 1px solid var(--ink); background: var(--panel); color: var(--ink); font-family: var(--font-head); letter-spacing: 0.06em; text-transform: uppercase; font-size: 12px; }
+[data-skin='scp'] .btn:hover { background: var(--ink); color: var(--panel); }
+[data-skin='scp'] .btn.primary { background: var(--scp-red); color: #fff; border-color: var(--scp-red); }
+[data-skin='scp'] .btn.primary:hover { background: var(--ink); border-color: var(--ink); color: var(--panel); }
+[data-skin='scp'] .btn.primary:disabled { background: var(--panel2); color: var(--muted); border-color: var(--line); }
+[data-skin='scp'] .btn.ghost { background: transparent; border-color: transparent; }
+[data-skin='scp'] .btn.ghost:hover { background: transparent; color: var(--scp-red); }
+[data-skin='scp'] .btn.danger { color: var(--scp-red); border-color: var(--scp-red); background: transparent; }
+[data-skin='scp'] .btn.danger:hover { background: var(--scp-red); color: #fff; }
+[data-skin='scp'] select, [data-skin='scp'] .box-input { border-radius: 0; background: var(--panel); border-color: var(--ink2); color: var(--ink); }
+[data-skin='scp'] .box-input:focus { border-color: var(--scp-red); }
+[data-skin='scp'] option { background: var(--panel); }
+[data-skin='scp'] .field > input, [data-skin='scp'] .line-input { border-bottom: 1px dashed var(--ink2); }
+[data-skin='scp'] .field > input:focus, [data-skin='scp'] .line-input:focus { border-bottom: 1px solid var(--scp-red); background: var(--accent-soft); }
+[data-skin='scp'] .field > label, [data-skin='scp'] .field-lbl { font-family: var(--font-head); color: var(--ink2); letter-spacing: 0.12em; text-transform: uppercase; font-weight: 400; }
+[data-skin='scp'] .chip { border-radius: 0; background: transparent; border-color: var(--ink2); }
+[data-skin='scp'] .chip.accent { color: var(--scp-red); border-color: var(--scp-red); background: var(--accent-soft); }
+[data-skin='scp'] .tag { border-radius: 0; background: var(--scp-redact); color: var(--paper); font-family: var(--font-head); }
+[data-skin='scp'] .tag.alt { background: transparent; color: var(--ink2); border-color: var(--ink2); }
+[data-skin='scp'] .badge, [data-skin='scp'] .kbd { border-radius: 0; background: transparent; border-color: var(--scp-red); color: var(--scp-red); font-family: var(--font-head); }
+[data-skin='scp'] .seg { border-radius: 0; border-color: var(--ink); }
+[data-skin='scp'] .seg button { background: var(--panel); border-color: var(--ink); font-family: var(--font-head); text-transform: uppercase; letter-spacing: 0.06em; }
+[data-skin='scp'] .seg button.on { background: var(--ink); color: var(--panel); }
+[data-skin='scp'] .pip { border-radius: 0; border: 1.5px solid var(--ink); }
+[data-skin='scp'] .pip.on { background: var(--ink); }
+[data-skin='scp'] .pip.mettle.on { background: var(--scp-red); border-color: var(--scp-red); }
+[data-skin='scp'] .pip.succ.on { background: var(--good); border-color: var(--good); }
+[data-skin='scp'] .pip.fail.on { background: var(--scp-red); border-color: var(--scp-red); }
+[data-skin='scp'] .switch { border-radius: 0; background: var(--line); }
+[data-skin='scp'] .switch::after { border-radius: 0; }
+[data-skin='scp'] .switch.on { background: var(--scp-red); }
+[data-skin='scp'] .hpbar, [data-skin='scp'] .weight-bar, [data-skin='scp'] .sp-bar { border-radius: 0; background: var(--panel2); border: 1px solid var(--ink); }
+[data-skin='scp'] .hpbar > i { background: var(--ink); }
+[data-skin='scp'] .hpbar.low > i { background: var(--warn); }
+[data-skin='scp'] .hpbar.crit > i { background: var(--scp-red); }
+[data-skin='scp'] .sp-bar > i { background: repeating-linear-gradient(90deg, var(--ink) 0 6px, transparent 6px 8px); }
+[data-skin='scp'] .sp-bar.full > i, [data-skin='scp'] .sp-bar.ap > i { background: var(--scp-red); }
+
+/* top bar: the file's header, black with a red rule */
+[data-skin='scp'] .topbar {
+  --ink: #f0f0ee; --ink2: #b4b4b0; --muted: #77776f; --line: #3a3a3e; --panel: #161618; --panel2: #1e1e21;
+  --accent: #e0403a; --accent-soft: rgba(224, 64, 58, 0.15); --scp-strip: #e8e8e6; --scp-strip-ink: #0b0b0c; color-scheme: dark;
+  background: #0d0d0e; color: #f0f0ee; border-bottom: none; box-shadow: 0 3px 0 var(--scp-red);
+}
+[data-skin='scp'] .top-portrait { border-radius: 0; border: 1px solid #f0f0ee; filter: grayscale(0.25) contrast(1.05); }
+[data-skin='scp'] .name-banner .name-in { font-family: var(--font-head); font-weight: 400; text-transform: uppercase; letter-spacing: 0.1em; font-size: 22px; border-bottom: 1px dashed #f0f0ee; }
+[data-skin='scp'] .name-banner label { letter-spacing: 0.16em; font-family: var(--font-head); }
+[data-skin='scp'] .vbox { border-radius: 0; border: 1px solid #55555a; background: var(--panel); box-shadow: none; }
+[data-skin='scp'] .vbox:hover { border-color: #e0403a; }
+[data-skin='scp'] .vbox .v, [data-skin='scp'] .hp-box .big input, [data-skin='scp'] .spell-stat b, [data-skin='scp'] .spell-stat input { font-family: var(--font-num); font-weight: 400; }
+[data-skin='scp'] .vbox .l { font-family: var(--font-head); letter-spacing: 0.12em; font-weight: 400; }
+[data-skin='scp'] .vbox .sub { color: #e0403a; }
+[data-skin='scp'] .vbox.dying { border-color: #e0403a; box-shadow: inset 0 0 0 1px #e0403a; }
+[data-skin='scp'] .inv-btn { border-radius: 0; border: 1px solid #e0403a; background: #9c1414; }
+[data-skin='scp'] .inv-btn .l, [data-skin='scp'] .inv-btn .inv-ico { color: #fff; }
+[data-skin='scp'] .inv-btn:hover { background: #b81d1d; }
+[data-skin='scp'] .nav { background: #161618; border-top: 1px solid #2c2c30; }
+[data-skin='scp'] .nav button.tab { font-family: var(--font-head); text-transform: uppercase; letter-spacing: 0.12em; color: #9a9a96; }
+[data-skin='scp'] .nav button.tab:hover { color: #f0f0ee; }
+[data-skin='scp'] .nav button.tab.active { color: #0d0d0e; background: #f0f0ee; border-bottom-color: #e0403a; box-shadow: inset 0 -3px 0 #e0403a; }
+
+/* abilities dock */
+[data-skin='scp'] .dock { background: var(--panel); border-right: 1px solid var(--ink); }
+[data-skin='scp'] .dock-edge { background: #0d0d0e; border-right: 1px solid #2c2c30; }
+[data-skin='scp'] .dock-edge span { color: #b4b4b0; font-family: var(--font-head); letter-spacing: 0.12em; }
+[data-skin='scp'] .dock-edge:hover, [data-skin='scp'] .dock-edge.on { background: #9c1414; }
+[data-skin='scp'] .dock-edge:hover span, [data-skin='scp'] .dock-edge.on span { color: #fff; }
+[data-skin='scp'] .pill, [data-skin='scp'] .passive { border-radius: 0; border: 1px solid var(--ink2); background: var(--panel); }
+[data-skin='scp'] .pill .num { border-radius: 0; border: 1px solid var(--ink); font-family: var(--font-num); font-weight: 400; background: var(--panel2); }
+[data-skin='scp'] .pill.insp.on { border-color: var(--scp-red); background: var(--accent-soft); }
+[data-skin='scp'] .ab-box .name { border-radius: 0; background: var(--scp-strip); color: var(--scp-strip-ink); font-family: var(--font-head); letter-spacing: 0.14em; font-weight: 400; }
+[data-skin='scp'] .ab-box .mod { border-radius: 0; border: 1px solid var(--ink); border-top: none; background: var(--panel); font-family: var(--font-num); font-weight: 400; }
+[data-skin='scp'] .ab-box .mod.changed { color: var(--scp-red); }
+[data-skin='scp'] .ab-box .score { border-radius: 0; border: 1px solid var(--ink); background: var(--panel); font-family: var(--font-num); font-weight: 400; }
+[data-skin='scp'] .rr { border-radius: 0; border-bottom: 1px dashed var(--line); }
+[data-skin='scp'] .rr .val { font-family: var(--font-num); font-weight: 400; }
+[data-skin='scp'] .rr:hover, [data-skin='scp'] .list-row:hover, [data-skin='scp'] .sline:hover,
+[data-skin='scp'] .act-item:hover, [data-skin='scp'] table.t tr.hov:hover td { background: var(--accent-soft); }
+[data-skin='scp'] .breakdown { border-radius: 0; background: var(--panel2); border-color: var(--ink2); border-left: 4px solid var(--scp-red); }
+
+/* spells / arts, operator skills */
+[data-skin='scp'] .spell-sec { border-radius: 0; border: 1px solid var(--ink); box-shadow: 3px 3px 0 var(--shadow); background: var(--panel); }
+[data-skin='scp'] .sec-head .lvl-badge { border-radius: 0; background: var(--scp-strip); color: var(--scp-strip-ink); border-color: var(--scp-strip); font-family: var(--font-num); font-weight: 400; }
+[data-skin='scp'] .sec-banner { background: var(--panel2); border-color: var(--ink2); }
+[data-skin='scp'] .sec-title { font-family: var(--font-head); letter-spacing: 0.14em; text-transform: uppercase; }
+[data-skin='scp'] .ap-cost { border-radius: 0; font-family: var(--font-num); color: var(--scp-red); border-color: var(--scp-red); }
+[data-skin='scp'] .slot-total input, [data-skin='scp'] .sp-num input, [data-skin='scp'] .ap-num b, [data-skin='scp'] .ap-num input { font-family: var(--font-num); font-weight: 400; }
+[data-skin='scp'] .sline { border-bottom: 1px dashed var(--line); }
+[data-skin='scp'] .crm.on { color: var(--scp-red); }
+[data-skin='scp'] .spell-stat, [data-skin='scp'] .ap-panel { border-radius: 0; border: 1px solid var(--ink); background: var(--panel); }
+[data-skin='scp'] .op-card { border-radius: 0; background: var(--panel); border: 1px solid var(--ink2); border-left: 4px solid var(--ink2); }
+[data-skin='scp'] .op-card.ready { border-left-color: var(--ink); }
+[data-skin='scp'] .op-card.active { border-color: var(--scp-red); border-left-color: var(--scp-red); }
+[data-skin='scp'] .op-name { font-family: var(--font-head); text-transform: uppercase; letter-spacing: 0.08em; }
+[data-skin='scp'] .op-tier-dot { border-radius: 0; background: var(--scp-strip); color: var(--scp-strip-ink); }
+[data-skin='scp'] .sp-active { border-left-color: var(--scp-red); background: var(--accent-soft); }
+
+/* overlays */
+[data-skin='scp'] .popover, [data-skin='scp'] .modal, [data-skin='scp'] .drawer { border-radius: 0; border: 1px solid var(--ink); background: var(--panel); box-shadow: 6px 6px 0 var(--shadow); }
+[data-skin='scp'] .modal-head, [data-skin='scp'] .drawer-head { background: #0d0d0e; border-bottom: 3px solid #9c1414; }
+[data-skin='scp'] .modal-head h2, [data-skin='scp'] .drawer-head h2 { color: #f0f0ee; }
+[data-skin='scp'] .modal-head .btn, [data-skin='scp'] .drawer-head .btn { --ink: #f0f0ee; --panel: #161618; color: #f0f0ee; border-color: #55555a; background: transparent; }
+[data-skin='scp'] .backdrop { background: rgba(0, 0, 0, 0.6); }
+[data-skin='scp'] .toast { border-radius: 0; background: #0d0d0e; color: #f0f0ee; border-left: 4px solid #e0403a; font-family: var(--font-head); }
+[data-skin='scp'] .fx { border-radius: 0; background: var(--panel2); border-color: var(--ink2); }
+[data-skin='scp'] table.t th { font-family: var(--font-head); font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); border-bottom: 2px solid var(--ink); }
+[data-skin='scp'] table.t td { border-bottom: 1px dashed var(--line); }
+
+/* inventory, character list */
+[data-skin='scp'] .eq-slot, [data-skin='scp'] .tile { border-radius: 0; }
+[data-skin='scp'] .coin input { border-radius: 0; border: 1px solid var(--ink); font-family: var(--font-num); }
+[data-skin='scp'] .coin span { font-family: var(--font-head); letter-spacing: 0.12em; }
+[data-skin='scp'] .skin-card, [data-skin='scp'] .char-new { border-radius: 0; }
+[data-skin='scp'] .charlist-head { border-bottom: 3px double var(--ink); }
+[data-skin='scp'] .char-name { font-family: var(--font-head); text-transform: uppercase; letter-spacing: 0.08em; }
+[data-skin='scp'] .char-portrait { border-radius: 0; filter: grayscale(0.25); }
+[data-skin='scp'] .game-tag { border-radius: 0; font-family: var(--font-head); letter-spacing: 0.1em; }
+[data-skin='scp'] svg.ico { color: var(--ink); }
+[data-skin='scp'] .icon-pick-btn, [data-skin='scp'] .icon-grid, [data-skin='scp'] .icon-grid button { border-radius: 0; }

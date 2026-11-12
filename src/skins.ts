@@ -1,5 +1,5 @@
 /** UI styles. Each one is a stylesheet in src/styles/skins/ keyed off <html data-skin="...">. */
-export type SkinId = 'standard' | 'nier' | 'cyberpunk' | 'skyrim' | 'hollow' | 'honkai' | 'arknights'
+export type SkinId = 'standard' | 'nier' | 'cyberpunk' | 'skyrim' | 'hollow' | 'honkai' | 'arknights' | 'pda' | 'scp'
 
 /** `modes`: the style has its own light and dark versions (follows the Light / Dark switch). */
 /** a style's alternative looks (the first is the default) */
@@ -48,6 +48,17 @@ export const SKINS: { id: SkinId; name: string; desc: string; swatch: string[]; 
       { id: 'endfield', name: 'Endfield', desc: 'Industrial terminal: hazard yellow, warning stripes, clipped corners.' },
       { id: 'classic', name: 'Classic', desc: "The original game's menus: charcoal and white, Rhodes Island blue, corner triangles, wide headings." },
     ],
+  },
+  {
+    id: 'pda', name: 'Survival PDA',
+    desc: 'Inspired by Subnautica. Deep-ocean blue with light from the surface, frosted glass panels, glowing cyan readouts.',
+    swatch: ['#041622', '#0c3a4e', '#4fe3ff', '#ffb547'],
+  },
+  {
+    id: 'scp', name: 'Foundation',
+    desc: 'Inspired by the SCP Foundation. A typed containment file: black title strips, mono type, red marks. Light (paper) and dark (terminal).',
+    swatch: ['#e9e7e1', '#111111', '#9c1414'],
+    modes: true,
   },
 ]
 

@@ -1,0 +1,165 @@
+/* ============ Survival PDA — inspired by Subnautica's handheld PDA ============
+   Deep-ocean blue backdrop with light falling from the surface, frosted teal glass panels with soft rounded corners,
+   glowing cyan outlines and readouts, white rounded type. Dark only (it's underwater). */
+
+:root[data-skin='pda'] {
+  --paper: #041622;
+  --paper2: rgba(120, 230, 255, 0.04);
+  --panel: rgba(12, 58, 78, 0.62);
+  --panel2: rgba(22, 84, 108, 0.55);
+  --ink: #e9fcff;
+  --ink2: #a6dbe8;
+  --muted: #6aa6b8;
+  --line: rgba(120, 228, 255, 0.28);
+  --accent: #4fe3ff;
+  --accent-soft: rgba(79, 227, 255, 0.16);
+  --good: #6ff0a8;
+  --warn: #ffb547;
+  --adv: #6ff0a8;
+  --dis: #ff6f7d;
+  --slot: #062130;
+  --slot-border: rgba(120, 228, 255, 0.4);
+  --slot-ink: #e9fcff;
+  --slot-drop: #0d4a60;
+  --img-bg: #072638;
+  --shadow: rgba(0, 10, 20, 0.6);
+  --font-head: 'Exo 2 Variable', 'Segoe UI', sans-serif;
+  --font-body: 'Exo 2 Variable', 'Segoe UI', sans-serif;
+  --font-num: 'Exo 2 Variable', 'Segoe UI', sans-serif;
+  --pda-glow: 0 0 0 1px rgba(120, 228, 255, 0.3), 0 0 16px rgba(79, 227, 255, 0.12), inset 0 0 24px rgba(79, 227, 255, 0.05);
+  --pda-r: 12px;
+  color-scheme: dark;
+}
+
+[data-skin='pda'] body {
+  font-size: 13.5px;
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(ellipse 80% 45% at 50% -8%, rgba(120, 220, 255, 0.22), transparent 70%),
+    repeating-linear-gradient(100deg, transparent 0 70px, rgba(160, 235, 255, 0.025) 70px 110px, transparent 110px 190px),
+    linear-gradient(180deg, #08324a 0%, #041622 55%, #020b12 100%);
+  background-size: auto;
+  background-attachment: fixed;
+}
+[data-skin='pda'] h1, [data-skin='pda'] h2, [data-skin='pda'] h3 { font-weight: 600; letter-spacing: 0.06em; color: var(--ink); }
+[data-skin='pda'] ::-webkit-scrollbar-thumb { background: rgba(120, 228, 255, 0.45); border-radius: 8px; border: 3px solid transparent; background-clip: content-box; }
+[data-skin='pda'] ::selection { background: #4fe3ff; color: #03202c; }
+
+/* panels: frosted glass with a glowing rim */
+[data-skin='pda'] .frame { clip-path: none; background: transparent; padding: 0; filter: none; }
+[data-skin='pda'] .frame > .frame-in {
+  clip-path: none; border-radius: var(--pda-r); background: var(--panel); box-shadow: var(--pda-glow);
+  backdrop-filter: blur(6px); border: none;
+}
+[data-skin='pda'] .frame-title { justify-content: flex-start; font-family: var(--font-head); font-weight: 600; letter-spacing: 0.14em; color: #bff4ff; font-size: 12.5px; text-shadow: 0 0 8px rgba(79, 227, 255, 0.5); }
+[data-skin='pda'] .frame-title::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #4fe3ff; box-shadow: 0 0 8px #4fe3ff; }
+[data-skin='pda'] .frame-title::after { background: linear-gradient(90deg, rgba(120, 228, 255, 0.45), transparent); }
+
+/* controls */
+[data-skin='pda'] .btn { border-radius: 8px; border: 1px solid var(--line); background: rgba(22, 84, 108, 0.45); color: var(--ink); font-weight: 600; letter-spacing: 0.04em; }
+[data-skin='pda'] .btn:hover { border-color: #4fe3ff; box-shadow: 0 0 10px rgba(79, 227, 255, 0.35); background: rgba(40, 120, 150, 0.5); }
+[data-skin='pda'] .btn.primary { background: linear-gradient(180deg, #5ee8ff, #1fb8dc); color: #03202c; border-color: #8ff0ff; }
+[data-skin='pda'] .btn.primary:hover { background: linear-gradient(180deg, #8ff0ff, #3ccbea); }
+[data-skin='pda'] .btn.primary:disabled { background: rgba(22, 84, 108, 0.45); color: var(--muted); border-color: var(--line); }
+[data-skin='pda'] .btn.ghost { background: transparent; border-color: transparent; box-shadow: none; }
+[data-skin='pda'] .btn.ghost:hover { color: #4fe3ff; }
+[data-skin='pda'] .btn.danger { color: var(--dis); border-color: rgba(255, 111, 125, 0.6); background: transparent; }
+[data-skin='pda'] .btn.danger:hover { background: rgba(255, 111, 125, 0.2); }
+[data-skin='pda'] select, [data-skin='pda'] .box-input { border-radius: 8px; background: rgba(3, 30, 44, 0.7); border-color: var(--line); color: var(--ink); }
+[data-skin='pda'] .box-input:focus { border-color: #4fe3ff; box-shadow: 0 0 8px rgba(79, 227, 255, 0.35); }
+[data-skin='pda'] option { background: #072638; }
+[data-skin='pda'] .field > input, [data-skin='pda'] .line-input { border-bottom-color: var(--line); }
+[data-skin='pda'] .field > input:focus, [data-skin='pda'] .line-input:focus { border-bottom-color: #4fe3ff; background: rgba(79, 227, 255, 0.07); }
+[data-skin='pda'] .field > label, [data-skin='pda'] .field-lbl { color: var(--muted); letter-spacing: 0.1em; font-weight: 600; }
+[data-skin='pda'] .chip { border-radius: 999px; background: rgba(22, 84, 108, 0.4); border-color: var(--line); }
+[data-skin='pda'] .chip.accent { color: #bff4ff; border-color: #4fe3ff; background: rgba(79, 227, 255, 0.14); }
+[data-skin='pda'] .tag { border-radius: 999px; background: #4fe3ff; color: #03202c; }
+[data-skin='pda'] .tag.alt { background: transparent; color: var(--ink2); border-color: var(--line); }
+[data-skin='pda'] .badge, [data-skin='pda'] .kbd { border-radius: 6px; background: transparent; border-color: #4fe3ff; color: #4fe3ff; }
+[data-skin='pda'] .seg { border-radius: 10px; border-color: var(--line); overflow: hidden; }
+[data-skin='pda'] .seg button { background: rgba(22, 84, 108, 0.4); border-color: var(--line); font-weight: 600; }
+[data-skin='pda'] .seg button.on { background: #4fe3ff; color: #03202c; }
+[data-skin='pda'] .pip { border: 1.5px solid #8fe9ff; }
+[data-skin='pda'] .pip.on { background: #4fe3ff; border-color: #4fe3ff; box-shadow: 0 0 6px #4fe3ff; }
+[data-skin='pda'] .pip.mettle.on { background: #ffb547; border-color: #ffb547; box-shadow: 0 0 6px #ffb547; }
+[data-skin='pda'] .pip.succ.on { background: var(--good); border-color: var(--good); }
+[data-skin='pda'] .pip.fail.on { background: var(--dis); border-color: var(--dis); }
+[data-skin='pda'] .switch { background: rgba(120, 228, 255, 0.2); }
+[data-skin='pda'] .switch.on { background: #1fb8dc; box-shadow: 0 0 8px rgba(79, 227, 255, 0.5); }
+/* survival gauges: rounded bars that glow */
+[data-skin='pda'] .hpbar, [data-skin='pda'] .weight-bar, [data-skin='pda'] .sp-bar { border-radius: 999px; background: rgba(3, 30, 44, 0.8); border: 1px solid var(--line); overflow: hidden; }
+[data-skin='pda'] .hpbar > i { background: linear-gradient(90deg, #2fd8a0, #7cf7c4); box-shadow: 0 0 8px rgba(111, 240, 168, 0.6); border-radius: 999px; }
+[data-skin='pda'] .hpbar.low > i { background: linear-gradient(90deg, #e88a1a, #ffb547); }
+[data-skin='pda'] .hpbar.crit > i { background: linear-gradient(90deg, #e2384b, #ff6f7d); }
+[data-skin='pda'] .sp-bar > i { background: linear-gradient(90deg, #ff9d2e, #ffc861); border-radius: 999px; }
+[data-skin='pda'] .sp-bar.full > i, [data-skin='pda'] .sp-bar.ap > i { background: linear-gradient(90deg, #1fb8dc, #6eefff); box-shadow: 0 0 8px rgba(79, 227, 255, 0.6); }
+
+/* top bar: the PDA's header, a glass strip with a glowing lower edge */
+[data-skin='pda'] .topbar { background: linear-gradient(180deg, rgba(10, 60, 82, 0.92), rgba(4, 30, 44, 0.95)); border-bottom: 1px solid rgba(120, 228, 255, 0.5); box-shadow: 0 2px 18px rgba(79, 227, 255, 0.18); }
+[data-skin='pda'] .top-portrait { border-radius: 14px; border: 1px solid rgba(120, 228, 255, 0.5); box-shadow: 0 0 12px rgba(79, 227, 255, 0.25); }
+[data-skin='pda'] .name-banner .name-in { font-weight: 600; letter-spacing: 0.04em; font-size: 22px; border-bottom: 1px solid rgba(120, 228, 255, 0.6); text-shadow: 0 0 10px rgba(79, 227, 255, 0.35); }
+[data-skin='pda'] .vbox { border-radius: 10px; border: 1px solid var(--line); background: rgba(3, 30, 44, 0.55); box-shadow: inset 0 0 14px rgba(79, 227, 255, 0.06); }
+[data-skin='pda'] .vbox:hover { border-color: #4fe3ff; box-shadow: 0 0 10px rgba(79, 227, 255, 0.3); }
+[data-skin='pda'] .vbox .v, [data-skin='pda'] .hp-box .big input, [data-skin='pda'] .spell-stat b, [data-skin='pda'] .spell-stat input { font-weight: 600; color: #e9fcff; text-shadow: 0 0 8px rgba(79, 227, 255, 0.45); }
+[data-skin='pda'] .vbox .l { color: var(--muted); letter-spacing: 0.12em; font-weight: 600; }
+[data-skin='pda'] .vbox .sub { color: #4fe3ff; }
+[data-skin='pda'] .vbox.dying { border-color: var(--dis); box-shadow: 0 0 12px rgba(255, 111, 125, 0.45); }
+[data-skin='pda'] .inv-btn { border-radius: 12px; border: 1px solid #8ff0ff; background: linear-gradient(180deg, #5ee8ff, #1fb8dc); }
+[data-skin='pda'] .inv-btn .l, [data-skin='pda'] .inv-btn .inv-ico { color: #03202c; font-weight: 700; }
+[data-skin='pda'] .nav { background: rgba(2, 18, 28, 0.85); border-top: 1px solid rgba(120, 228, 255, 0.2); }
+[data-skin='pda'] .nav button.tab { font-weight: 600; letter-spacing: 0.08em; color: #7fb9c8; border-radius: 10px 10px 0 0; }
+[data-skin='pda'] .nav button.tab:hover { color: #e9fcff; background: rgba(79, 227, 255, 0.08); }
+[data-skin='pda'] .nav button.tab.active { color: #e9fcff; background: rgba(79, 227, 255, 0.16); border-bottom-color: #4fe3ff; box-shadow: inset 0 -2px 0 #4fe3ff, 0 4px 14px rgba(79, 227, 255, 0.3); text-shadow: 0 0 8px rgba(79, 227, 255, 0.6); }
+
+/* abilities dock */
+[data-skin='pda'] .dock { background: rgba(4, 30, 44, 0.85); border-right: 1px solid var(--line); backdrop-filter: blur(6px); }
+[data-skin='pda'] .dock-edge { background: rgba(2, 18, 28, 0.9); border-right: 1px solid var(--line); }
+[data-skin='pda'] .dock-edge span { color: #7fb9c8; letter-spacing: 0.12em; font-weight: 600; }
+[data-skin='pda'] .dock-edge:hover, [data-skin='pda'] .dock-edge.on { background: rgba(79, 227, 255, 0.2); }
+[data-skin='pda'] .dock-edge:hover span, [data-skin='pda'] .dock-edge.on span { color: #e9fcff; }
+[data-skin='pda'] .pill, [data-skin='pda'] .passive { border-radius: 10px; border: 1px solid var(--line); background: rgba(22, 84, 108, 0.35); }
+[data-skin='pda'] .pill .num { border-radius: 8px; border: 1px solid rgba(120, 228, 255, 0.5); background: rgba(3, 30, 44, 0.7); font-weight: 600; }
+[data-skin='pda'] .pill.insp.on { border-color: #ffb547; background: rgba(255, 181, 71, 0.14); }
+[data-skin='pda'] .ab-box .name { border-radius: 8px 8px 0 0; background: rgba(79, 227, 255, 0.85); color: #03202c; font-weight: 700; letter-spacing: 0.1em; }
+[data-skin='pda'] .ab-box .mod { border-radius: 0 0 12px 12px; border: 1px solid var(--line); border-top: none; background: rgba(3, 30, 44, 0.6); font-weight: 600; text-shadow: 0 0 8px rgba(79, 227, 255, 0.4); }
+[data-skin='pda'] .ab-box .mod.changed { color: #4fe3ff; }
+[data-skin='pda'] .ab-box .score { border-radius: 999px; border: 1px solid rgba(120, 228, 255, 0.6); background: #062130; font-weight: 600; }
+[data-skin='pda'] .rr { border-bottom: 1px solid rgba(120, 228, 255, 0.14); }
+[data-skin='pda'] .rr .val { font-weight: 600; }
+[data-skin='pda'] .rr:hover, [data-skin='pda'] .list-row:hover, [data-skin='pda'] .sline:hover,
+[data-skin='pda'] .act-item:hover, [data-skin='pda'] table.t tr.hov:hover td { background: rgba(79, 227, 255, 0.09); }
+[data-skin='pda'] .breakdown { border-radius: 10px; background: rgba(3, 30, 44, 0.75); border-color: var(--line); border-left: 3px solid #4fe3ff; }
+
+/* spells / arts, operator skills */
+[data-skin='pda'] .spell-sec, [data-skin='pda'] .spell-stat, [data-skin='pda'] .ap-panel { border-radius: var(--pda-r); border: none; background: var(--panel); box-shadow: var(--pda-glow); }
+[data-skin='pda'] .sec-head .lvl-badge { border-radius: 999px; background: #4fe3ff; color: #03202c; border-color: #4fe3ff; font-weight: 700; }
+[data-skin='pda'] .sec-banner { background: rgba(22, 84, 108, 0.45); border-color: var(--line); }
+[data-skin='pda'] .sec-title { letter-spacing: 0.12em; color: #bff4ff; }
+[data-skin='pda'] .ap-cost { border-radius: 999px; color: #4fe3ff; border-color: #4fe3ff; }
+[data-skin='pda'] .sline { border-bottom-color: rgba(120, 228, 255, 0.14); }
+[data-skin='pda'] .crm.on { color: #4fe3ff; }
+[data-skin='pda'] .op-card { border-radius: 12px; background: rgba(22, 84, 108, 0.35); border-left: 3px solid #7fb9c8; }
+[data-skin='pda'] .op-card.ready { border-left-color: #ffb547; }
+[data-skin='pda'] .op-card.active { border-color: #4fe3ff; border-left-color: #4fe3ff; box-shadow: 0 0 12px rgba(79, 227, 255, 0.35); }
+[data-skin='pda'] .op-tier-dot { background: #4fe3ff; color: #03202c; border-color: #4fe3ff; }
+[data-skin='pda'] .sp-active { border-left-color: #4fe3ff; background: rgba(79, 227, 255, 0.09); }
+
+/* overlays */
+[data-skin='pda'] .popover, [data-skin='pda'] .modal, [data-skin='pda'] .drawer { border-radius: 14px; border: 1px solid rgba(120, 228, 255, 0.4); background: rgba(6, 36, 52, 0.96); box-shadow: 0 0 30px rgba(79, 227, 255, 0.18); }
+[data-skin='pda'] .drawer { border-radius: 14px 0 0 14px; }
+[data-skin='pda'] .modal-head, [data-skin='pda'] .drawer-head { background: rgba(10, 60, 82, 0.9); border-bottom: 1px solid rgba(120, 228, 255, 0.45); }
+[data-skin='pda'] .backdrop { background: rgba(1, 10, 16, 0.65); backdrop-filter: blur(2px); }
+[data-skin='pda'] .toast { border-radius: 999px; background: rgba(10, 60, 82, 0.95); color: #e9fcff; border: 1px solid #4fe3ff; box-shadow: 0 0 16px rgba(79, 227, 255, 0.4); }
+[data-skin='pda'] .fx { border-radius: 10px; background: rgba(22, 84, 108, 0.35); border-color: var(--line); }
+[data-skin='pda'] table.t th { letter-spacing: 0.1em; color: #7fb9c8; border-bottom: 1px solid rgba(120, 228, 255, 0.4); }
+[data-skin='pda'] table.t td { border-bottom-color: rgba(120, 228, 255, 0.12); }
+
+/* inventory, character list */
+[data-skin='pda'] .eq-slot, [data-skin='pda'] .tile { border-radius: 12px; }
+[data-skin='pda'] .coin input { border-radius: 999px; border: 1px solid rgba(120, 228, 255, 0.5); font-weight: 600; }
+[data-skin='pda'] .skin-card, [data-skin='pda'] .char-new { border-radius: 12px; }
+[data-skin='pda'] .charlist-head { border-bottom: 1px solid rgba(120, 228, 255, 0.5); box-shadow: 0 6px 14px -10px rgba(79, 227, 255, 0.6); }
+[data-skin='pda'] .char-portrait { border-radius: 12px; }
+[data-skin='pda'] .game-tag { border-radius: 999px; }
+[data-skin='pda'] svg.ico { color: #bff4ff; }
+[data-skin='pda'] .icon-pick-btn, [data-skin='pda'] .icon-grid button { border-radius: 10px; }

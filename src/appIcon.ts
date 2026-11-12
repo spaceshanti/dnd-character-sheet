@@ -115,6 +115,31 @@ ${d.face}${d.edges}`
   },
 }
 
+// Survival PDA: deep-water tile with light rays, a glowing cyan die inside HUD arcs
+ICONS.pda = () => {
+  const glow = d20({ line: '#4fe3ff', face: 'none', width: 30, s: 0.72 })
+  const d = d20({ line: '#e9fcff', face: '#ffb547', width: 12, s: 0.72 })
+  return `<defs>${grad('g', '#0d4e6c', '#020d16')}
+<filter id="b" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="10"/></filter></defs>
+<path d="${rounded(110)}" fill="url(#g)" stroke="#4fe3ff" stroke-opacity=".7" stroke-width="8"/>
+<path d="M150 24 L200 24 L120 300 Z M270 24 L330 24 L250 330 Z M400 24 L440 24 L360 280 Z" fill="#bff4ff" opacity=".07"/>
+<path d="M118 150 A170 170 0 0 1 394 150 M394 368 A170 170 0 0 1 118 368" fill="none" stroke="#4fe3ff" stroke-width="10" stroke-linecap="round" opacity=".85"/>
+<circle cx="256" cy="259" r="196" fill="none" stroke="#4fe3ff" stroke-width="3" stroke-dasharray="6 18" opacity=".6"/>
+<g filter="url(#b)" opacity=".7">${glow.edges}</g>${d.face}${d.edges}`
+}
+
+// Foundation: a containment-file card, black frame, red CLASSIFIED band, redaction bars, black die with a red face
+ICONS.scp = () => {
+  const d = d20({ line: '#111111', face: '#9c1414', width: 15, s: 0.66, cy: 268 })
+  return `<rect x="24" y="24" width="464" height="464" fill="#f1efe9" stroke="#111111" stroke-width="14"/>
+<rect x="24" y="24" width="464" height="74" fill="#111111"/>
+<rect x="52" y="48" width="120" height="26" fill="#f1efe9"/><rect x="196" y="48" width="70" height="26" fill="#9c1414"/>
+<circle cx="256" cy="268" r="168" fill="none" stroke="#111111" stroke-width="10"/>
+<path d="M256 92 V112 M256 424 V444 M80 268 H100 M412 268 H432" stroke="#111111" stroke-width="10"/>
+${d.face}${d.edges}
+<rect x="300" y="438" width="160" height="22" fill="#111111"/><rect x="52" y="438" width="90" height="22" fill="#111111"/>`
+}
+
 export function iconSvg(skin: SkinId, variant?: string): string {
   const make = ICONS[variant ? `${skin}/${variant}` : skin] ?? ICONS[skin] ?? ICONS.standard
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">${make()}</svg>`
