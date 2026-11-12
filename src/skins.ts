@@ -2,7 +2,11 @@
 export type SkinId = 'standard' | 'nier' | 'cyberpunk' | 'skyrim' | 'hollow' | 'honkai' | 'arknights'
 
 /** `modes`: the style has its own light and dark versions (follows the Light / Dark switch). */
-export const SKINS: { id: SkinId; name: string; desc: string; swatch: string[]; modes?: boolean }[] = [
+/** a style's alternative looks (the first is the default) */
+export interface SkinVariant { id: string; name: string; desc: string }
+
+/** `variants`: the style comes in more than one look, picked under its card. */
+export const SKINS: { id: SkinId; name: string; desc: string; swatch: string[]; modes?: boolean; variants?: SkinVariant[] }[] = [
   {
     id: 'standard', name: 'Character Sheet',
     desc: 'The classic printed-sheet look. Has its own light and dark mode.',
@@ -37,8 +41,19 @@ export const SKINS: { id: SkinId; name: string; desc: string; swatch: string[]; 
   },
   {
     id: 'arknights', name: 'Rhodes Island',
-    desc: 'Inspired by Arknights. Graphite terminal panels, hazard-yellow and cyan accents, mono readouts, clipped corners. Light and dark.',
+    desc: 'Inspired by Arknights. Two looks: Endfield (hazard yellow, clipped corners) or Classic (charcoal, white and Rhodes Island blue). Light and dark.',
     swatch: ['#1b1d21', '#f2f2f0', '#ffd23f', '#23b3e6'],
     modes: true,
+    variants: [
+      { id: 'endfield', name: 'Endfield', desc: 'Industrial terminal: hazard yellow, warning stripes, clipped corners.' },
+      { id: 'classic', name: 'Classic', desc: "The original game's menus: charcoal and white, Rhodes Island blue, corner triangles, wide headings." },
+    ],
   },
 ]
+
+/** the look in use for a style (its first variant unless you picked another) */
+export function variantOf(skin: SkinId, picked: Partial<Record<SkinId, string>>): string | undefined {
+  const v = SKINS.find((k) => k.id === skin)?.variants
+  if (!v) return undefined
+  return v.find((x) => x.id === picked[skin])?.id ?? v[0].id
+}

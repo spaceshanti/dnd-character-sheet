@@ -451,6 +451,8 @@ export interface AppData {
   skin?: string
   /** the UI style last used for each game, so switching characters switches the look too */
   skinBySystem?: Record<string, string>
+  /** the look picked for styles that have more than one (Rhodes Island: Endfield / Classic) */
+  skinVariant?: Record<string, string>
   /** your own spells, available to every character */
   customSpells?: CustomSpell[]
   /** sourcebook bookmarks, shared by all characters */

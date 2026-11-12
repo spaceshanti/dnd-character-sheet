@@ -1,10 +1,12 @@
-import { SKINS } from '../skins'
+import { SKINS, variantOf } from '../skins'
 import { useStore, useUI } from '../store'
 import { Modal } from './ui'
 
 /** UI style cards plus the light / dark switch for the standard sheet. */
 export function SkinPicker() {
-  const { skin, setSkin, theme, setTheme } = useStore()
+  const { skin, setSkin, theme, setTheme, skinVariant, setSkinVariant } = useStore()
+  const cur = SKINS.find((k) => k.id === skin)
+  const look = variantOf(skin, skinVariant)
   return (
     <div className="col" style={{ gap: 10 }}>
       <div className="skin-grid">
@@ -16,7 +18,17 @@ export function SkinPicker() {
           </button>
         ))}
       </div>
-      {SKINS.find((k) => k.id === skin)?.modes && (
+      {cur?.variants && (
+        <div className="col" style={{ gap: 4 }}>
+          <div className="row"><span className="grow">Look</span>
+            <div className="seg">
+              {cur.variants.map((v) => <button key={v.id} className={look === v.id ? 'on' : ''} onClick={() => setSkinVariant(skin, v.id)}>{v.name}</button>)}
+            </div>
+          </div>
+          <span className="small muted">{cur.variants.find((v) => v.id === look)?.desc}</span>
+        </div>
+      )}
+      {cur?.modes && (
         <div className="row"><span className="grow">Light / dark</span>
           <div className="seg">
             <button className={theme === 'light' ? 'on' : ''} onClick={() => setTheme('light')}>Light</button>

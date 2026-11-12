@@ -88,7 +88,7 @@ async function writeStore(json: string) {
 /** how long a deleted character can still be restored */
 export const TRASH_DAYS = 30
 
-interface State extends Omit<AppData, 'skin' | 'customSpells' | 'skinBySystem' | 'bookmarks' | 'trash'> {
+interface State extends Omit<AppData, 'skin' | 'customSpells' | 'skinBySystem' | 'skinVariant' | 'bookmarks' | 'trash'> {
   trash: TrashedChar[]
   restoreChar: (id: string) => void
   purgeChar: (id: string) => void
@@ -98,6 +98,8 @@ interface State extends Omit<AppData, 'skin' | 'customSpells' | 'skinBySystem' |
   removeBookmark: (id: string) => void
   skin: SkinId
   skinBySystem: Partial<Record<SystemId, SkinId>>
+  skinVariant: Partial<Record<SkinId, string>>
+  setSkinVariant: (skin: SkinId, v: string) => void
   customSpells: CustomSpell[]
   saveCustomSpell: (s: CustomSpell) => void
   deleteCustomSpell: (id: string) => void
@@ -116,7 +118,7 @@ interface State extends Omit<AppData, 'skin' | 'customSpells' | 'skinBySystem' |
 }
 
 export const useStore = create<State>((set, get) => ({
-  version: 1, chars: {}, order: [], activeId: '', trash: [], theme: 'light', skin: 'standard', skinBySystem: {}, customSpells: [], bookmarks: [], loaded: false, saveError: '',
+  version: 1, chars: {}, order: [], activeId: '', trash: [], theme: 'light', skin: 'standard', skinBySystem: {}, skinVariant: {}, customSpells: [], bookmarks: [], loaded: false, saveError: '',
 
   async load() {
     let data: Partial<AppData> | null = null
@@ -139,7 +141,7 @@ export const useStore = create<State>((set, get) => ({
     if (!skinBySystem.dnd5e) skinBySystem.dnd5e = skin
     // deleted characters stay restorable for TRASH_DAYS
     const trash = (data?.trash ?? []).filter((t) => t?.char && Date.now() - t.deletedAt < TRASH_DAYS * 86400000)
-    set({ chars, order, activeId, trash, theme: data?.theme === 'dark' ? 'dark' : 'light', skin, skinBySystem, customSpells: data?.customSpells ?? [], bookmarks: data?.bookmarks ?? [], loaded: true })
+    set({ chars, order, activeId, trash, theme: data?.theme === 'dark' ? 'dark' : 'light', skin, skinBySystem, skinVariant: { ...(data?.skinVariant ?? {}) }, customSpells: data?.customSpells ?? [], bookmarks: data?.bookmarks ?? [], loaded: true })
   },
 
   patch(fn) {
@@ -210,6 +212,7 @@ export const useStore = create<State>((set, get) => ({
   setTheme: (theme) => set({ theme }),
   // remembered per game: the style you pick applies to every character of the open character's game
   setSkin: (skin) => set((s) => ({ skin, skinBySystem: { ...s.skinBySystem, [systemOf(s.chars[s.activeId])]: skin } })),
+  setSkinVariant: (skin, v) => set((s) => ({ skinVariant: { ...s.skinVariant, [skin]: v } })),
   saveCustomSpell: (sp) => set((s) => ({ customSpells: s.customSpells.some((x) => x.id === sp.id) ? s.customSpells.map((x) => (x.id === sp.id ? sp : x)) : [...s.customSpells, sp] })),
   deleteCustomSpell: (id) => set((s) => ({ customSpells: s.customSpells.filter((x) => x.id !== id) })),
   addBookmark: (b) => set((s) => ({ bookmarks: [...s.bookmarks, { ...b, id: uid() }] })),
@@ -222,12 +225,12 @@ let timer: ReturnType<typeof setTimeout> | undefined
 useStore.subscribe((s, prev) => {
   // nothing to save for the load itself, only for changes after it (keeps the .bak a real previous version)
   if (!s.loaded || !prev.loaded) return
-  if (s.chars === prev.chars && s.order === prev.order && s.activeId === prev.activeId && s.theme === prev.theme && s.skin === prev.skin && s.skinBySystem === prev.skinBySystem && s.customSpells === prev.customSpells && s.bookmarks === prev.bookmarks && s.trash === prev.trash) return
+  if (s.chars === prev.chars && s.order === prev.order && s.activeId === prev.activeId && s.theme === prev.theme && s.skin === prev.skin && s.skinBySystem === prev.skinBySystem && s.skinVariant === prev.skinVariant && s.customSpells === prev.customSpells && s.bookmarks === prev.bookmarks && s.trash === prev.trash) return
   clearTimeout(timer)
   timer = setTimeout(async () => {
-    const { chars, order, activeId, theme, skin, skinBySystem, customSpells, bookmarks, trash } = useStore.getState()
+    const { chars, order, activeId, theme, skin, skinBySystem, skinVariant, customSpells, bookmarks, trash } = useStore.getState()
     try {
-      await writeStore(JSON.stringify({ version: 1, chars, order, activeId, theme, skin, skinBySystem, customSpells, bookmarks, trash } satisfies AppData))
+      await writeStore(JSON.stringify({ version: 1, chars, order, activeId, theme, skin, skinBySystem, skinVariant, customSpells, bookmarks, trash } satisfies AppData))
       useStore.setState({ saveError: '' })
     } catch (e) {
       useStore.setState({ saveError: String(e) })

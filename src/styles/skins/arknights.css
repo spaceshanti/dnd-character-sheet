@@ -14,8 +14,8 @@
   --ink2: #a9adb4;
   --muted: #6c7078;
   --line: #34373e;
-  --accent: #ffd23f;
-  --accent-soft: rgba(255, 210, 63, 0.13);
+  --accent: var(--rk-hi);
+  --accent-soft: color-mix(in srgb, var(--rk-hi) 13%, transparent);
   --good: #5fd18b;
   --warn: #ff9d2e;
   --adv: #5fd18b;
@@ -32,6 +32,10 @@
   --font-num: 'Share Tech Mono', 'Consolas', monospace;
 
   --rk-cyan: #23b3e6;
+  --rk-hi: #ffd23f;
+  --rk-hi2: #ffe174;
+  --rk-hi3: #e6b820;
+  --rk-on-hi: #121316;
   --rk-on-accent: #121316;
   --rk-head-bg: #0e0f11;
   --rk-stripe: repeating-linear-gradient(-45deg, var(--accent) 0 6px, transparent 6px 12px);
@@ -62,7 +66,7 @@
   --img-bg: #e6e7e5;
   --shadow: rgba(0, 0, 0, 0.22);
   --rk-cyan: #0c86b8;
-  --rk-on-accent: #ffd23f;
+  --rk-on-accent: var(--rk-hi);
   --rk-head-bg: #1a1b1f;
   --rk-stripe: repeating-linear-gradient(-45deg, #e8b80f 0 6px, transparent 6px 12px);
   --rk-grid: rgba(0, 0, 0, 0.04);
@@ -80,12 +84,12 @@
 }
 [data-skin='arknights'] h1, [data-skin='arknights'] h2, [data-skin='arknights'] h3 { font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
 [data-skin='arknights'] ::-webkit-scrollbar-thumb { background: var(--ink2); border-radius: 0; border: 4px solid transparent; background-clip: content-box; }
-[data-skin='arknights'] ::selection { background: #ffd23f; color: #121316; }
+[data-skin='arknights'] ::selection { background: var(--rk-hi); color: var(--rk-on-hi); }
 
 /* panels: hairline border, one clipped corner, a yellow tick in the top-left */
 [data-skin='arknights'] .frame { --c: 0px; clip-path: var(--rk-cut); background: var(--line); padding: 1px; filter: none; position: relative; }
 [data-skin='arknights'] .frame > .frame-in { clip-path: var(--rk-cut); box-shadow: none; background: var(--panel); border-radius: 0; }
-[data-skin='arknights'] .frame::before { content: ''; position: absolute; left: 0; top: 0; width: 18px; height: 3px; background: #ffd23f; z-index: 2; }
+[data-skin='arknights'] .frame::before { content: ''; position: absolute; left: 0; top: 0; width: 18px; height: 3px; background: var(--rk-hi); z-index: 2; }
 [data-skin='arknights'] .frame-title {
   justify-content: flex-start; font-family: var(--font-head); color: var(--ink); font-size: 13px; font-weight: 700;
   letter-spacing: 0.2em; margin: -1px 0 10px; text-transform: uppercase;
@@ -99,8 +103,8 @@
   font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; clip-path: var(--rk-cut-sm);
 }
 [data-skin='arknights'] .btn:hover { border-color: var(--ink2); background: var(--panel); }
-[data-skin='arknights'] .btn.primary { background: #ffd23f; color: #121316; border-color: #ffd23f; }
-[data-skin='arknights'] .btn.primary:hover { background: #ffe174; }
+[data-skin='arknights'] .btn.primary { background: var(--rk-hi); color: var(--rk-on-hi); border-color: var(--rk-hi); }
+[data-skin='arknights'] .btn.primary:hover { background: var(--rk-hi2); }
 [data-skin='arknights'] .btn.primary:disabled { background: var(--panel2); color: var(--muted); border-color: var(--line); }
 [data-skin='arknights'] .btn.ghost { background: transparent; border-color: transparent; clip-path: none; }
 [data-skin='arknights'] .btn.ghost:hover { color: var(--rk-cyan); }
@@ -113,17 +117,17 @@
 [data-skin='arknights'] .field > input:focus, [data-skin='arknights'] .line-input:focus { border-bottom-color: var(--rk-cyan); background: color-mix(in srgb, var(--rk-cyan) 7%, transparent); }
 [data-skin='arknights'] .field > label, [data-skin='arknights'] .field-lbl { color: var(--ink2); letter-spacing: 0.16em; font-family: var(--font-head); font-weight: 700; }
 [data-skin='arknights'] .chip { border-radius: 0; background: transparent; border-color: var(--line); }
-[data-skin='arknights'] .chip.accent { color: var(--ink); border-color: #ffd23f; background: rgba(255, 210, 63, 0.14); }
+[data-skin='arknights'] .chip.accent { color: var(--ink); border-color: var(--rk-hi); background: color-mix(in srgb, var(--rk-hi) 14%, transparent); }
 [data-skin='arknights'] .tag { border-radius: 0; background: var(--ink); color: var(--paper); }
 [data-skin='arknights'] .tag.alt { background: transparent; color: var(--ink2); border-color: var(--line); }
 [data-skin='arknights'] .badge, [data-skin='arknights'] .kbd { border-radius: 0; background: transparent; border-color: var(--rk-cyan); color: var(--rk-cyan); }
 [data-skin='arknights'] .seg { border-radius: 0; border-color: var(--line); }
 [data-skin='arknights'] .seg button { background: var(--panel2); border-color: var(--line); font-family: var(--font-head); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-[data-skin='arknights'] .seg button.on { background: var(--ink); color: var(--paper); box-shadow: inset 0 -3px 0 #ffd23f; }
+[data-skin='arknights'] .seg button.on { background: var(--ink); color: var(--paper); box-shadow: inset 0 -3px 0 var(--rk-hi); }
 [data-skin='arknights'] .pip { border-radius: 0; border: 1.5px solid var(--ink2); }
 [data-skin='arknights'] .pip.on { background: var(--ink); border-color: var(--ink); }
 [data-skin='arknights'] .pip.diamond, [data-skin='arknights'] .pip.mettle { transform: rotate(45deg) scale(0.78); }
-[data-skin='arknights'] .pip.mettle.on { background: #ffd23f; border-color: #ffd23f; }
+[data-skin='arknights'] .pip.mettle.on { background: var(--rk-hi); border-color: var(--rk-hi); }
 [data-skin='arknights'] .pip.succ.on { background: var(--good); border-color: var(--good); }
 [data-skin='arknights'] .pip.fail.on { background: var(--dis); border-color: var(--dis); }
 [data-skin='arknights'] .switch { border-radius: 0; background: var(--line); }
@@ -133,45 +137,45 @@
 [data-skin='arknights'] .hpbar > i { background: var(--rk-cyan); }
 [data-skin='arknights'] .hpbar.low > i { background: var(--warn); }
 [data-skin='arknights'] .hpbar.crit > i { background: var(--dis); }
-[data-skin='arknights'] .sp-bar > i { background: repeating-linear-gradient(-45deg, #ffd23f 0 5px, #e6b820 5px 10px); }
+[data-skin='arknights'] .sp-bar > i { background: repeating-linear-gradient(-45deg, var(--rk-hi) 0 5px, var(--rk-hi3) 5px 10px); }
 [data-skin='arknights'] .sp-bar.full > i { background: var(--rk-cyan); }
 [data-skin='arknights'] .sp-bar.ap > i { background: var(--rk-cyan); }
 
 /* top bar: near-black header with a hazard stripe along the bottom */
-[data-skin='arknights'] .topbar { background: var(--rk-head-bg); color: #f0f0ee; position: relative; border-bottom: none; box-shadow: 0 2px 0 #ffd23f; }
+[data-skin='arknights'] .topbar { background: var(--rk-head-bg); color: #f0f0ee; position: relative; border-bottom: none; box-shadow: 0 2px 0 var(--rk-hi); }
 [data-skin='arknights'] .topbar::after { content: ''; position: absolute; left: 0; right: 0; bottom: -8px; height: 6px; background: var(--rk-stripe); opacity: .55; pointer-events: none; }
-[data-skin='arknights'] .topbar { --ink: #f0f0ee; --ink2: #a9adb4; --muted: #6c7078; --line: #34373e; --panel: #1c1e22; --panel2: #24272c; --accent: #ffd23f; --accent-soft: rgba(255, 210, 63, 0.13); color-scheme: dark; }
+[data-skin='arknights'] .topbar { --ink: #f0f0ee; --ink2: #a9adb4; --muted: #6c7078; --line: #34373e; --panel: #1c1e22; --panel2: #24272c; --accent: var(--rk-hi); --accent-soft: color-mix(in srgb, var(--rk-hi) 13%, transparent); color-scheme: dark; }
 [data-skin='arknights'] .top-portrait { border-radius: 0; border: 1px solid #3b3f46; clip-path: var(--rk-cut); }
-[data-skin='arknights'] .name-banner .name-in { font-family: var(--font-head); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 22px; border-bottom: 2px solid #ffd23f; }
+[data-skin='arknights'] .name-banner .name-in { font-family: var(--font-head); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 22px; border-bottom: 2px solid var(--rk-hi); }
 [data-skin='arknights'] .name-banner label { color: var(--ink2); letter-spacing: .2em; }
 [data-skin='arknights'] .vbox { border-radius: 0; border: 1px solid var(--line); box-shadow: none; background: var(--panel); clip-path: var(--rk-cut-sm); }
-[data-skin='arknights'] .vbox:hover { border-color: #ffd23f; }
+[data-skin='arknights'] .vbox:hover { border-color: var(--rk-hi); }
 [data-skin='arknights'] .vbox .v, [data-skin='arknights'] .hp-box .big input, [data-skin='arknights'] .spell-stat b, [data-skin='arknights'] .spell-stat input {
   font-family: var(--font-num); font-weight: 400; color: var(--ink);
 }
 [data-skin='arknights'] .vbox .l { font-family: var(--font-head); font-weight: 700; color: var(--ink2); letter-spacing: .16em; font-size: 8px; }
-[data-skin='arknights'] .vbox .sub { color: #ffd23f; }
+[data-skin='arknights'] .vbox .sub { color: var(--rk-hi); }
 [data-skin='arknights'] .hp-box .big .of { font-family: var(--font-num); color: var(--ink2); }
 [data-skin='arknights'] .shield { clip-path: polygon(0 0, 100% 0, 100% 78%, 50% 100%, 0 78%); padding-bottom: 8px; }
 [data-skin='arknights'] .vbox.dying { border-color: var(--dis); box-shadow: inset 0 0 0 1px var(--dis); }
-[data-skin='arknights'] .inv-btn { border-radius: 0; border: 1px solid #ffd23f; background: #ffd23f; clip-path: var(--rk-cut-sm); }
-[data-skin='arknights'] .inv-btn .l { color: #121316; font-weight: 700; }
-[data-skin='arknights'] .inv-btn .inv-ico { color: #121316; }
-[data-skin='arknights'] .inv-btn:hover { background: #ffe174; }
+[data-skin='arknights'] .inv-btn { border-radius: 0; border: 1px solid var(--rk-hi); background: var(--rk-hi); clip-path: var(--rk-cut-sm); }
+[data-skin='arknights'] .inv-btn .l { color: var(--rk-on-hi); font-weight: 700; }
+[data-skin='arknights'] .inv-btn .inv-ico { color: var(--rk-on-hi); }
+[data-skin='arknights'] .inv-btn:hover { background: var(--rk-hi2); }
 [data-skin='arknights'] .nav { background: #16181b; border-top: 1px solid #2a2d33; }
 [data-skin='arknights'] .nav button.tab { font-family: var(--font-head); font-weight: 700; font-size: 12.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #8b9097; }
 [data-skin='arknights'] .nav button.tab:hover { color: #f0f0ee; }
-[data-skin='arknights'] .nav button.tab.active { color: #121316; background: #ffd23f; border-bottom-color: #ffd23f; clip-path: polygon(0 0, 100% 0, 100% 100%, 8px 100%, 0 calc(100% - 8px)); }
+[data-skin='arknights'] .nav button.tab.active { color: var(--rk-on-hi); background: var(--rk-hi); border-bottom-color: var(--rk-hi); clip-path: polygon(0 0, 100% 0, 100% 100%, 8px 100%, 0 calc(100% - 8px)); }
 
 /* abilities dock */
 [data-skin='arknights'] .dock { background: var(--panel); border-right: 1px solid var(--line); }
 [data-skin='arknights'] .dock-edge { background: var(--rk-head-bg); border-right: 1px solid #34373e; }
 [data-skin='arknights'] .dock-edge span { color: #a9adb4; font-family: var(--font-head); font-weight: 700; letter-spacing: .14em; }
-[data-skin='arknights'] .dock-edge:hover, [data-skin='arknights'] .dock-edge.on { background: #ffd23f; }
-[data-skin='arknights'] .dock-edge:hover span, [data-skin='arknights'] .dock-edge.on span { color: #121316; }
+[data-skin='arknights'] .dock-edge:hover, [data-skin='arknights'] .dock-edge.on { background: var(--rk-hi); }
+[data-skin='arknights'] .dock-edge:hover span, [data-skin='arknights'] .dock-edge.on span { color: var(--rk-on-hi); }
 [data-skin='arknights'] .pill, [data-skin='arknights'] .passive { border-radius: 0; border: 1px solid var(--line); background: var(--panel2); }
 [data-skin='arknights'] .pill .num { border-radius: 0; border: 1px solid var(--ink2); font-family: var(--font-num); font-weight: 400; background: var(--panel); }
-[data-skin='arknights'] .pill.insp.on { border-color: #ffd23f; background: rgba(255, 210, 63, 0.14); }
+[data-skin='arknights'] .pill.insp.on { border-color: var(--rk-hi); background: color-mix(in srgb, var(--rk-hi) 14%, transparent); }
 [data-skin='arknights'] .ab-box .name { border-radius: 0; background: var(--ink); color: var(--paper); font-family: var(--font-head); font-weight: 700; letter-spacing: .14em; }
 [data-skin='arknights'] .ab-box .mod {
   border-radius: 0; border: 1px solid var(--line); border-top: none; background: var(--panel2); font-family: var(--font-num); font-weight: 400;
@@ -183,7 +187,7 @@
 [data-skin='arknights'] .rr .val { font-family: var(--font-num); font-weight: 400; }
 [data-skin='arknights'] .rr:hover, [data-skin='arknights'] .list-row:hover, [data-skin='arknights'] .sline:hover,
 [data-skin='arknights'] .act-item:hover, [data-skin='arknights'] table.t tr.hov:hover td { background: color-mix(in srgb, var(--rk-cyan) 8%, transparent); }
-[data-skin='arknights'] .breakdown { border-radius: 0; background: var(--panel2); border-color: var(--line); border-left: 3px solid #ffd23f; }
+[data-skin='arknights'] .breakdown { border-radius: 0; background: var(--panel2); border-color: var(--line); border-left: 3px solid var(--rk-hi); }
 
 /* arts book */
 [data-skin='arknights'] .spell-sec { border-radius: 0; border: 1px solid var(--line); box-shadow: none; background: var(--panel); clip-path: var(--rk-cut); }
@@ -201,7 +205,7 @@
 
 /* operator skills */
 [data-skin='arknights'] .op-card { border-radius: 0; clip-path: var(--rk-cut-sm); background: var(--panel2); border-left: 3px solid var(--ink2); }
-[data-skin='arknights'] .op-card.ready { border-left-color: #ffd23f; }
+[data-skin='arknights'] .op-card.ready { border-left-color: var(--rk-hi); }
 [data-skin='arknights'] .op-card.active { border-color: var(--rk-cyan); border-left-color: var(--rk-cyan); box-shadow: inset 0 0 0 1px var(--rk-cyan); }
 [data-skin='arknights'] .op-name { text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
 [data-skin='arknights'] .op-stats span { font-family: var(--font-num); font-weight: 400; }
@@ -210,11 +214,11 @@
 
 /* overlays */
 [data-skin='arknights'] .popover, [data-skin='arknights'] .modal, [data-skin='arknights'] .drawer { border-radius: 0; border: 1px solid var(--line); background: var(--panel); }
-[data-skin='arknights'] .modal-head, [data-skin='arknights'] .drawer-head { background: var(--rk-head-bg); border-bottom: 2px solid #ffd23f; }
+[data-skin='arknights'] .modal-head, [data-skin='arknights'] .drawer-head { background: var(--rk-head-bg); border-bottom: 2px solid var(--rk-hi); }
 [data-skin='arknights'] .modal-head h2, [data-skin='arknights'] .drawer-head h2 { color: #f0f0ee; }
 [data-skin='arknights'] .modal-head .btn, [data-skin='arknights'] .drawer-head .btn { --ink: #f0f0ee; --panel2: #24272c; --line: #3b3f46; }
 [data-skin='arknights'] .backdrop { background: rgba(8, 9, 10, 0.68); }
-[data-skin='arknights'] .toast { border-radius: 0; background: #ffd23f; color: #121316; font-weight: 700; clip-path: var(--rk-cut-sm); }
+[data-skin='arknights'] .toast { border-radius: 0; background: var(--rk-hi); color: var(--rk-on-hi); font-weight: 700; clip-path: var(--rk-cut-sm); }
 [data-skin='arknights'] .fx { border-radius: 0; background: var(--panel2); border-color: var(--line); }
 [data-skin='arknights'] table.t th { font-family: var(--font-head); letter-spacing: .14em; color: var(--ink2); border-bottom: 1px solid var(--ink2); }
 [data-skin='arknights'] table.t td { border-bottom-color: var(--line); }
@@ -229,10 +233,155 @@
 [data-skin='arknights'] .char-name { text-transform: uppercase; letter-spacing: .06em; }
 [data-skin='arknights'] .char-portrait { border-radius: 0; }
 [data-skin='arknights'] .game-tag { border-radius: 0; font-family: var(--font-head); letter-spacing: .14em; }
-[data-skin='arknights'] .game-tag.sys-ak5e { background: #ffd23f; color: #121316; border-color: #ffd23f; }
+[data-skin='arknights'] .game-tag.sys-ak5e { background: var(--rk-hi); color: var(--rk-on-hi); border-color: var(--rk-hi); }
 
 [data-skin='arknights'] svg.ico { color: var(--ink); }
 [data-skin='arknights'] .r-legendary svg.ico, [data-skin='arknights'] .r-artifact svg.ico { color: #e6b820; }
 [data-skin='arknights'] .r-very-rare svg.ico { color: #b77cff; }
 [data-skin='arknights'] .r-rare svg.ico { color: var(--rk-cyan); }
 [data-skin='arknights'] .icon-pick-btn, [data-skin='arknights'] .icon-grid, [data-skin='arknights'] .icon-grid button { border-radius: 0; }
+
+/* ============ Rhodes Island · Classic — the original game's menus ============
+   Charcoal and white instead of the Endfield yellow: smoky dark panels with thin light rules, Rhodes Island blue for
+   the live / primary things, small white corner triangles, wide uppercase headings and bold square numbers.
+   Built on top of the Endfield rules above; only what differs is here. */
+
+:root[data-skin='arknights'][data-variant='classic'] {
+  --paper: #232323;
+  --paper2: rgba(255, 255, 255, 0.03);
+  --panel: #1b1b1b;
+  --panel2: #2b2b2b;
+  --ink: #ffffff;
+  --ink2: #b8b8b8;
+  --muted: #7c7c7c;
+  --line: #474747;
+  --accent: #0098dc;
+  --accent-soft: rgba(0, 152, 220, 0.16);
+  --slot: #161616;
+  --slot-border: #4a4a4a;
+  --slot-drop: #10354a;
+  --img-bg: #141414;
+  --font-head: 'Jost Variable', 'Futura', 'Segoe UI', sans-serif;
+  --font-num: 'Exo 2 Variable', 'Segoe UI', sans-serif;
+
+  --rk-cyan: #3cc2f5;
+  --rk-hi: #0098dc;
+  --rk-hi2: #1fb0f2;
+  --rk-hi3: #0079b3;
+  --rk-on-hi: #ffffff;
+  --rk-on-accent: #ffffff;
+  --rk-head-bg: #121212;
+  --rk-grid: rgba(255, 255, 255, 0.025);
+  --rk-tri: #ffffff;
+}
+:root[data-skin='arknights'][data-variant='classic'][data-theme='light'] {
+  --paper: #d2d2d2;
+  --paper2: rgba(0, 0, 0, 0.03);
+  --panel: #f2f2f2;
+  --panel2: #e4e4e4;
+  --ink: #1b1b1b;
+  --ink2: #555555;
+  --muted: #858585;
+  --line: #bdbdbd;
+  --accent: #0084c4;
+  --accent-soft: rgba(0, 132, 196, 0.12);
+  --slot: #2b2b2b;
+  --img-bg: #e8e8e8;
+  --rk-cyan: #0084c4;
+  --rk-hi: #0084c4;
+  --rk-hi2: #1a9be0;
+  --rk-hi3: #006a9e;
+  --rk-head-bg: #262626;
+  --rk-grid: rgba(0, 0, 0, 0.035);
+  --rk-tri: #262626;
+}
+
+/* backdrop: a soft spotlight and faint slanted lines instead of the blueprint grid */
+[data-skin='arknights'][data-variant='classic'] body {
+  background-image:
+    radial-gradient(ellipse at 70% 0%, rgba(255, 255, 255, 0.06), transparent 60%),
+    repeating-linear-gradient(-60deg, transparent 0 38px, var(--rk-grid) 38px 39px);
+  background-size: auto;
+}
+[data-skin='arknights'][data-variant='classic'][data-theme='light'] body {
+  background-image:
+    radial-gradient(ellipse at 70% 0%, rgba(255, 255, 255, 0.55), transparent 60%),
+    repeating-linear-gradient(-60deg, transparent 0 38px, var(--rk-grid) 38px 39px);
+}
+[data-skin='arknights'][data-variant='classic'] h1, [data-skin='arknights'][data-variant='classic'] h2,
+[data-skin='arknights'][data-variant='classic'] h3 { font-weight: 600; letter-spacing: 0.14em; }
+
+/* panels: square, thin rule, a triangle in the top-right corner and a short bar on the top edge */
+[data-skin='arknights'][data-variant='classic'] .frame { clip-path: none; }
+[data-skin='arknights'][data-variant='classic'] .frame > .frame-in { clip-path: none; }
+[data-skin='arknights'][data-variant='classic'] .frame::before { width: 40px; height: 2px; left: 12px; background: var(--ink); }
+[data-skin='arknights'][data-variant='classic'] .frame::after {
+  content: ''; position: absolute; right: 0; top: 0; width: 12px; height: 12px; z-index: 2;
+  background: var(--rk-tri); clip-path: polygon(0 0, 100% 0, 100% 100%); pointer-events: none;
+}
+[data-skin='arknights'][data-variant='classic'] .frame-title { font-weight: 600; letter-spacing: 0.24em; font-size: 12.5px; }
+[data-skin='arknights'][data-variant='classic'] .frame-title::before { width: 8px; height: 8px; background: var(--rk-hi); }
+[data-skin='arknights'][data-variant='classic'] .frame-title::after { background: linear-gradient(90deg, var(--line), transparent); }
+
+/* controls: plain rectangles; the primary button is the blue "start" button */
+[data-skin='arknights'][data-variant='classic'] .btn { clip-path: none; font-weight: 600; letter-spacing: 0.1em; }
+[data-skin='arknights'][data-variant='classic'] .seg button { font-weight: 600; }
+[data-skin='arknights'][data-variant='classic'] .field > label, [data-skin='arknights'][data-variant='classic'] .field-lbl { font-weight: 600; }
+[data-skin='arknights'][data-variant='classic'] .pip { border-radius: 50%; }
+[data-skin='arknights'][data-variant='classic'] .pip.diamond, [data-skin='arknights'][data-variant='classic'] .pip.mettle { border-radius: 0; }
+/* HP is the blue ally bar, SP the pale green charge bar from battle */
+[data-skin='arknights'][data-variant='classic'] .hpbar > i, [data-skin='arknights'][data-variant='classic'] .sp-bar.ap > i { background: linear-gradient(180deg, #4cc3ff, #0098dc); }
+[data-skin='arknights'][data-variant='classic'] .sp-bar > i { background: linear-gradient(180deg, #c9ec6a, #93c534); }
+[data-skin='arknights'][data-variant='classic'] .sp-bar.full > i { background: var(--ink); }
+
+/* top bar: black header, white name over a thin rule, no warning stripe */
+[data-skin='arknights'][data-variant='classic'] .topbar {
+  --ink: #ffffff; --ink2: #b8b8b8; --muted: #7c7c7c; --line: #474747; --panel: #1b1b1b; --panel2: #2b2b2b;
+  --accent: #0098dc; --accent-soft: rgba(0, 152, 220, 0.16); --rk-hi: #0098dc; --rk-hi2: #1fb0f2; --rk-tri: #ffffff;
+  background: linear-gradient(180deg, #181818, #0f0f0f); box-shadow: 0 1px 0 #5a5a5a;
+}
+[data-skin='arknights'][data-variant='classic'] .topbar::after { display: none; }
+[data-skin='arknights'][data-variant='classic'] .top-portrait { clip-path: none; border-color: #5a5a5a; }
+[data-skin='arknights'][data-variant='classic'] .name-banner .name-in { font-weight: 600; letter-spacing: 0.1em; border-bottom: 1px solid #ffffff; }
+[data-skin='arknights'][data-variant='classic'] .vbox { clip-path: none; position: relative; }
+[data-skin='arknights'][data-variant='classic'] .vbox::after {
+  content: ''; position: absolute; right: 0; bottom: 0; width: 7px; height: 7px; background: var(--ink2);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%); pointer-events: none;
+}
+[data-skin='arknights'][data-variant='classic'] .vbox:hover { border-color: #ffffff; }
+[data-skin='arknights'][data-variant='classic'] .vbox .v, [data-skin='arknights'][data-variant='classic'] .hp-box .big input,
+[data-skin='arknights'][data-variant='classic'] .spell-stat b, [data-skin='arknights'][data-variant='classic'] .spell-stat input { font-weight: 700; }
+[data-skin='arknights'][data-variant='classic'] .vbox .l { font-weight: 600; }
+[data-skin='arknights'][data-variant='classic'] .vbox .sub { color: #3cc2f5; }
+[data-skin='arknights'][data-variant='classic'] .inv-btn { clip-path: none; }
+[data-skin='arknights'][data-variant='classic'] .nav { background: #141414; border-top: 1px solid #333; }
+[data-skin='arknights'][data-variant='classic'] .nav button.tab { font-weight: 600; letter-spacing: 0.2em; color: #9a9a9a; }
+[data-skin='arknights'][data-variant='classic'] .nav button.tab:hover { color: #ffffff; }
+[data-skin='arknights'][data-variant='classic'] .nav button.tab.active {
+  color: #141414; background: #ffffff; border-bottom-color: #ffffff; box-shadow: inset 0 -3px 0 #0098dc;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+
+/* abilities dock */
+[data-skin='arknights'][data-variant='classic'] .dock-edge:hover, [data-skin='arknights'][data-variant='classic'] .dock-edge.on { background: #ffffff; }
+[data-skin='arknights'][data-variant='classic'] .dock-edge:hover span, [data-skin='arknights'][data-variant='classic'] .dock-edge.on span { color: #141414; }
+[data-skin='arknights'][data-variant='classic'] .pill .num, [data-skin='arknights'][data-variant='classic'] .ab-box .mod,
+[data-skin='arknights'][data-variant='classic'] .ab-box .score, [data-skin='arknights'][data-variant='classic'] .rr .val { font-weight: 700; }
+[data-skin='arknights'][data-variant='classic'] .ab-box .mod { clip-path: none; }
+[data-skin='arknights'][data-variant='classic'] .ab-box .name { font-weight: 600; }
+
+/* arts book, operator skills, inventory */
+[data-skin='arknights'][data-variant='classic'] .spell-sec, [data-skin='arknights'][data-variant='classic'] .spell-stat,
+[data-skin='arknights'][data-variant='classic'] .ap-panel, [data-skin='arknights'][data-variant='classic'] .op-card,
+[data-skin='arknights'][data-variant='classic'] .eq-slot, [data-skin='arknights'][data-variant='classic'] .tile { clip-path: none; }
+[data-skin='arknights'][data-variant='classic'] .sec-head .lvl-badge, [data-skin='arknights'][data-variant='classic'] .ap-cost,
+[data-skin='arknights'][data-variant='classic'] .op-stats span, [data-skin='arknights'][data-variant='classic'] .sp-num input,
+[data-skin='arknights'][data-variant='classic'] .ap-num b, [data-skin='arknights'][data-variant='classic'] .ap-num input,
+[data-skin='arknights'][data-variant='classic'] .slot-total input, [data-skin='arknights'][data-variant='classic'] .coin input { font-weight: 700; }
+[data-skin='arknights'][data-variant='classic'] .op-card.ready { border-left-color: #93c534; }
+[data-skin='arknights'][data-variant='classic'] .op-name { font-weight: 600; }
+
+/* overlays */
+[data-skin='arknights'][data-variant='classic'] .modal-head, [data-skin='arknights'][data-variant='classic'] .drawer-head { border-bottom: 1px solid #ffffff; box-shadow: 0 2px 0 #0098dc; }
+[data-skin='arknights'][data-variant='classic'] .toast { clip-path: none; }
+[data-skin='arknights'][data-variant='classic'] .charlist-head::after { display: none; }

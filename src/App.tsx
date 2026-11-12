@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { variantOf } from './skins'
 import { useStore, useUI } from './store'
 import { TopBar } from './components/TopBar'
 import { LeftDock } from './components/LeftDock'
@@ -29,6 +30,7 @@ export default function App() {
   const load = useStore((s) => s.load)
   const theme = useStore((s) => s.theme)
   const skin = useStore((s) => s.skin)
+  const variant = useStore((s) => variantOf(s.skin, s.skinVariant))
   const activeId = useStore((s) => s.activeId)
   const page = useUI((s) => s.page)
   const listOpen = useUI((s) => s.charListOpen)
@@ -51,6 +53,10 @@ export default function App() {
   }, [loaded, hasChar, system])
   useEffect(() => { document.documentElement.dataset.theme = theme }, [theme])
   useEffect(() => { document.documentElement.dataset.skin = skin }, [skin])
+  useEffect(() => {
+    if (variant) document.documentElement.dataset.variant = variant
+    else delete document.documentElement.dataset.variant
+  }, [variant])
   // each game keeps its own UI style: opening an Arknights character switches to its look, and back
   useEffect(() => {
     const st = useStore.getState()
