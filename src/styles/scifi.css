@@ -35,7 +35,13 @@
 [data-scifi] .appearance-card .profile-stats { grid-area: stats; grid-template-columns: 1fr !important; margin: 0; gap: 4px !important; }
 
 /* the photo: a framed ID picture with a small tag in its corner */
-[data-scifi] .appearance-card .profile-img .image-box { border-color: var(--ink2) !important; min-height: 180px; }
+/* the photo is exactly as tall as the details beside it */
+[data-scifi] .appearance-card .profile-img { align-self: stretch; display: flex; flex-direction: column; min-height: 0; }
+[data-scifi] .appearance-card .profile-img .image-box {
+  border-color: var(--ink2) !important; flex: 1; aspect-ratio: auto !important; max-height: none !important; min-height: 120px; height: auto;
+}
+/* the "accessing file…" flavour lines belong to Rhodes Island's terminal */
+[data-scifi]:not([data-skin='arknights']) .appearance-card .ph-flavor { display: none; }
 /* tighter rows when the box is on the narrow side */
 @container (max-width: 420px) {
   [data-scifi] .appearance-card .profile-body { column-gap: 8px; }

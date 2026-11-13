@@ -105,14 +105,14 @@ function ProfileHead() {
       <div className="ph-title"><span>PERSONNEL FILE</span><span className="ph-no">No. {fileNo}</span></div>
       <div className="ph-rule"><i /><i /></div>
       <div className="ph-lines">
-        <span>&gt;Accessing file…</span>
+        <span className="ph-flavor">&gt;Accessing file…</span>
         <span>&gt;Subject verified: {who}</span>
         {role && <span className="ph-mark">Classification: {role}{c.level ? ` · Lv ${c.level}` : ''}</span>}
         {org && <span className="ph-mark">Affiliation: {org}</span>}
         {isAK(c) && c.ak.infection?.trim() && (
           <span className={`ph-mark ${/non|not|clean|negative/i.test(c.ak.infection) ? '' : /infect|positive|oripath/i.test(c.ak.infection) ? 'ph-alert' : ''}`}>Infection status: {c.ak.infection.trim()}</span>
         )}
-        <span>&gt;&gt;Loading profile… Complete.</span>
+        <span className="ph-flavor">&gt;&gt;Loading profile… Complete.</span>
       </div>
     </div>
   )
