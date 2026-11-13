@@ -109,6 +109,9 @@ function ProfileHead() {
         <span>&gt;Subject verified: {who}</span>
         {role && <span className="ph-mark">Classification: {role}{c.level ? ` · Lv ${c.level}` : ''}</span>}
         {org && <span className="ph-mark">Affiliation: {org}</span>}
+        {isAK(c) && c.ak.infection?.trim() && (
+          <span className={`ph-mark ${/non|not|clean|negative/i.test(c.ak.infection) ? '' : /infect|positive|oripath/i.test(c.ak.infection) ? 'ph-alert' : ''}`}>Infection status: {c.ak.infection.trim()}</span>
+        )}
         <span>&gt;&gt;Loading profile… Complete.</span>
       </div>
     </div>
@@ -133,11 +136,15 @@ export function CharacterPage() {
           {/* sci-fi styles show this as a personnel file: a header and a few terminal lines (hidden otherwise) */}
           <ProfileHead />
           <div className="profile-body">
-            <div className="profile-ids grid" style={{ gridTemplateColumns: isAK(c) ? '1fr 1fr' : '1fr', gap: 8 }}>
+            <div className="profile-ids grid" style={{ gridTemplateColumns: isAK(c) ? '1fr 1fr 1fr' : '1fr', gap: 8 }}>
               <Field label="Nickname" value={c.nickname ?? ''} placeholder="none" onChange={(v) => patch((d) => { d.nickname = v })} />
               {isAK(c) && (
                 <Field label="Operator codename" value={c.ak.codename} placeholder="not assigned yet"
                   onChange={(v) => patch((d) => { d.ak.codename = v })} />
+              )}
+              {isAK(c) && (
+                <Field label="Infection status" value={c.ak.infection ?? ''} placeholder="Non-infected / Infected"
+                  onChange={(v) => patch((d) => { d.ak.infection = v })} />
               )}
             </div>
             <div className="profile-img">

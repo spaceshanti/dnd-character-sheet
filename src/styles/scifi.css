@@ -103,3 +103,7 @@
 /* keep the portrait's edit button above the lines */
 [data-skin='arknights'][data-variant='classic'] .top-portrait .edit,
 [data-skin='arknights'][data-variant='classic'] .party-img .party-change { z-index: 2; }
+
+/* an infected operator's status line is flagged */
+[data-scifi] .appearance-card .ph-lines .ph-alert { color: var(--dis); background: color-mix(in srgb, var(--dis) 14%, transparent); }
+[data-scifi] .appearance-card .ph-lines .ph-alert::before { background: var(--dis); }

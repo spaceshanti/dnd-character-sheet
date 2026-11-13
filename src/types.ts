@@ -271,6 +271,8 @@ export interface OperatorSkill {
 
 /** Everything only an Arknights 5e sheet has. */
 export interface AkData {
+  /** Oripathy infection status, as on an operator file ("Non-infected", "Infected", "Infected · 4% assimilation"…) */
+  infection?: string
   /** Lungmen Dollars */
   lmd: number
   /** spent on Death's Door actions while Dying, max 6 */
