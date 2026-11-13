@@ -178,6 +178,8 @@ export interface Item {
   armor: ArmorStats | null
   /** wikidot (or other) page for the item */
   url: string
+  /** ammunition: how many have been fired since you last gathered them up (half can be recovered after a fight) */
+  ammoSpent?: number
 }
 
 export interface Attack {
@@ -224,6 +226,24 @@ export interface GalleryImage {
   id: string
   src: string
   caption: string
+}
+
+/** a faction / organisation in the Allies & Organizations box: its emblem and your notes on it */
+export interface Faction {
+  id: string
+  name: string
+  /** emblem picture (data URL); kept out of the gallery */
+  emblem: string
+  notes: string
+}
+
+/** one of your party, shown on the Gallery page */
+export interface PartyMember {
+  id: string
+  name: string
+  /** who plays them, their class, anything short */
+  note: string
+  image: string
 }
 
 export interface ExtraNote {
@@ -392,6 +412,12 @@ export interface Character {
   extraNotes: ExtraNote[]
   battleState: string
   gallery: GalleryImage[]
+  /** Allies & Organizations: every faction you belong to or deal with (the first one's emblem is the sheet's emblem) */
+  factions: Faction[]
+  /** the Allies & Organizations box is folded */
+  factionsFolded?: boolean
+  /** your party, with a picture each (Gallery page) */
+  party: PartyMember[]
   ak: AkData
   /** deletion protection: a locked character can't be deleted until it's unlocked (on by default) */
   locked: boolean
@@ -453,6 +479,8 @@ export interface AppData {
   skinBySystem?: Record<string, string>
   /** the look picked for styles that have more than one (Rhodes Island: Endfield / Classic) */
   skinVariant?: Record<string, string>
+  /** light / dark, remembered for each UI style */
+  themeBySkin?: Record<string, 'light' | 'dark'>
   /** your own spells, available to every character */
   customSpells?: CustomSpell[]
   /** sourcebook bookmarks, shared by all characters */

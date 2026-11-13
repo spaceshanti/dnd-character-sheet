@@ -1,7 +1,7 @@
 import raw from './data/items.json'
 import type { Rarity } from './types'
 import type { SystemId } from './systems'
-import { AK_ITEMS } from './data/gear'
+import { AK_ARMOUR_LIST, AK_ITEMS, AK_WEAPON_LIST } from './data/gear'
 
 /** Standard equipment and magic items from the SRD (2014 + 2024), CC-BY-4.0. */
 export interface LibItem {
@@ -74,6 +74,23 @@ function bestIn(lib: LibItem[], name: string): LibItem | undefined {
   // magic "+N" versions: only when the name had a +N
   if (/\+[1-3]\b/.test(name)) { m = lib.filter((i) => /\+1\/\+2\/\+3/.test(i.n) && base(i.n) === k); if (m.length) return pick(m) }
   return undefined
+}
+
+/**
+ * Every item a sheet knows about, for browsing and adding from the inventory: the SRD's equipment and magic items
+ * (both editions); on an Arknights sheet, the book's weapons, armour and items first, then everyday 5e gear in LMD.
+ */
+export function libraryFor(sys: SystemId): LibItem[] {
+  if (sys !== 'ak5e') return ITEM_LIB
+  const out: LibItem[] = []
+  const seen = new Set<string>()
+  const push = (i: LibItem) => { const k = key(i.n); if (seen.has(k)) return; seen.add(k); out.push(i) }
+  for (const w of AK_WEAPON_LIST) push({ n: w.n, k: 'Weapon', d: '', w: w.w, c: w.c, r: 'common', a: false, m: false, e: 'AK5e' })
+  for (const a of AK_ARMOUR_LIST) push({ n: a.n, k: 'Armor', d: '', w: a.w, c: a.c, r: 'common', a: false, m: false, e: 'AK5e' })
+  for (const i of AK_LIB) push(i)
+  // everyday gear from 5e (not its weapons / armour: the book has its own)
+  for (const i of ITEM_LIB) if (!i.m && i.k !== 'Weapon' && i.k !== 'Armor' && i.e === '2024') push({ ...i, c: toLmd(i.c), e: '5e' })
+  return out
 }
 
 /** Search for the library browser. */

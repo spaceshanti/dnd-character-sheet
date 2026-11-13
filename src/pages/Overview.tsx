@@ -7,7 +7,7 @@ import { SpTracker } from './OperatorSkills'
 import { newAttack, newResource } from '../blank'
 import { useChar, useStore, useUI } from '../store'
 import { Frame, Num, Pips, Select, Switch, Toast, useToast, DieSlot } from '../components/ui'
-import { ammoText, useItem } from '../consume'
+import { ammoFor, ammoText, firesAmmo, recoverAmmo, useItem } from '../consume'
 import { RichArea } from '../components/RichText'
 import { Icon, itemIcon } from '../components/Icon'
 import { WeaponTags } from '../components/WeaponTags'
@@ -219,6 +219,34 @@ function OperatorPanel() {
   )
 }
 
+/** Under a ranged weapon: the ammunition it fires and how many are left; pick between suitable kinds (arrows / +1 arrows…). */
+function AmmoLine({ weaponId }: { weaponId: string }) {
+  const c = useChar()
+  const patch = useStore((s) => s.patch)
+  const weapon = c.items.find((i) => i.id === weaponId)
+  if (!weapon?.weapon) return null
+  const options = ammoFor(c, weapon)
+  const cur = c.items.find((i) => i.id === weapon.weapon!.ammoId)
+  if (!cur && !(firesAmmo(weapon) && options.length)) {
+    return firesAmmo(weapon) ? <div className="ammo-line muted small">No ammunition in the pack</div> : null
+  }
+  const list = cur && !options.includes(cur) ? [cur, ...options] : options
+  return (
+    <div className="ammo-line small" onClick={(e) => e.stopPropagation()}>
+      <Icon name="arrow" className="list-ico" />
+      {list.length > 1 ? (
+        <select value={cur?.id ?? ''} title="Which ammunition to fire" onChange={(e) => patch((d) => { const w = d.items.find((i) => i.id === weaponId)?.weapon; if (w) w.ammoId = e.target.value })}>
+          {!cur && <option value="">Choose ammunition</option>}
+          {list.map((i) => <option key={i.id} value={i.id}>{i.name} ({i.qty})</option>)}
+        </select>
+      ) : cur ? <span>{cur.name}</span> : (
+        <button className="btn sm ghost" onClick={() => patch((d) => { const w = d.items.find((i) => i.id === weaponId)?.weapon; if (w) w.ammoId = options[0].id })}>Use {options[0].name}</button>
+      )}
+      {cur && <b className={cur.qty === 0 ? 'bad' : cur.qty <= 5 ? 'warn-txt' : ''}>{cur.qty} left</b>}
+    </div>
+  )
+}
+
 function AttacksPanel() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
@@ -227,8 +255,20 @@ function AttacksPanel() {
   const toast = useToast()
   const fromItems = itemAttacks(c)
   const up = (id: string, fn: (a: Attack) => void) => patch((d) => { const x = d.attacks.find((y) => y.id === id); if (x) fn(x) })
+  // ammunition fired since it was last gathered up (each kind rounds down on its own)
+  const spentAmmo = c.items.reduce((n, i) => n + Math.floor((i.ammoSpent ?? 0) / 2) * 2, 0)
   return (
-    <Frame title="Weapons & Attacks" tools={<button className="btn sm" onClick={() => { const a = newAttack(); patch((d) => { d.attacks.push(a) }); setOpen(a.id) }}>＋ Add</button>}>
+    <Frame title="Weapons & Attacks" tools={
+      <>
+        {spentAmmo > 0 && (
+          <button className="btn sm" title="After a fight, gather up half of the ammunition you fired (rounded down)"
+            onClick={() => { let n = 0; patch((d) => { n = recoverAmmo(d) }); toast.show(n ? `Gathered up ${n} ammunition` : 'Nothing to gather up') }}>
+            ↺ Gather ammo (+{Math.floor(spentAmmo / 2)})
+          </button>
+        )}
+        <button className="btn sm" onClick={() => { const a = newAttack(); patch((d) => { d.attacks.push(a) }); setOpen(a.id) }}>＋ Add</button>
+      </>
+    }>
       {c.attacks.length === 0 && fromItems.length === 0 ? <div className="empty">No attacks yet. Add a weapon to your inventory (or here) and its bonus is worked out for you.</div> : (
         <table className="t">
           <thead><tr><th>Name</th><th style={{ width: 62 }}>Atk</th><th>Damage</th><th style={{ width: 28 }} /></tr></thead>
@@ -240,6 +280,7 @@ function AttacksPanel() {
                   <td>
                     <span className="row" style={{ gap: 6 }}><Icon name="sword" className="list-ico" />{a.name}{a.equipped && <span className="itag">in hand</span>}</span>
                     <WeaponTags properties={a.weapon.properties} mastery={a.weapon.mastery} masteryFrom={a.masteryFrom} />
+                    <AmmoLine weaponId={a.itemId} />
                   </td>
                   <td style={{ fontWeight: 700, fontSize: 16 }}>{signed(info.bonus)}{info.adv.length > 0 && info.dis.length === 0 && <span className="adv a" style={{ marginLeft: 3, fontSize: 10, color: 'var(--adv)' }}>ADV</span>}</td>
                   <td>{info.damage} <span className="muted">{a.damageType}</span>{a.range && <span className="muted small"> · {a.range}</span>}</td>

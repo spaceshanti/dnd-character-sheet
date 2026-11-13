@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { variantOf } from './skins'
 import { applyAppIcon } from './appIcon'
 import { useStore, useUI } from './store'
-import { TopBar } from './components/TopBar'
+import { AK_TABS, TABS, TopBar } from './components/TopBar'
 import { LeftDock } from './components/LeftDock'
 import { Inventory } from './components/Inventory'
 import { CharacterList } from './pages/CharacterList'
@@ -65,7 +65,7 @@ export default function App() {
     const st = useStore.getState()
     if (!st.loaded || !st.chars[st.activeId]) return
     const want = st.skinBySystem[system] ?? (system === 'ak5e' ? 'arknights' : undefined)
-    if (want && want !== st.skin) useStore.setState({ skin: want, skinBySystem: { ...st.skinBySystem, [system]: want } })
+    if (want && want !== st.skin) useStore.setState({ skin: want, theme: st.themeBySkin[want] ?? st.theme, skinBySystem: { ...st.skinBySystem, [system]: want } })
     document.documentElement.dataset.system = system
   }, [system, loaded, activeId])
 
@@ -75,6 +75,18 @@ export default function App() {
       const t = e.target as HTMLElement
       const typing = /INPUT|TEXTAREA|SELECT/.test(t.tagName) || t.isContentEditable
       const overlay = document.querySelector('.backdrop, .drawer, .popover')
+      // Ctrl+Tab / Ctrl+Shift+Tab: next / previous page of the sheet (works while typing too, like browser tabs)
+      if (e.key === 'Tab' && e.ctrlKey && !e.altKey && !e.metaKey) {
+        const ui = useUI.getState()
+        const st = useStore.getState()
+        const ch = st.chars[st.activeId]
+        if (!ch || ui.charListOpen) return
+        e.preventDefault()
+        const tabs = systemOf(ch) === 'ak5e' ? AK_TABS : TABS
+        const i = Math.max(0, tabs.findIndex((x) => x.id === ui.page))
+        ui.go(tabs[(i + (e.shiftKey ? -1 : 1) + tabs.length) % tabs.length].id)
+        return
+      }
       if (e.key === 'Tab' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && !typing && !overlay) {
         e.preventDefault()
         useUI.getState().toggleDock()

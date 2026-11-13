@@ -114,6 +114,9 @@ const AK: AkGear = (() => {
   return g ?? { weapons: [], armour: [], properties: {}, items: [] }
 })()
 export const AK_ITEMS = AK.items
+/** the book's weapon and armour tables (for browsing every known item) */
+export const AK_WEAPON_LIST = AK.weapons
+export const AK_ARMOUR_LIST = AK.armour
 const AKW_SORTED = [...AK.weapons].sort((a, b) => b.n.length - a.n.length)
 const AKA_SORTED = [...AK.armour].sort((a, b) => b.n.length - a.n.length)
 

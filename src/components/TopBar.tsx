@@ -16,7 +16,7 @@ import { askConfirm } from './Dialog'
 
 const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']
 
-const TABS: { id: PageId; name: string }[] = [
+export const TABS: { id: PageId; name: string }[] = [
   { id: 'overview', name: 'Overview' },
   { id: 'character', name: 'Character' },
   { id: 'features', name: 'Features' },
@@ -26,7 +26,7 @@ const TABS: { id: PageId; name: string }[] = [
   { id: 'settings', name: 'Settings' },
 ]
 /** Arknights 5e: Operator Skills get their own page and spells are called Arts */
-const AK_TABS: { id: PageId; name: string }[] = [
+export const AK_TABS: { id: PageId; name: string }[] = [
   { id: 'overview', name: 'Overview' },
   { id: 'character', name: 'Character' },
   { id: 'features', name: 'Features' },

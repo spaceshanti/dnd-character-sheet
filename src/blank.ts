@@ -82,7 +82,7 @@ export function blankCharacter(name = 'New Character', system: SystemId = 'dnd5e
       backstory: '', trait1: '', trait2: '', trait3: '', ideals: '', bonds: '', flaws: '', allies: '',
       alliesTitle: 'Allies & Organizations', roleplay: '', expression: '',
     },
-    extraNotes: [], battleState: '', gallery: [], ak: blankAk(), updatedAt: Date.now(),
+    extraNotes: [], battleState: '', gallery: [], factions: [], party: [], ak: blankAk(), updatedAt: Date.now(),
   }
 }
 
@@ -125,6 +125,14 @@ export function normalize(raw: Partial<Character>): Character {
     url: i.url ?? '',
     armor: i.armor ?? null,
   }))
+  c.party = raw.party ?? []
+  // Allies & Organizations became a list of factions: the old emblem + notes are the first one,
+  // and the emblem no longer lives in the gallery (unless it's also the portrait / appearance picture)
+  if (!raw.factions) {
+    c.factions = c.emblem || c.story.allies.trim() ? [{ id: uid(), name: '', emblem: c.emblem, notes: c.story.allies }] : []
+    c.story.allies = ''
+    if (c.emblem) c.gallery = c.gallery.filter((g) => g.src !== c.emblem || g.src === c.portrait || g.src === c.appearanceImage)
+  }
   // the Appearance box used to show the top-left portrait; start it off with the same picture
   if (raw.appearanceImage === undefined) c.appearanceImage = c.portrait
   return c

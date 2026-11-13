@@ -1,11 +1,11 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { ABILITIES, ACTION_TYPES, ITEM_CATEGORIES, RARITIES, SLOT_IDS } from '../constants'
 import { attackInfo, carryCapacity, itemAttacks, masterySource, signed, totalWeight } from '../calc'
 import { newItem } from '../blank'
 import { isAK } from '../systems'
-import { baseItemWeight, bestItemFor } from '../itemLib'
+import { baseItemWeight, bestItemFor, libraryFor, type LibItem } from '../itemLib'
 import { systemOf, type SystemId } from '../systems'
-import { ammoOptions, ammoText } from '../consume'
+import { ammoFits, ammoOptions, ammoText, autoLinkAmmo, firesAmmo, isAmmo, recoverAmmo } from '../consume'
 import { MASTERIES, MASTERY_INFO, akGearExtras, lookupArmor, lookupWeapon, weaponNames } from '../data/gear'
 import { PropertyEditor, WeaponTags } from './WeaponTags'
 import { imageToDataUrl, useChar, useStore, useUI } from '../store'
@@ -26,18 +26,38 @@ export function Inventory() {
   return <InventoryInner onClose={() => set({ inventoryOpen: false })} />
 }
 
-/** "16 rations" / "rations x16" / "Torches (9)" → { qty, name } */
-function parseGear(text: string): { qty: number; name: string } {
+/** "16 rations" / "rations x16" / "Torches (9)" → { qty, name } (`given`: a number was typed) */
+function parseGear(text: string): { qty: number; name: string; given: boolean } {
   const t = text.trim()
   let m = t.match(/^(\d+)\s*[x×]?\s+(.+)$/i)
-  if (m) return { qty: +m[1], name: m[2] }
+  if (m) return { qty: +m[1], name: m[2], given: true }
   m = t.match(/^(.+?)\s*(?:[x×]\s*(\d+)|\((\d+)\))$/i)
-  if (m) return { qty: +(m[2] ?? m[3]), name: m[1] }
-  return { qty: 1, name: t }
+  if (m) return { qty: +(m[2] ?? m[3]), name: m[1], given: true }
+  return { qty: 1, name: t, given: false }
+}
+
+/** the rules sell ammunition by the bundle (price and weight are for the whole bundle) */
+function ammoBundle(name: string): number {
+  if (/needle/i.test(name)) return 50
+  if (/firearm/i.test(name)) return 10
+  return 20
 }
 
 /** A new item from a typed line, pre-filled with standard weapon / armor stats when the name matches. */
 function itemFromText(text: string, sys: SystemId): Item {
+  const it = itemFromTextRaw(text, sys)
+  const lib = bestItemFor(parseGear(text).name, sys)
+  // plain ammunition from the rules: a bundle's worth (unless you typed a number), weighed and priced per shot
+  if (it.category === 'Ammo' && lib && !lib.m && lib.k === 'Ammo' && !/\+\d/.test(text)) {
+    const n = ammoBundle(lib.n)
+    if (!parseGear(text).given) it.qty = n
+    if (lib.w) it.weight = Math.round((lib.w / n) * 1000) / 1000
+    if (lib.c) it.value = `${lib.c} per ${n}`
+  }
+  return it
+}
+
+function itemFromTextRaw(text: string, sys: SystemId): Item {
   const { qty, name } = parseGear(text)
   // "Longsword +1", "+2 Chain Mail": the number becomes the magic bonus
   const plus = +((name.match(/(?:^|\s)\+([1-3])\b/) || [])[1] || 0)
@@ -110,9 +130,10 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
   const add = () => {
     if (!draft.trim()) return
     const it = itemFromText(draft, systemOf(c))
-    patch((d) => { d.items.push(it) })
+    patch((d) => { d.items.push(it); autoLinkAmmo(d) })
     setDraft('')
   }
+  const [browsing, setBrowsing] = useState(false)
 
   const drag = (i: Item) => ({
     draggable: true,
@@ -208,7 +229,7 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
                 </div>
               ))}
               <div className="gear-add">
-                <span className="muted">＋</span>
+                <button className="btn sm gear-browse" title="Browse every known item and add it" onClick={() => setBrowsing(true)}>＋</button>
                 <input value={draft} placeholder="Type an item and press Enter, e.g. “Longsword”, “Chain Mail”, “16 rations”"
                   onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} />
               </div>
@@ -251,7 +272,119 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
         </div>
       </div>
       </div>
+      {browsing && <ItemBrowser onClose={() => setBrowsing(false)} />}
     </Modal>
+  )
+}
+
+/** Every known item (SRD, and the Arknights book on AK sheets), searchable; click one to add it to the pack. */
+function ItemBrowser({ onClose }: { onClose: () => void }) {
+  const c = useChar()
+  const patch = useStore((s) => s.patch)
+  const sys = systemOf(c)
+  const lib = useMemo(() => libraryFor(sys), [sys])
+  const [q, setQ] = useState('')
+  const [cat, setCat] = useState('')
+  const [ed, setEd] = useState(sys === 'ak5e' ? 'all' : '2024')
+  const [added, setAdded] = useState<string[]>([])
+  const cats = useMemo(() => [...new Set(lib.map((i) => i.k))].sort(), [lib])
+  const eds = useMemo(() => [...new Set(lib.map((i) => i.e))].sort().reverse(), [lib])
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean)
+  const shown = lib.filter((i) => (!cat || i.k === cat) && (ed === 'all' || i.e === ed) && words.every((w) => i.n.toLowerCase().includes(w)))
+    .sort((a, b) => a.n.localeCompare(b.n))
+  const addOne = (li: LibItem) => {
+    const it = itemFromText(li.n, sys)
+    // the exact entry you picked (edition, price, text), not just the best name match
+    if (li.d) it.description = li.d
+    // (plain ammunition is already priced and weighed per shot, by the bundle)
+    const bundled = li.k === 'Ammo' && !li.m
+    if (li.w && !bundled) it.weight = li.w
+    if (li.c && !bundled) it.value = li.c
+    if (li.m) { it.rarity = li.r; it.attunement = li.a }
+    if (!it.weapon && !it.armor) it.category = li.k
+    const cat = ITEM_CATEGORIES.find((k) => k.name === it.category)
+    if (cat && it.icon === 'box') it.icon = cat.icon
+    patch((d) => { d.items.push(it); autoLinkAmmo(d) })
+    setAdded((a) => [li.n, ...a].slice(0, 6))
+  }
+  return (
+    <Modal title="Add from the item list" onClose={onClose}>
+      <div className="col item-browser" style={{ gap: 8 }}>
+        <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+          <input autoFocus className="box-input grow" style={{ minWidth: 180 }} placeholder="search items… (e.g. “arrows”, “plate”, “bag of holding”)" value={q} onChange={(e) => setQ(e.target.value)} />
+          <Select value={cat} onChange={setCat} options={[{ id: '', name: 'All kinds' }, ...cats.map((k) => ({ id: k, name: k }))]} />
+          <Select value={ed} onChange={setEd} options={[{ id: 'all', name: 'All sources' }, ...eds.map((e) => ({ id: e, name: /^\d/.test(e) ? `${e} SRD` : e }))]} />
+        </div>
+        <div className="ib-list">
+          {shown.slice(0, 200).map((li) => (
+            <button key={`${li.e}:${li.n}`} className="ib-row" onClick={() => addOne(li)} title={`Add ${li.n}`}>
+              <Icon name={itemIcon({ icon: ITEM_CATEGORIES.find((k) => k.name === li.k)?.icon ?? 'box', name: li.n })} className="list-ico" />
+              <span className="grow ib-name">{li.n}{li.m && <span className={`rdot r-${li.r.replace(' ', '-')}`} title={li.r} />}{li.a && <span title="Needs attunement"> ✧</span>}</span>
+              <span className="muted small">{li.k}</span>
+              <span className="small ib-num">{li.w ? `${li.w} lb` : ''}</span>
+              <span className="small ib-num">{li.c}</span>
+              <span className="itag">{li.e}</span>
+            </button>
+          ))}
+          {shown.length === 0 && <div className="empty">Nothing matches. You can still type any item into the list yourself.</div>}
+          {shown.length > 200 && <div className="muted small" style={{ padding: 6 }}>{shown.length - 200} more: search to narrow it down.</div>}
+        </div>
+        <div className="row small" style={{ gap: 6 }}>
+          {added.length ? <span style={{ color: 'var(--good)' }}>Added: {added.join(', ')}</span> : <span className="muted">Click an item to add it (click again to add another).</span>}
+          <span className="grow" />
+          <button className="btn sm" onClick={onClose}>Done</button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+/** For ammunition: which weapons fire it, and gathering up spent shots after a fight. */
+function AmmoSection({ item }: { item: Item }) {
+  const c = useChar()
+  const patch = useStore((s) => s.patch)
+  const weapons = c.items.filter((i) => i.weapon && i.id !== item.id)
+  const fits = weapons.filter((w) => firesAmmo(w) && ammoFits(w, item))
+  const others = weapons.filter((w) => !fits.includes(w))
+  const toggle = (wid: string, on: boolean) => patch((d) => {
+    const w = d.items.find((i) => i.id === wid)?.weapon
+    if (!w) return
+    if (on) { w.ammoId = item.id; w.ammoCost = w.ammoCost || 1 } else if (w.ammoId === item.id) w.ammoId = ''
+  })
+  const row = (w: Item) => {
+    const cur = w.weapon!.ammoId
+    const other = cur && cur !== item.id ? c.items.find((i) => i.id === cur) : undefined
+    return (
+      <label key={w.id} className="row small" style={{ gap: 6 }}>
+        <Switch on={cur === item.id} onChange={(b) => toggle(w.id, b)} />
+        <span>{w.name || 'Unnamed weapon'}</span>
+        {other && <span className="muted">(now using {other.name})</span>}
+      </label>
+    )
+  }
+  return (
+    <Section title="Ammunition" open>
+      <div className="field-lbl">Fired by</div>
+      {fits.length === 0 && others.length === 0 && <div className="muted small">No weapons in the pack yet. Add a bow, crossbow, sling or gun and it links up by itself.</div>}
+      {fits.map(row)}
+      {others.length > 0 && (
+        <details className="small">
+          <summary className="muted">Other weapons ({others.length})</summary>
+          <div className="col" style={{ gap: 4, marginTop: 4 }}>{others.map(row)}</div>
+        </details>
+      )}
+      <div className="row small" style={{ gap: 6, flexWrap: 'wrap' }}>
+        <span className="muted">Fired since last gathered: <b>{item.ammoSpent ?? 0}</b></span>
+        {(item.ammoSpent ?? 0) > 0 && (
+          <>
+            <button className="btn sm" title="After a fight you can recover half your spent ammunition" onClick={() => patch((d) => { recoverAmmo(d, item.id) })}>
+              Recover half (+{Math.floor((item.ammoSpent ?? 0) / 2)})
+            </button>
+            <button className="btn sm ghost" title="Forget the count without getting any back" onClick={() => patch((d) => { const x = d.items.find((i) => i.id === item.id); if (x) x.ammoSpent = 0 })}>Clear</button>
+          </>
+        )}
+      </div>
+    </Section>
   )
 }
 
@@ -374,6 +507,8 @@ function ItemEditor({ item }: { item: Item }) {
           </>
         )}
       </Section>
+
+      {isAmmo(item) && <AmmoSection item={item} />}
 
       <Section title="Armor / shield" open={!!item.armor}
         right={<Switch on={!!item.armor} title="Counts toward AC when worn" onChange={(b) => up((x) => { x.armor = b ? (lookupArmor(x.name, systemOf(c)) ?? { ...DEFAULT_ARMOR }) : null; if (b && x.category === 'Misc') x.category = 'Armor' })} />}>
