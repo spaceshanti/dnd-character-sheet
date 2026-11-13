@@ -95,9 +95,7 @@
 [data-skin='arknights'][data-variant='classic'] :is(.top-portrait:not(.empty), .image-box, .art-card .img, .party-img, .char-portrait, .pick-tile .img)::after {
   content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background:
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.09) 0 1px, transparent 1px 4px),
-    linear-gradient(180deg, rgba(60, 194, 245, 0.05), transparent 35%, transparent 75%, rgba(0, 0, 0, 0.12)),
-    radial-gradient(ellipse at 50% 50%, transparent 65%, rgba(0, 0, 0, 0.14));
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 3px);
   mix-blend-mode: normal;
 }
 /* keep the portrait's edit button above the lines */
