@@ -466,6 +466,10 @@ table.t tr.hov:hover td { background: var(--panel2); cursor: pointer; }
 .story-right { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
 /* not enough room for three columns: image + backstory stay on the left, the rest stacks on the right */
 @container (max-width: 960px) { .story-right { grid-template-columns: minmax(0, 1fr); } }
+/* …and then the left side (appearance, backstory) and the right side share the width evenly, so the appearance
+   box isn't squashed (e.g. with the abilities panel open) */
+.story-wrap { container-type: inline-size; }
+@container (max-width: 960px) { .story-wrap > .story-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 
 .kbd { display: inline-block; font-family: var(--font-body); font-size: 11.5px; font-weight: 700; padding: 0 6px; border: 1px solid var(--ink2); border-bottom-width: 2px; border-radius: 4px; background: var(--panel2); white-space: nowrap; }
 

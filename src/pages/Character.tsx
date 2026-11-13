@@ -126,7 +126,7 @@ export function CharacterPage() {
   )
 
   return (
-    <div className="story-cols">
+    <div className="story-wrap"><div className="story-cols">
       {/* left: who they are */}
       <div className="col" style={{ gap: 12 }}>
         <Frame title="Appearance" tight className="appearance-card">
@@ -189,6 +189,6 @@ export function CharacterPage() {
         </div>
       </div>
       </div>
-    </div>
+    </div></div>
   )
 }
