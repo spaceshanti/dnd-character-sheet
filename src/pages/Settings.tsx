@@ -23,6 +23,8 @@ export function SettingsPage() {
 
   return (
     <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', alignItems: 'start' }}>
+      {/* updates first, across the whole page */}
+      <div className="settings-update" style={{ gridColumn: '1 / -1' }}><UpdateControl /></div>
       <Frame title="Rules for this character">
         <div className="col" style={{ gap: 12 }}>
           <div className="row">
@@ -125,7 +127,6 @@ export function SettingsPage() {
             <button className="btn" onClick={() => downloadJson('all-characters.json', { version: 1, chars, order })}>Export everything (backup)</button>
           </div>
           <div className="muted small">Import files from the 👥 Characters window.</div>
-          <UpdateControl />
         </div>
       </Frame>
 
@@ -165,6 +166,7 @@ const SHORTCUTS: [string, string][] = [
   ['Enter', 'HP box: take damage'],
   ['Shift + Enter', 'HP box: heal'],
   ['Enter', 'Add the spell / gear / condition you just typed'],
+  ['Ctrl + Tab', 'Next page (Ctrl + Shift + Tab: previous), even while typing'],
 ]
 
 function ShortcutList() {
