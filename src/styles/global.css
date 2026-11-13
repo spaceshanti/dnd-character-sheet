@@ -868,3 +868,6 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 .party-x { position: absolute; top: 2px; right: 2px; opacity: 0; background: var(--panel); }
 .party-card:hover .party-x { opacity: 1; }
 .party-from { font-size: 12px; padding: 2px 4px; max-width: 190px; }
+
+/* Settings: the update strip across the top */
+.settings-update { padding: 6px 10px; border: 1px solid var(--line); background: var(--panel); }

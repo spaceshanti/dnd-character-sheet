@@ -63,6 +63,9 @@ export const SKINS: { id: SkinId; name: string; desc: string; swatch: string[]; 
 ]
 
 /** the look in use for a style (its first variant unless you picked another) */
+/** styles with a sci-fi interface: the Appearance box becomes a digital profile card */
+export const SCIFI_SKINS: SkinId[] = ['arknights', 'cyberpunk', 'pda', 'honkai', 'scp', 'nier']
+
 export function variantOf(skin: SkinId, picked: Partial<Record<SkinId, string>>): string | undefined {
   const v = SKINS.find((k) => k.id === skin)?.variants
   if (!v) return undefined

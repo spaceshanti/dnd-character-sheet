@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { variantOf } from './skins'
+import { SCIFI_SKINS, variantOf } from './skins'
 import { applyAppIcon } from './appIcon'
 import { useStore, useUI } from './store'
 import { AK_TABS, TABS, TopBar } from './components/TopBar'
@@ -53,7 +53,11 @@ export default function App() {
       .catch((e) => setAkDownload(`Couldn't download the Arknights 5e book (${e instanceof Error ? e.message : e}). Try again from Settings → Sourcebooks.`))
   }, [loaded, hasChar, system])
   useEffect(() => { document.documentElement.dataset.theme = theme }, [theme])
-  useEffect(() => { document.documentElement.dataset.skin = skin }, [skin])
+  useEffect(() => {
+    document.documentElement.dataset.skin = skin
+    if (SCIFI_SKINS.includes(skin)) document.documentElement.dataset.scifi = '1'
+    else delete document.documentElement.dataset.scifi
+  }, [skin])
   useEffect(() => {
     if (variant) document.documentElement.dataset.variant = variant
     else delete document.documentElement.dataset.variant

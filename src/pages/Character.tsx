@@ -92,6 +92,29 @@ function EmblemPick({ src, onChange }: { src: string; onChange: (src: string) =>
   )
 }
 
+/** The personnel-file header of the Appearance box (only shown by the sci-fi styles). */
+function ProfileHead() {
+  const c = useChar()
+  const who = (isAK(c) && c.ak.codename.trim()) || c.name.trim() || 'Unknown'
+  const role = [c.className, c.subclass].filter((x) => x.trim()).join(' / ')
+  const org = c.factions.find((f) => f.name.trim())?.name.trim() || c.nationality.trim()
+  // a stable file number from the character's id
+  const fileNo = [...c.id].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) % 100000, 7).toString().padStart(5, '0')
+  return (
+    <div className="profile-head" aria-hidden>
+      <div className="ph-title"><span>PERSONNEL FILE</span><span className="ph-no">No. {fileNo}</span></div>
+      <div className="ph-rule"><i /><i /></div>
+      <div className="ph-lines">
+        <span>&gt;Accessing file…</span>
+        <span>&gt;Subject verified: {who}</span>
+        {role && <span className="ph-mark">Classification: {role}{c.level ? ` · Lv ${c.level}` : ''}</span>}
+        {org && <span className="ph-mark">Affiliation: {org}</span>}
+        <span>&gt;&gt;Loading profile… Complete.</span>
+      </div>
+    </div>
+  )
+}
+
 export function CharacterPage() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
@@ -106,19 +129,25 @@ export function CharacterPage() {
     <div className="story-cols">
       {/* left: who they are */}
       <div className="col" style={{ gap: 12 }}>
-        <Frame title="Appearance" tight>
-          <div className="grid" style={{ gridTemplateColumns: isAK(c) ? '1fr 1fr' : '1fr', gap: 8, marginBottom: 8 }}>
-            <Field label="Nickname" value={c.nickname ?? ''} placeholder="none" onChange={(v) => patch((d) => { d.nickname = v })} />
-            {isAK(c) && (
-              <Field label="Operator codename" value={c.ak.codename} placeholder="not assigned yet"
-                onChange={(v) => patch((d) => { d.ak.codename = v })} />
-            )}
-          </div>
-          <ImageBox target="appearanceImage" contain maxHeight={c.appearanceImage ? 420 : 160} placeholder="Click to choose a full-body / appearance image" />
-          <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 8 }}>
-            {(['age', 'height', 'weight', 'eyes', 'skin', 'hair'] as const).map((k) => (
-              <Field key={k} label={k} value={c.appearance[k]} onChange={(v) => patch((d) => { d.appearance[k] = v })} />
-            ))}
+        <Frame title="Appearance" tight className="appearance-card">
+          {/* sci-fi styles show this as a personnel file: a header and a few terminal lines (hidden otherwise) */}
+          <ProfileHead />
+          <div className="profile-body">
+            <div className="profile-ids grid" style={{ gridTemplateColumns: isAK(c) ? '1fr 1fr' : '1fr', gap: 8 }}>
+              <Field label="Nickname" value={c.nickname ?? ''} placeholder="none" onChange={(v) => patch((d) => { d.nickname = v })} />
+              {isAK(c) && (
+                <Field label="Operator codename" value={c.ak.codename} placeholder="not assigned yet"
+                  onChange={(v) => patch((d) => { d.ak.codename = v })} />
+              )}
+            </div>
+            <div className="profile-img">
+              <ImageBox target="appearanceImage" contain maxHeight={c.appearanceImage ? 420 : 160} placeholder="Click to choose a full-body / appearance image" />
+            </div>
+            <div className="profile-stats grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+              {(['age', 'height', 'weight', 'eyes', 'skin', 'hair'] as const).map((k) => (
+                <Field key={k} label={k} value={c.appearance[k]} onChange={(v) => patch((d) => { d.appearance[k] = v })} />
+              ))}
+            </div>
           </div>
         </Frame>
         <Frame title="Character Backstory" tight>
