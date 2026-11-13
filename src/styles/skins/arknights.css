@@ -273,8 +273,6 @@
   --rk-head-bg: #121212;
   --rk-grid: rgba(255, 255, 255, 0.025);
   --rk-tri: #ffffff;
-  /* the "lit" fill of the selected tab, the open abilities strip and ability labels: a soft grey in the dark */
-  --rkc-lit: #b9bbbe;
 }
 :root[data-skin='arknights'][data-variant='classic'][data-theme='light'] {
   --paper: #d2d2d2;
@@ -296,7 +294,6 @@
   --rk-head-bg: #262626;
   --rk-grid: rgba(0, 0, 0, 0.035);
   --rk-tri: #262626;
-  --rkc-lit: #ffffff;
 }
 
 /* backdrop: a soft spotlight and faint slanted lines instead of the blueprint grid */
@@ -360,16 +357,24 @@
 [data-skin='arknights'][data-variant='classic'] .nav { background: #141414; border-top: 1px solid #333; }
 [data-skin='arknights'][data-variant='classic'] .nav button.tab { font-weight: 600; letter-spacing: 0.2em; color: #9a9a9a; }
 [data-skin='arknights'][data-variant='classic'] .nav button.tab:hover { color: #ffffff; }
+/* the selected tab: no fill, white type lit from below in blue, a blue bar and a small white corner mark */
+[data-skin='arknights'][data-variant='classic'] .nav button.tab { position: relative; }
 [data-skin='arknights'][data-variant='classic'] .nav button.tab.active {
-  color: #141414; background: var(--rkc-lit); border-bottom-color: var(--rkc-lit); box-shadow: inset 0 -3px 0 #0098dc;
-  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  color: #ffffff; background: linear-gradient(0deg, rgba(0, 152, 220, 0.3), rgba(0, 152, 220, 0) 80%); border-bottom-color: #0098dc;
+  text-shadow: 0 0 10px rgba(0, 152, 220, 0.6);
+}
+[data-skin='arknights'][data-variant='classic'] .nav button.tab.active::after {
+  content: ''; position: absolute; right: 0; top: 0; width: 7px; height: 7px; background: #ffffff; clip-path: polygon(0 0, 100% 0, 100% 100%);
 }
 
 /* abilities dock */
-[data-skin='arknights'][data-variant='classic'] .dock-edge:hover, [data-skin='arknights'][data-variant='classic'] .dock-edge.on { background: var(--rkc-lit); }
-[data-skin='arknights'][data-variant='classic'][data-theme='dark'] .ab-box .name,
-[data-skin='arknights'][data-variant='classic'][data-theme='dark'] .seg button.on { background: var(--rkc-lit); color: #141414; }
-[data-skin='arknights'][data-variant='classic'] .dock-edge:hover span, [data-skin='arknights'][data-variant='classic'] .dock-edge.on span { color: #141414; }
+/* the abilities strip: stays dark; open (or hovered) it gets a blue edge and white lettering */
+[data-skin='arknights'][data-variant='classic'] .dock-edge:hover, [data-skin='arknights'][data-variant='classic'] .dock-edge.on { background: #1c1c1c; border-right-color: #0098dc; }
+[data-skin='arknights'][data-variant='classic'] .dock-edge.on { box-shadow: inset -3px 0 0 #0098dc; }
+[data-skin='arknights'][data-variant='classic'] .dock-edge:hover span, [data-skin='arknights'][data-variant='classic'] .dock-edge.on span { color: #ffffff; }
+/* dark mode: ability labels and picked options are marked with lines, not filled white */
+[data-skin='arknights'][data-variant='classic'][data-theme='dark'] .ab-box .name { background: transparent; color: #ffffff; box-shadow: inset 0 -2px 0 #0098dc; }
+[data-skin='arknights'][data-variant='classic'][data-theme='dark'] .seg button.on { background: rgba(0, 152, 220, 0.22); color: #ffffff; box-shadow: inset 0 -3px 0 #0098dc; }
 [data-skin='arknights'][data-variant='classic'] .pill .num, [data-skin='arknights'][data-variant='classic'] .ab-box .mod,
 [data-skin='arknights'][data-variant='classic'] .ab-box .score, [data-skin='arknights'][data-variant='classic'] .rr .val { font-weight: 700; }
 [data-skin='arknights'][data-variant='classic'] .ab-box .mod { clip-path: none; }
