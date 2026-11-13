@@ -461,11 +461,24 @@ function NameBox({ value, onChange }: { value: string; onChange: (v: string) => 
       while (lines() > 2 && size > 9) { size -= 0.5; el.style.fontSize = `${size}px` }
       // the box's own underline isn't part of scrollHeight
       el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`
+      el.scrollTop = 0
     }
     fit()
-    const ro = new ResizeObserver(fit)
+    // measure again whenever the text could have changed width without the name changing: the style's font finishing
+    // loading, switching style / light-dark (a different font), or the box itself changing size
+    const ro = new ResizeObserver(() => fit())
     ro.observe(el.parentElement ?? el)
-    return () => ro.disconnect()
+    // (twice: once the new style's rules apply, and again once its font has had a moment to arrive)
+    const timers: ReturnType<typeof setTimeout>[] = []
+    const mo = new MutationObserver(() => { timers.push(setTimeout(fit, 0), setTimeout(fit, 300)) })
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-skin', 'data-variant', 'data-theme', 'data-system'] })
+    const fonts = document.fonts
+    const onFonts = () => fit()
+    fonts?.addEventListener?.('loadingdone', onFonts)
+    fonts?.ready.then(onFonts)
+    // and when you come back to the window (it may have been laid out while hidden)
+    window.addEventListener('focus', onFonts)
+    return () => { ro.disconnect(); mo.disconnect(); timers.forEach(clearTimeout); fonts?.removeEventListener?.('loadingdone', onFonts); window.removeEventListener('focus', onFonts) }
   }, [value])
   return (
     <textarea ref={ref} className="name-in" rows={1} value={value} placeholder="Character name" spellCheck={false}
