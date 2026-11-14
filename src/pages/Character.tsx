@@ -209,7 +209,7 @@ export function CharacterPage() {
             <div className="profile-ids grid" style={{ gridTemplateColumns: isAK(c) ? '1fr 1fr 1fr' : '1fr', gap: 8 }}>
               <Field label="Nickname" value={c.nickname ?? ''} placeholder="none" onChange={(v) => patch((d) => { d.nickname = v })} />
               {isAK(c) && (
-                <Field label="Operator codename" value={c.ak.codename} placeholder="not assigned yet"
+                <Field label="Codename" value={c.ak.codename} placeholder="not assigned yet"
                   onChange={(v) => patch((d) => { d.ak.codename = v })} />
               )}
               {isAK(c) && (

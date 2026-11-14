@@ -2,7 +2,7 @@
   "name": "dnd-sheet",
   "productName": "Character Sheet",
   "private": true,
-  "version": "2.9.0",
+  "version": "2.9.1",
   "description": "Desktop D&D character sheet",
   "author": "Santiago",
   "main": "electron/main.cjs",

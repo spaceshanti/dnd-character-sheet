@@ -136,7 +136,7 @@ export function TopBar() {
         <div className="banner">
           <div className="name-banner">
             {/* Arknights: the operator codename, when one's been assigned, sits just above the name */}
-            {ak && c.ak.codename.trim() && <div className="codename" title="Operator codename (set on the Character page)">{c.ak.codename}</div>}
+            {ak && c.ak.codename.trim() && <div className="codename" title="Codename (set on the Character page)">{c.ak.codename}</div>}
             <NameBox value={c.name} onChange={(v) => patch((d) => { d.name = v })} />
             <div className="name-label-row">
               <label>Character Name</label>
