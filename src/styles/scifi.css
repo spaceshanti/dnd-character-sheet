@@ -26,27 +26,30 @@
 [data-scifi] .appearance-card .ph-lines .ph-mark::before { content: ''; display: inline-block; width: 6px; height: 10px; margin-right: 8px; background: var(--ink2); vertical-align: -1px; }
 
 /* body: photo on the left, the file's fields on the right */
+/* --pc-s (scale of the details), --pc-img-w / --pc-img-h (the photo's box) are worked out to fit the picture (useProfileFit) */
 [data-scifi] .appearance-card .profile-body {
-  display: grid; grid-template-columns: minmax(96px, 0.85fr) minmax(0, 1.15fr); grid-template-areas: 'img ids' 'img stats';
-  grid-template-rows: auto 1fr; gap: 4px 12px; align-items: start;
+  display: grid; grid-template-columns: var(--pc-img-w, minmax(96px, 0.85fr)) minmax(0, 1fr); grid-template-areas: 'img ids' 'img stats';
+  grid-template-rows: auto auto; gap: calc(4px * var(--pc-s, 1)) 12px; align-items: start; align-content: start;
 }
 [data-scifi] .appearance-card .profile-img { grid-area: img; position: relative; }
-[data-scifi] .appearance-card .profile-ids { grid-area: ids; grid-template-columns: 1fr !important; margin: 0; gap: 4px !important; }
-[data-scifi] .appearance-card .profile-stats { grid-area: stats; grid-template-columns: 1fr !important; margin: 0; gap: 4px !important; }
+[data-scifi] .appearance-card .profile-ids { grid-area: ids; grid-template-columns: 1fr !important; margin: 0; gap: calc(4px * var(--pc-s, 1)) !important; }
+[data-scifi] .appearance-card .profile-stats { grid-area: stats; grid-template-columns: 1fr !important; margin: 0; gap: calc(4px * var(--pc-s, 1)) !important; }
 
 /* the photo: a framed ID picture with a small tag in its corner */
-/* the photo is exactly as tall as the details beside it */
-[data-scifi] .appearance-card .profile-img { align-self: stretch; display: flex; flex-direction: column; min-height: 0; }
+/* a landscape picture: across the top, details below */
+[data-scifi] .appearance-card .profile-body[data-wide] { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'img' 'ids' 'stats'; }
+/* the photo: shown whole, in a box as tall as the details beside it */
+[data-scifi] .appearance-card .profile-img { align-self: start; }
 [data-scifi] .appearance-card .profile-img .image-box {
-  border-color: var(--ink2) !important; flex: 1; aspect-ratio: auto !important; max-height: none !important; min-height: 120px; height: auto;
+  border-color: var(--ink2) !important; width: 100%; height: var(--pc-img-h, 220px); aspect-ratio: auto !important; max-height: none !important; min-height: 0;
+  background-size: contain !important;
 }
 /* the "accessing file…" flavour lines belong to Rhodes Island's terminal */
 [data-scifi]:not([data-skin='arknights']) .appearance-card .ph-flavor { display: none; }
-/* tighter rows when the box is on the narrow side */
+/* a little tighter between the columns when the box is on the narrow side */
 @container (max-width: 420px) {
   [data-scifi] .appearance-card .profile-body { column-gap: 8px; }
-  [data-scifi] .appearance-card .profile-body .field > label { width: 74px; font-size: 8.5px; letter-spacing: 0.08em; padding-left: 4px; }
-  [data-scifi] .appearance-card .profile-body .field > input { font-size: 12px; }
+  [data-scifi] .appearance-card .profile-body .field > label { letter-spacing: 0.08em; }
 }
 [data-scifi] .appearance-card .profile-img::before {
   content: '◆ ID PHOTO'; position: absolute; left: 0; top: 0; z-index: 2; font-size: 9px; letter-spacing: 0.12em; padding: 2px 6px;
@@ -60,15 +63,15 @@
 /* the fields: one terminal row each, "LABEL ▸ value" in a translucent bar */
 [data-scifi] .appearance-card .profile-body .field {
   flex-direction: row-reverse; align-items: center; justify-content: flex-end; gap: 0;
-  background: color-mix(in srgb, var(--ink) 7%, transparent); padding: 2px 6px 2px 0;
+  background: color-mix(in srgb, var(--ink) 7%, transparent); padding: calc(2px * var(--pc-s, 1)) 6px calc(2px * var(--pc-s, 1)) 0;
 }
 [data-scifi] .appearance-card .profile-body .field > label {
-  flex: none; width: 92px; margin: 0; padding: 1px 4px 1px 6px; font-size: 9.5px; letter-spacing: 0.12em; line-height: 1.2; color: var(--muted);
-  border-left: 3px solid var(--ink2); white-space: normal; overflow-wrap: anywhere; align-self: stretch; display: flex; align-items: center;
+  flex: none; width: min(calc(88px * var(--pc-s, 1)), 46%); margin: 0; padding: 1px 4px 1px 6px; font-size: calc(9.5px * var(--pc-s, 1)); letter-spacing: 0.12em; line-height: 1.2; color: var(--muted);
+  border-left: 3px solid var(--ink2); white-space: normal; overflow-wrap: normal; min-width: min-content; align-self: stretch; display: flex; flex-wrap: wrap; align-content: center; align-items: center;
 }
 [data-scifi] .appearance-card .profile-body .field > label::after { content: '▸'; color: var(--accent); margin-left: 4px; }
 [data-scifi] .appearance-card .profile-body .field > input {
-  flex: 1; min-width: 0; border-bottom: none !important; background: transparent; font-family: var(--font-num, var(--font-body)); font-weight: 500; font-size: 13px;
+  flex: 1; min-width: 0; border-bottom: none !important; background: transparent; font-family: var(--font-num, var(--font-body)); font-weight: 500; font-size: calc(13px * var(--pc-s, 1));
 }
 [data-scifi] .appearance-card .profile-body .field > input:focus { background: var(--accent-soft); }
 [data-scifi] .appearance-card .profile-body .field:focus-within > label { border-left-color: var(--accent); color: var(--ink); }

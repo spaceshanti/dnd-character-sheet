@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useLayoutEffect, useRef, type RefObject } from 'react'
 import { uid } from '../blank'
 import { imageToDataUrl, useChar, useStore } from '../store'
 import type { Faction } from '../types'
@@ -92,6 +92,74 @@ function EmblemPick({ src, onChange }: { src: string; onChange: (src: string) =>
   )
 }
 
+const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n))
+
+/**
+ * Sci-fi profile card: fit the photo and the details beside it to each other. The photo is always shown whole: its
+ * column gets the width that makes it as tall as the details at their normal size, within limits; when it can't
+ * (a very wide or very tall picture), the details' text and rows scale (80%–135%) until both columns end level.
+ * Done again when the picture, the style or the box's width changes. Plain styles are left alone.
+ */
+function useProfileFit(ref: RefObject<HTMLDivElement>, src: string) {
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    let ratio = 3 / 4
+    let lastW = -1
+    const props = ['--pc-s', '--pc-img-w', '--pc-img-h']
+    const clear = () => props.forEach((p) => el.style.removeProperty(p))
+    const fit = () => {
+      if (!document.documentElement.dataset.scifi) { clear(); delete el.dataset.wide; return }
+      const W = el.clientWidth
+      if (!W) return
+      const ids = el.querySelector<HTMLElement>('.profile-ids')
+      const stats = el.querySelector<HTMLElement>('.profile-stats')
+      if (!ids || !stats) return
+      clear()
+      // a landscape picture goes across the top, the details below it
+      if (ratio > 1.15) el.dataset.wide = '1'
+      else delete el.dataset.wide
+      // (and a very narrow box puts any photo above the details): show it whole at the box's width
+      if (!getComputedStyle(el).gridTemplateAreas.includes('img ids')) {
+        el.style.setProperty('--pc-img-h', `${Math.round(Math.min(W / ratio, 460))}px`)
+        return
+      }
+      const gap = () => parseFloat(getComputedStyle(el).rowGap) || 0
+      const fieldsH = () => ids.offsetHeight + gap() + stats.offsetHeight
+      let s = 1
+      let w = 0
+      for (let k = 0; k < 6; k++) {
+        el.style.setProperty('--pc-s', String(s))
+        w = clamp(ratio * fieldsH(), 0.22 * W, 0.56 * W)
+        el.style.setProperty('--pc-img-w', `${Math.round(w)}px`)
+        // the details may wrap differently at the new width, so measure again
+        const want = clamp((s * (w / ratio)) / fieldsH(), 0.8, 1.45)
+        if (Math.abs(want - s) < 0.01) break
+        s = want
+      }
+      el.style.setProperty('--pc-img-h', `${Math.round(fieldsH())}px`)
+      lastW = W
+    }
+    let alive = true
+    const load = () => {
+      if (!src) { ratio = 3 / 4; fit(); return }
+      const img = new Image()
+      img.onload = () => { if (!alive) return; if (img.naturalWidth && img.naturalHeight) ratio = img.naturalWidth / img.naturalHeight; fit() }
+      img.onerror = () => { if (alive) fit() }
+      img.src = src
+    }
+    load()
+    // only width changes matter (our own changes alter the height)
+    const ro = new ResizeObserver(() => { if (el.clientWidth !== lastW) fit() })
+    ro.observe(el)
+    const timers: ReturnType<typeof setTimeout>[] = []
+    const mo = new MutationObserver(() => { timers.push(setTimeout(fit, 0), setTimeout(fit, 300)) })
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-skin', 'data-variant', 'data-scifi', 'data-theme'] })
+    document.fonts?.ready.then(() => { if (alive) fit() })
+    return () => { alive = false; ro.disconnect(); mo.disconnect(); timers.forEach(clearTimeout) }
+  }, [ref, src])
+}
+
 /** The personnel-file header of the Appearance box (only shown by the sci-fi styles). */
 function ProfileHead() {
   const c = useChar()
@@ -122,6 +190,8 @@ export function CharacterPage() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const st = c.story
+  const profileBody = useRef<HTMLDivElement>(null)
+  useProfileFit(profileBody, c.appearanceImage)
   const text = (key: keyof typeof st, title: string, rows = 4, ph = '') => (
     <Frame title={title} tight>
       <RichArea className="sheet-ta" minRows={rows} placeholder={ph} value={st[key]} onChange={(v) => patch((d) => { d.story[key] = v })} />
@@ -135,7 +205,7 @@ export function CharacterPage() {
         <Frame title="Appearance" tight className="appearance-card">
           {/* sci-fi styles show this as a personnel file: a header and a few terminal lines (hidden otherwise) */}
           <ProfileHead />
-          <div className="profile-body">
+          <div className="profile-body" ref={profileBody}>
             <div className="profile-ids grid" style={{ gridTemplateColumns: isAK(c) ? '1fr 1fr 1fr' : '1fr', gap: 8 }}>
               <Field label="Nickname" value={c.nickname ?? ''} placeholder="none" onChange={(v) => patch((d) => { d.nickname = v })} />
               {isAK(c) && (
