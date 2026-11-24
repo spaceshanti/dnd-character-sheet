@@ -299,6 +299,15 @@ function Vitals() {
           <div className="sub">{dr.adds.length ? `= ${dr.total}` : ''}</div>
         </div>
       ) : (
+        <>
+        {/* D&D has no Damage Reduction of its own: the box appears when a feature gives you some */}
+        {dr.total > 0 && (
+          <div className="vbox" style={{ cursor: 'default' }} title={'Damage Reduction (from your features): a flat cut to damage taken.\n' + dr.adds.map((a) => `${a.label} ${signed(a.value)}`).join('\n')}>
+            <div className="l">Dmg Red.</div>
+            <div className="v">{dr.total}</div>
+            <div className="sub" />
+          </div>
+        )}
         <div className="vbox size-box" style={{ cursor: 'default' }}>
           <div className="l">Size</div>
           <select className="size-select" value={c.size} onChange={(e) => patch((d) => { d.size = e.target.value })}>
@@ -307,6 +316,7 @@ function Vitals() {
           </select>
           <div className="sub" />
         </div>
+        </>
       )}
 
       <div className="vbox hp-box">

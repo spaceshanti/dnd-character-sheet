@@ -128,7 +128,9 @@ export const EFFECT_TYPES: { id: EffectType; name: string }[] = [
   { id: 'proficiency', name: 'Grants proficiency' },
   { id: 'halfProf', name: 'Half proficiency' },
   { id: 'expertise', name: 'Grants expertise' },
-  { id: 'minScore', name: 'Sets score to at least' },
+  { id: 'minScore', name: 'At least (raises to)' },
+  { id: 'maxScore', name: 'At most (caps at)' },
+  { id: 'set', name: 'Sets to' },
   { id: 'note', name: 'Note only' },
 ]
 
@@ -141,7 +143,11 @@ export function effectTargets(sys: SystemId): TargetGroup[] {
   const skills = skillsFor(sys)
   return EFFECT_TARGETS.map((g) => {
     if (g.label === 'Skills') return { ...g, options: [g.options[0], ...skills.map((s) => ({ id: `skill:${s.key}`, name: s.name }))] }
-    if (g.label === 'Stats' && sys === 'ak5e') return { ...g, options: [...g.options, { id: 'dr', name: 'Damage Reduction' }, { id: 'martialDc', name: 'Martial DC' }] }
+    if (g.label === 'Stats') {
+      const more = [{ id: 'dr', name: 'Damage Reduction' }, { id: 'carry', name: 'Max carry weight' }, { id: 'passivePerception', name: 'Passive Perception' }, { id: 'maxPrepared', name: 'Max prepared spells' }]
+      const ak = sys === 'ak5e' ? [{ id: 'martialDc', name: 'Martial DC' }, { id: 'ap', name: 'Max Arts Points' }, { id: 'artLevel', name: 'Max Art level' }] : []
+      return { ...g, options: [...g.options, ...more, ...ak] }
+    }
     return g
   })
 }
@@ -170,9 +176,15 @@ export const EFFECT_TARGETS: TargetGroup[] = [
   },
 ]
 
+const MORE_TARGETS: Record<string, string> = {
+  dr: 'Damage Reduction', martialDc: 'Martial DC', carry: 'Max carry weight', passivePerception: 'Passive Perception',
+  maxPrepared: 'Max prepared spells', ap: 'Max Arts Points', artLevel: 'Max Art level',
+}
+
 export function targetName(id: string): string {
-  if (id === 'dr') return 'Damage Reduction'
-  if (id === 'martialDc') return 'Martial DC'
+  if (MORE_TARGETS[id]) return MORE_TARGETS[id]
+  if (id.startsWith('var:')) return id.slice(4)
+  if (id.startsWith('resource:')) return 'Resource max'
   for (const g of EFFECT_TARGETS) {
     const o = g.options.find((x) => x.id === id)
     if (o) return o.name

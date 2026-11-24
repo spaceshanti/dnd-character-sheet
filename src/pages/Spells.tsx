@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ABILITIES, SPELL_LEVEL_NAMES } from '../constants'
-import { activeEffects, preparedCount, signed, spellStats } from '../calc'
+import { activeEffects, apMax, artLevelMax, maxPreparedOf, preparedCount, signed, spellStats } from '../calc'
 import { isAK } from '../systems'
 import { isConsumed, newSpell, uid } from '../blank'
 import { applyLib, bestLib, bundledLib, fetchStub, fromLib, isPool, nameKey, LIB, LIB_DND_CLASSES, LIB_POOLS, LIB_SCHOOLS, libLabel, searchLib, type LibSpell } from '../spellLib'
@@ -63,6 +63,7 @@ export function SpellsPage() {
             {!ak && (
               <div className="spell-stat" title={`How many spells you can have prepared. ${preparedCount(c)} prepared now.`}>
                 <Num min={0} max={99} className="prep-max" value={c.maxPrepared ?? 0} onChange={(n) => patch((d) => { d.maxPrepared = n })} />
+                {maxPreparedOf(c) !== (c.maxPrepared ?? 0) && <span className="small" title="Changed by a feature's modifier" style={{ color: 'var(--accent)' }}>= {maxPreparedOf(c)}</span>}
                 <span className="field-lbl">Max prepared</span>
               </div>
             )}
@@ -115,18 +116,22 @@ function ArtsPoints() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const ap = c.ak.ap
-  const left = Math.max(0, ap.max - ap.used)
+  // the maximum with any modifiers from features (the box shows what you typed; "= n" when a feature changes it)
+  const max = apMax(c)
+  const lvl = artLevelMax(c)
+  const left = Math.max(0, max - ap.used)
   return (
     <div className="ap-panel">
       <div className="ap-num">
         <b>{left}</b><span>/</span>
         <Num min={0} max={999} value={ap.max} onChange={(n) => patch((d) => { d.ak.ap.max = n; d.ak.ap.used = Math.min(d.ak.ap.used, n) })} />
+        {max !== ap.max && <span className="small" title="Changed by a feature's modifier" style={{ color: 'var(--accent)' }}>= {max}</span>}
         <label>Arts Points left / max</label>
       </div>
       <div className="grow col" style={{ gap: 4, minWidth: 0 }}>
-        <div className="sp-bar ap"><i style={{ width: (ap.max ? (left / ap.max) * 100 : 0) + '%' }} /></div>
+        <div className="sp-bar ap"><i style={{ width: (max ? (left / max) * 100 : 0) + '%' }} /></div>
         <div className="row" style={{ gap: 4, flexWrap: 'wrap' }}>
-          <button className="btn sm" onClick={() => patch((d) => { d.ak.ap.used = Math.min(d.ak.ap.max, d.ak.ap.used + 1) })}>−1 AP</button>
+          <button className="btn sm" onClick={() => patch((d) => { d.ak.ap.used = Math.min(max, d.ak.ap.used + 1) })}>−1 AP</button>
           <button className="btn sm" onClick={() => patch((d) => { d.ak.ap.used = Math.max(0, d.ak.ap.used - 1) })}>+1 AP</button>
           <button className="btn sm ghost" onClick={() => patch((d) => { d.ak.ap.used = 0 })}>Refill</button>
           <span className="muted small">Casting an Art costs AP equal to the level you cast it at.</span>
@@ -134,6 +139,7 @@ function ArtsPoints() {
       </div>
       <div className="spell-stat">
         <Num min={0} max={9} value={c.ak.maxArtLevel} onChange={(n) => patch((d) => { d.ak.maxArtLevel = n })} />
+        {lvl !== c.ak.maxArtLevel && <span className="small" title="Changed by a feature's modifier" style={{ color: 'var(--accent)' }}>= {lvl}</span>}
         <span className="field-lbl">Max Art level</span>
       </div>
       <div className="spell-stat">
@@ -142,7 +148,7 @@ function ArtsPoints() {
         </select>
         <span className="field-lbl">AP come back on</span>
       </div>
-      {c.ak.maxArtLevel >= 9 && (
+      {lvl >= 9 && (
         <label className="spell-stat" title="Only one 9th-level Art per long rest">
           <Switch on={c.ak.ninthUsed} onChange={(b) => patch((d) => { d.ak.ninthUsed = b })} />
           <span className="field-lbl">9th used</span>
@@ -184,7 +190,8 @@ function SpellSection({ level, spells, editable, filtering, onOpen, onToggle, on
   const [adding, setAdding] = useState(false)
   const slot = c.slots[level] ?? { total: 0, used: 0 }
   const ak = isAK(c)
-  const locked = ak && level > 0 && c.ak.maxArtLevel > 0 && level > c.ak.maxArtLevel
+  const maxArt = ak ? artLevelMax(c) : 0
+  const locked = ak && level > 0 && maxArt > 0 && level > maxArt
   const list = [...spells].sort((a, b) => a.name.localeCompare(b.name))
   const blanks = !editable || filtering ? 0 : Math.max(MIN_LINES(level) - list.length, 1)
 

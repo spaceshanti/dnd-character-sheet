@@ -875,3 +875,10 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 
 /* Settings: the update strip across the top */
 .settings-update { padding: 6px 10px; border: 1px solid var(--line); background: var(--panel); }
+
+/* formula modifiers: the target you type, and what it resolved to underneath */
+.formula-item { display: flex; flex-direction: column; gap: 1px; margin-bottom: 6px; }
+.formula-target { width: 150px; flex: none; font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+.formula-what { padding-left: 4px; }
+.formula-what.bad { color: var(--dis); }
+.formula-what code { font-size: 11.5px; }

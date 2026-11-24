@@ -243,11 +243,12 @@ export const ActionSelect = ({ value, onChange }: { value: Parameters<typeof Sel
 )
 
 function allowedTypes(target: string): EffectType[] {
-  if (target.startsWith('ability:')) return ['bonus', 'minScore', 'note']
+  if (target.startsWith('ability:')) return ['bonus', 'minScore', 'maxScore', 'set', 'note']
   if (target.startsWith('save:') || target.startsWith('skill:')) return ['advantage', 'disadvantage', 'bonus', 'proficiency', 'halfProf', 'expertise', 'note']
   if (target === 'initiative') return ['bonus', 'advantage', 'disadvantage', 'proficiency', 'halfProf', 'note']
   if (target === 'attack') return ['bonus', 'advantage', 'disadvantage', 'note']
-  return ['bonus', 'note']
+  // any other value (AC, speed, Damage Reduction, carry weight…): add to it, or set it
+  return ['bonus', 'minScore', 'maxScore', 'set', 'note']
 }
 
 /** Lets any feature / item / spell be linked to the things it changes. */
@@ -279,7 +280,7 @@ export function EffectsEditor({ effects, onChange, bare = false }: { effects: Ef
             <select value={e.type} onChange={(ev) => set(e.id, { type: ev.target.value as EffectType })}>
               {EFFECT_TYPES.filter((t) => types.includes(t.id)).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
-            {(e.type === 'bonus' || e.type === 'minScore') && (
+            {(e.type === 'bonus' || e.type === 'minScore' || e.type === 'maxScore' || e.type === 'set') && (
               <Num className="box-input n" width={56} value={e.value ?? 0} onChange={(n) => set(e.id, { value: n })} />
             )}
             {(e.type === 'proficiency' || e.type === 'halfProf' || e.type === 'expertise') && (

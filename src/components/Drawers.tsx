@@ -13,7 +13,7 @@ import { FeatureChangesEditor, FeatureUsage, FeatureUsageEditor } from './Featur
 import { targetName } from '../constants'
 import type { Effect, Feature, FeatureCategory, Spell } from '../types'
 import { FormulaModifiers, formulaText } from './FormulaEditor'
-import { formulaVars, spellOnActions } from '../calc'
+import { apMax, artLevelMax, formulaVars, spellOnActions } from '../calc'
 import { askConfirm } from './Dialog'
 import { cantripScale, markCantrip } from '../cantrip'
 import { toHtml } from '../rich'
@@ -32,7 +32,7 @@ function EffectSummary({ effects }: { effects: Effect[] }) {
     <div className="row" style={{ flexWrap: 'wrap', gap: 5 }}>
       {effects.map((e) => (
         <span key={e.id} className={`chip ${e.type === 'advantage' ? 'adv' : e.type === 'disadvantage' ? 'dis' : 'accent'}`}>
-          {targetName(e.target)}: {e.formula !== undefined ? formulaText(e, vars) : e.type === 'bonus' ? (e.value ?? 0) >= 0 ? `+${e.value ?? 0}` : e.value : e.type === 'minScore' ? `≥ ${e.value}` : e.type === 'halfProf' ? '½ proficiency' : e.type}
+          {targetName(e.target)}: {e.formula !== undefined ? formulaText(e, vars) : e.type === 'bonus' ? (e.value ?? 0) >= 0 ? `+${e.value ?? 0}` : e.value : e.type === 'minScore' ? `≥ ${e.value}` : e.type === 'maxScore' ? `≤ ${e.value}` : e.type === 'set' ? `→ ${e.value}` : e.type === 'halfProf' ? '½ proficiency' : e.type}
           {e.stacks ? ' (stacks)' : ''}
           {e.note ? ` (${e.note})` : ''}
         </span>
@@ -183,7 +183,7 @@ export function SpellDrawer({ id }: { id: string }) {
                 <span className="small">at level</span>
                 {sp.level > 0 && (ak ? (
                   <select value={castLevel} onChange={(e) => setCastLevel(+e.target.value)}>
-                    {Array.from({ length: Math.max(1, (c.ak.maxArtLevel || 9) - sp.level + 1) }, (_, i) => sp.level + i).map((l) => (
+                    {Array.from({ length: Math.max(1, (artLevelMax(c) || 9) - sp.level + 1) }, (_, i) => sp.level + i).map((l) => (
                       <option key={l} value={l}>{l} ({l} AP)</option>
                     ))}
                   </select>
@@ -194,7 +194,7 @@ export function SpellDrawer({ id }: { id: string }) {
                     ))}
                   </select>
                 ))}
-                {ak && sp.level > 0 && <span className="muted small">{Math.max(0, c.ak.ap.max - c.ak.ap.used)} AP left</span>}
+                {ak && sp.level > 0 && <span className="muted small">{Math.max(0, apMax(c) - c.ak.ap.used)} AP left</span>}
               </>
             )}
             {sp.level > 0 && !sp.alwaysPrepared && !ak && (

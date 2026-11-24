@@ -107,7 +107,10 @@ A feature (or item, or spell) can change the sheet: bonuses, advantage, proficie
 saves, skills and Initiative. Proficiency-type modifiers count only when they're your best for that roll (the normal rule)
 unless you tick **stacks**, which adds them on top. For anything a fixed number can't do, the feature editor has
 **⚙ Advanced: custom formulas** at the bottom: modifiers worked out from a formula such as `max(1, wis)` or `half(prof)`,
-with a reference of every variable and function a click away.
+with a reference of every variable and function a click away. A formula modifier can change any value on the sheet:
+type its name (`dr`, `initiative`, `carry`, `passivePerception`, `res_psionic_dice` for a resource's maximum, `ap`…)
+and choose whether it adds, raises to at least, caps at most, or sets the value. Every name can also be read inside a
+formula, and typing a new name (e.g. `rage_damage`) makes a value of your own that other features' formulas can use.
 
 ## Class symbols
 

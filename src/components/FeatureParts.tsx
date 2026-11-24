@@ -4,11 +4,14 @@ import { WEAPON_NAMES } from '../data/gear'
 import { newEffect, newFeatureAction, newResource, newSpell, uid } from '../blank'
 import { useChar, useStore, useUI } from '../store'
 import { applyLib, bestLib } from '../spellLib'
+import { resourceMax } from '../calc'
 import { EffectsEditor, Num, Pips, Select, Switch, DieSlot } from './ui'
 import type { ActionMod, Character, Feature, FeatureAction, RestEffect, Resource } from '../types'
 
 export const actionTypeName = (t: string) => ACTION_TYPES.find((a) => a.id === t)?.name ?? ''
-export const left = (r: Resource) => Math.max(0, r.max - r.used)
+/** a resource's maximum uses with its modifiers (a feature can add to it, or set it, with a formula) */
+export const maxOf = (r: Resource) => { const st = useStore.getState(); const c = st.chars[st.activeId]; return c ? resourceMax(c, r) : r.max }
+export const left = (r: Resource) => Math.max(0, maxOf(r) - r.used)
 const resName = (r: Resource) => r.name || 'Resource'
 export const resLabel = (r: Resource) => (r.die ? `${resName(r)} (${r.die})` : resName(r))
 
@@ -17,7 +20,7 @@ export function spendAction(c: Character, a: FeatureAction): string {
   const r = c.resources.find((x) => x.id === a.resourceId)
   if (!r) return ''
   if (left(r) < a.cost) return `Not enough ${resName(r)} left`
-  useStore.getState().patch((d) => { const x = d.resources.find((y) => y.id === r.id); if (x) x.used = Math.min(x.max, x.used + a.cost) })
+  useStore.getState().patch((d) => { const x = d.resources.find((y) => y.id === r.id); if (x) x.used = Math.min(maxOf(r), x.used + a.cost) })
   const remaining = left(r) - a.cost
   return `${a.name || 'Used'}: spent ${a.cost} ${resName(r)} · ${remaining} left${r.die ? ` (roll ${r.die})` : ''}`
 }
@@ -75,8 +78,8 @@ export function FeatureUsage({ f, onUsed, showResources = true }: { f: Feature; 
       {resources.map((r) => (
         <div key={r.id} className="feat-res">
           <b className="grow">{resName(r)}{r.die && <span className="muted"> · {r.die}</span>}</b>
-          <Pips total={r.max} used={r.used} onChange={(u) => patch((d) => { const x = d.resources.find((y) => y.id === r.id); if (x) x.used = u })} />
-          <span className="muted small">{left(r)}/{r.max}</span>
+          <Pips total={maxOf(r)} used={r.used} onChange={(u) => patch((d) => { const x = d.resources.find((y) => y.id === r.id); if (x) x.used = u })} />
+          <span className="muted small">{left(r)}/{maxOf(r)}</span>
         </div>
       ))}
       {f.actions.map((a) => (

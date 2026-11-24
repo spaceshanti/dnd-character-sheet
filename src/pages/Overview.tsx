@@ -16,9 +16,10 @@ import { hasFeaturesFor, planFill, ruleNames, type FillPlan } from '../autofill'
 import { longRestOn } from '../rest'
 import type { AbilityKey, Attack, Effect } from '../types'
 import { askConfirm } from '../components/Dialog'
+import { maxOf } from '../components/FeatureParts'
 
 const effectText = (e: Effect) =>
-  `${targetName(e.target)} ${e.formula !== undefined ? `= ${e.formula}` : e.type === 'bonus' ? signed(e.value ?? 0) : e.type === 'minScore' ? `≥ ${e.value}` : e.type === 'halfProf' ? '½ proficiency' : e.type}`
+  `${targetName(e.target)} ${e.formula !== undefined ? `= ${e.formula}` : e.type === 'bonus' ? signed(e.value ?? 0) : e.type === 'minScore' ? `≥ ${e.value}` : e.type === 'maxScore' ? `≤ ${e.value}` : e.type === 'set' ? `→ ${e.value}` : e.type === 'halfProf' ? '½ proficiency' : e.type}`
 
 export function Overview() {
   const c = useChar()
@@ -349,11 +350,12 @@ function ResourcesPanel() {
               <input className="line-input" placeholder="Resource name" value={r.name} onChange={(e) => up((x) => { x.name = e.target.value })} />
               {feat(r.featureId) && <button className="res-feat" onClick={() => set({ drawer: { kind: 'feature', id: r.featureId } })}>from {feat(r.featureId)}</button>}
             </span>
-            <Pips total={r.max} used={r.used} onChange={(u) => up((x) => { x.used = u })} />
+            <Pips total={maxOf(r)} used={r.used} onChange={(u) => up((x) => { x.used = u })} />
             <DieSlot value={r.die} width={42} onChange={(v) => up((x) => { x.die = v })} />
             <span className="grow" />
             <span className="small muted">max</span>
             <Num min={0} max={999} className="box-input" width={48} style={{ textAlign: 'center' }} value={r.max} onChange={(n) => up((x) => { x.max = n; x.used = Math.min(x.used, n) })} />
+            {maxOf(r) !== r.max && <span className="small" title="Changed by a feature's modifier" style={{ color: 'var(--accent)' }}>= {maxOf(r)}</span>}
             {/* when it comes back: tucked away behind ⚙ to keep the list simple */}
             {gear === r.id && <Select value={r.recharge} onChange={(v) => up((x) => { x.recharge = v })} options={RECHARGES} />}
             <button className={`btn icon sm ghost ${gear === r.id ? 'on' : ''}`} title={`Comes back: ${RECHARGES.find((x) => x.id === r.recharge)?.name ?? r.recharge} (click to change)`}

@@ -40,6 +40,10 @@ export const FORMULA_EXAMPLES: [string, string][] = [
   ['floor(level / 2)', 'Half your level, rounded down'],
   ['if(level >= 11, 2, 1)', '2 from 11th level, 1 before'],
   ['prof + con', 'Proficiency bonus plus Constitution modifier'],
+  ['2', 'On dr with "at least": Damage Reduction is never below 2'],
+  ['strScore * 30', 'On carry with "sets to": carry twice the usual weight'],
+  ['half(res_psionic_dice)', 'Half of another feature’s resource maximum'],
+  ['dex + prof', 'On a value of your own, e.g. dodge_bonus, for other features to use'],
 ]
 
 const FNS: Record<string, (...a: number[]) => number> = {

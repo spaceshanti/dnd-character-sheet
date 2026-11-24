@@ -1,4 +1,4 @@
-import { spLimits } from './calc'
+import { apMax, artLevelMax, spLimits } from './calc'
 import { useStore } from './store'
 import type { Character, Spell } from './types'
 
@@ -35,9 +35,10 @@ export function gainSp(c: Character, n: number): string {
 export function castArt(c: Character, sp: Spell, level: number): string {
   if (sp.level === 0) return `${sp.name} cast`
   const ak = c.ak
-  if (ak.maxArtLevel && level > ak.maxArtLevel) return `Your maximum Art level is ${ak.maxArtLevel}`
+  const maxLevel = artLevelMax(c)
+  if (maxLevel && level > maxLevel) return `Your maximum Art level is ${maxLevel}`
   if (level >= 9 && ak.ninthUsed) return 'You already cast a 9th-level Art this long rest'
-  const left = ak.ap.max - ak.ap.used
+  const left = apMax(c) - ak.ap.used
   if (left < level) return `Not enough Arts Points: needs ${level}, ${left} left`
   patch((d) => { d.ak.ap.used += level; if (level >= 9) d.ak.ninthUsed = true })
   return `Cast ${sp.name} at level ${level} (−${level} AP, ${left - level} left)`

@@ -10,7 +10,7 @@ export type SkillKey =
 /** 0 none, 1 proficient, 2 expertise */
 export type ProfLevel = 0 | 1 | 2
 
-export type EffectType = 'bonus' | 'advantage' | 'disadvantage' | 'proficiency' | 'halfProf' | 'expertise' | 'minScore' | 'note'
+export type EffectType = 'bonus' | 'advantage' | 'disadvantage' | 'proficiency' | 'halfProf' | 'expertise' | 'minScore' | 'maxScore' | 'set' | 'note'
 
 /**
  * Something a feature / item / spell does to the sheet.

@@ -1,7 +1,7 @@
 import { PDFCheckBox, PDFDocument, PDFTextField, PDFButton, StandardFonts, rgb, type PDFForm, type PDFFont, type PDFPage } from 'pdf-lib'
 import {
   ability, activeEffects, attackInfo, damageReduction, itemAttacks, martialDc, passivePerception, profBonus, save, signed, skill,
-  spellStats, spLimits, statInfo, totalWeight, carryCapacity,
+  spellStats, spLimits, statInfo, totalWeight, carryCapacity, apMax, artLevelMax, resourceMax,
 } from '../calc'
 import { ABILITIES } from '../constants'
 import { plainText } from '../rich'
@@ -582,7 +582,7 @@ export async function akSheet(c: Character, imgs: AkImages): Promise<Uint8Array>
   const resRows: [number, number, number, number][] = [[930, 2121, 1425, 1480], [930, 2196, 1425, 1480], [930, 2265, 1236, 1290], [930, 2343, 1236, 1290], [930, 2418, 1044, 1098], [930, 2487, 1044, 1098]]
   c.resources.slice(0, 6).forEach((r, i) => {
     const [x0, y, x1, mx] = resRows[i]
-    p.left(`${r.name}${r.die ? ` (${r.die})` : ''}`, x0 + 8, y, x1 - x0 - 16, 8); p.center(`${r.max - r.used}/${r.max}`, mx, y, 76, 8)
+    p.left(`${r.name}${r.die ? ` (${r.die})` : ''}`, x0 + 8, y, x1 - x0 - 16, 8); p.center(`${resourceMax(c, r) - r.used}/${resourceMax(c, r)}`, mx, y, 76, 8)
   })
   // features, proficiencies, equipment
   p.box(c.features.map((f) => `${f.name}${f.source ? ` (${f.source})` : ''}. ${plain(f.description)}`).join('\n\n'), 1716, 1990, 2409, 3190, 7.5)
@@ -629,7 +629,7 @@ export async function akSheet(c: Character, imgs: AkImages): Promise<Uint8Array>
   const arts = d.spellsSorted
   for (let start = 0; start === 0 || start < arts.length; start += ARTS_ROWS.length) {
     const r = await addPage(imgs.arts)
-    r.center(c.ak.maxArtLevel || '', 394, 285, 400, 18); r.center(c.ak.ap.max ? `${c.ak.ap.max - c.ak.ap.used} / ${c.ak.ap.max}` : '', 847, 285, 400, 16)
+    r.center(artLevelMax(c) || '', 394, 285, 400, 18); r.center(apMax(c) ? `${apMax(c) - c.ak.ap.used} / ${apMax(c)}` : '', 847, 285, 400, 16)
     r.center(c.spellAbility ? ABBR[c.spellAbility] : '', 1303, 300, 240, 14); r.center(d.spell.dc ?? '', 1738, 300, 240, 16)
     r.center(d.spell.attack == null ? '' : signed(d.spell.attack), 2164, 300, 240, 16)
     arts.slice(start, start + ARTS_ROWS.length).forEach((s, i) => {
