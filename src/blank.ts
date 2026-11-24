@@ -124,6 +124,7 @@ export function normalize(raw: Partial<Character>): Character {
     weapon: i.weapon ? { ...i.weapon, kind: i.weapon.kind ?? (lookupWeapon(i.name)?.kind ?? ''), mastery: i.weapon.mastery ?? (lookupWeapon(i.name)?.mastery ?? ''), ammoId: i.weapon.ammoId ?? '', ammoCost: i.weapon.ammoCost ?? 1 } : null,
     url: i.url ?? '',
     armor: i.armor ?? null,
+    actions: i.actions ?? [],
   }))
   c.party = raw.party ?? []
   // Allies & Organizations became a list of factions: the old emblem + notes are the first one,

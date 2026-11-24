@@ -1,5 +1,6 @@
 import { activeEffects, spLimits, statInfo } from './calc'
 import { isAK } from './systems'
+import { regainOnRest } from './charges'
 import type { Character, RestSnapshot } from './types'
 
 /* Undoing a rest you took too early: each rest saves what it's about to change, and Settings can put it back. */
@@ -60,8 +61,9 @@ export function longRestOn(d: Character, opts: { hitDice?: boolean } = {}): stri
     let regain = Math.max(1, Math.floor(d.hitDice.reduce((s, h) => s + h.total, 0) / 2))
     for (const h of d.hitDice) { const r = Math.min(h.spent, regain); h.spent -= r; regain -= r }
   }
-  for (const r of d.resources) if (r.recharge !== 'none') r.used = 0
-  return restEffects(d, 'long')
+  // everything that comes back on a long rest (or at dawn) does; charges with a regain amount roll it
+  const regained = regainOnRest(d, (r) => r.recharge !== 'none')
+  return [...regained, ...restEffects(d, 'long')]
 }
 
 export function ago(t: number): string {

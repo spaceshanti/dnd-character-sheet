@@ -1,7 +1,9 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
-import { ABILITIES, ACTION_TYPES, ITEM_CATEGORIES, RARITIES, SLOT_IDS } from '../constants'
+import { ABILITIES, ACTION_TYPES, ITEM_CATEGORIES, RARITIES, RECHARGES, SLOT_IDS } from '../constants'
 import { attackInfo, carryCapacity, itemAttacks, masterySource, signed, totalWeight } from '../calc'
-import { newItem } from '../blank'
+import { newFeatureAction, newItem, newResource } from '../blank'
+import { chargesFor, chargesFromText } from '../charges'
+import { maxOf, resLabel, spendAction } from './FeatureParts'
 import { isAK } from '../systems'
 import { baseItemWeight, bestItemFor, libraryFor, type LibItem } from '../itemLib'
 import { systemOf, type SystemId } from '../systems'
@@ -9,10 +11,10 @@ import { ammoFits, ammoOptions, ammoText, autoLinkAmmo, firesAmmo, isAmmo, recov
 import { MASTERIES, MASTERY_INFO, akGearExtras, lookupArmor, lookupWeapon, weaponNames } from '../data/gear'
 import { PropertyEditor, WeaponTags } from './WeaponTags'
 import { imageToDataUrl, useChar, useStore, useUI } from '../store'
-import { EffectsEditor, Modal, Num, Select, Switch } from './ui'
+import { DieSlot, EffectsEditor, Modal, Num, Pips, Select, Switch, Toast, useToast } from './ui'
 import { RichArea } from './RichText'
 import { Icon, ICONS, itemIcon } from './Icon'
-import type { ArmorStats, Item, WeaponStats } from '../types'
+import type { ArmorStats, Character, FeatureAction, Item, Resource, WeaponStats } from '../types'
 import { askConfirm } from './Dialog'
 
 const rarityClass = (i: Item) => `r-${i.rarity.replace(' ', '-')}`
@@ -83,6 +85,24 @@ function itemFromTextRaw(text: string, sys: SystemId): Item {
   }
 }
 
+/** add an item to the pack: link ammunition up, and give a magic item the charges its description mentions */
+function addItemTo(d: Character, it: Item) {
+  d.items.push(it)
+  autoLinkAmmo(d)
+  const charges = chargesFor(it.id, it.description)
+  if (charges && !d.resources.some((r) => r.itemId === it.id)) d.resources.push(charges)
+}
+
+/** remove an item and its charges (anything that spent them goes back to free) */
+function removeItemFrom(d: Character, id: string) {
+  const gone = new Set(d.resources.filter((r) => r.itemId === id).map((r) => r.id))
+  d.items = d.items.filter((y) => y.id !== id)
+  if (!gone.size) return
+  d.resources = d.resources.filter((r) => !gone.has(r.id))
+  for (const it of d.items) for (const a of it.actions ?? []) if (gone.has(a.resourceId)) a.resourceId = ''
+  for (const f of d.features) for (const a of f.actions) if (gone.has(a.resourceId)) a.resourceId = ''
+}
+
 function InventoryInner({ onClose }: { onClose: () => void }) {
   const c = useChar()
   const patch = useStore((s) => s.patch)
@@ -130,7 +150,7 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
   const add = () => {
     if (!draft.trim()) return
     const it = itemFromText(draft, systemOf(c))
-    patch((d) => { d.items.push(it); autoLinkAmmo(d) })
+    patch((d) => { addItemTo(d, it) })
     setDraft('')
   }
   const [browsing, setBrowsing] = useState(false)
@@ -225,7 +245,7 @@ function InventoryInner({ onClose }: { onClose: () => void }) {
                     onClick={(e) => e.stopPropagation()} onChange={(e) => up(it.id, (x) => { x.value = e.target.value })} />
                   <button className="btn sm ghost" title="Details" onClick={(e) => { e.stopPropagation(); set({ inventorySelected: it.id }) }}>›</button>
                   <button className="btn sm ghost" title="Remove"
-                    onClick={(e) => { e.stopPropagation(); if (sel === it.id) set({ inventorySelected: '' }); patch((d) => { d.items = d.items.filter((y) => y.id !== it.id) }) }}>✕</button>
+                    onClick={(e) => { e.stopPropagation(); if (sel === it.id) set({ inventorySelected: '' }); patch((d) => { removeItemFrom(d, it.id) }) }}>✕</button>
                 </div>
               ))}
               <div className="gear-add">
@@ -304,7 +324,7 @@ function ItemBrowser({ onClose }: { onClose: () => void }) {
     if (!it.weapon && !it.armor) it.category = li.k
     const cat = ITEM_CATEGORIES.find((k) => k.name === it.category)
     if (cat && it.icon === 'box') it.icon = cat.icon
-    patch((d) => { d.items.push(it); autoLinkAmmo(d) })
+    patch((d) => { addItemTo(d, it) })
     setAdded((a) => [li.n, ...a].slice(0, 6))
   }
   return (
@@ -336,6 +356,85 @@ function ItemBrowser({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </Modal>
+  )
+}
+
+/**
+ * A magic item's charges (any number of pools, like a feature's resources) and the actions that spend them
+ * (Wand of Fireballs › Fireball, 1 charge). Charges are tracked under Class Resources and come back on their rest;
+ * the actions show on the Actions page with a Use button.
+ */
+function ChargesSection({ item }: { item: Item }) {
+  const c = useChar()
+  const patch = useStore((s) => s.patch)
+  const toast = useToast()
+  const pools = c.resources.filter((r) => r.itemId === item.id)
+  const actions = item.actions ?? []
+  const upR = (id: string, fn: (r: Resource) => void) => patch((d) => { const r = d.resources.find((y) => y.id === id); if (r) fn(r) })
+  const upI = (fn: (i: Item) => void) => patch((d) => { const x = d.items.find((y) => y.id === item.id); if (x) fn(x) })
+  const upA = (id: string, fn: (a: FeatureAction) => void) => upI((x) => { const a = (x.actions ??= []).find((y) => y.id === id); if (a) fn(a) })
+  const addPool = () => patch((d) => { d.resources.push({ ...newResource('', pools.length ? '' : 'Charges'), itemId: item.id, recharge: 'dawn' }) })
+  const addAction = () => upI((x) => { (x.actions ??= []).push({ ...newFeatureAction(), resourceId: pools[0]?.id ?? '' }) })
+  const fromText = chargesFromText(item.description)
+  return (
+    <Section title={`Charges & actions${pools.length ? ` · ${pools.map((r) => `${maxOf(r) - r.used}/${maxOf(r)}`).join(', ')}` : ''}`} open={pools.length > 0 || actions.length > 0}>
+      {pools.length === 0 && (
+        <div className="muted small">
+          For a wand, staff or anything with charges. {fromText && <>Its description says <b>{fromText.max} charges</b>{fromText.regain ? `, regaining ${fromText.regain}` : ''}. </>}
+        </div>
+      )}
+      {pools.map((r) => (
+        <div key={r.id} className="col charge-pool" style={{ gap: 4 }}>
+          <div className="fx-row">
+            <input className="box-input grow" style={{ minWidth: 100 }} placeholder="Charges" value={r.name} onChange={(e) => upR(r.id, (x) => { x.name = e.target.value })} />
+            <Pips total={maxOf(r)} used={r.used} onChange={(u) => upR(r.id, (x) => { x.used = u })} />
+            <span className="small muted">{maxOf(r) - r.used}/{maxOf(r)}</span>
+            <button className="btn icon sm" title="Remove these charges" onClick={() => patch((d) => {
+              d.resources = d.resources.filter((y) => y.id !== r.id)
+              for (const it of d.items) for (const a of it.actions ?? []) if (a.resourceId === r.id) a.resourceId = ''
+              for (const ft of d.features) for (const a of ft.actions) if (a.resourceId === r.id) a.resourceId = ''
+            })}>✕</button>
+          </div>
+          <div className="fx-row" style={{ flexWrap: 'wrap' }}>
+            <span className="small">max</span>
+            <Num min={0} max={999} className="box-input" width={44} value={r.max} onChange={(n) => upR(r.id, (x) => { x.max = n; x.used = Math.min(x.used, n) })} />
+            <DieSlot value={r.die} width={48} onChange={(v) => upR(r.id, (x) => { x.die = v })} />
+            <span className="small">back</span>
+            <Select value={r.recharge} onChange={(v) => upR(r.id, (x) => { x.recharge = v })} options={RECHARGES} />
+            {r.recharge !== 'none' && (
+              <input className="box-input" style={{ width: 92 }} placeholder="all" value={r.regain ?? ''}
+                title="How many come back: leave empty for all of them, or a roll like 1d6+1 (rolled on the rest)"
+                onChange={(e) => upR(r.id, (x) => { x.regain = e.target.value || undefined })} />
+            )}
+          </div>
+        </div>
+      ))}
+      {actions.map((a) => (
+        <div key={a.id} className="feat-act-edit">
+          <div className="fx-row">
+            <input className="box-input grow" style={{ minWidth: 110 }} placeholder="Action, e.g. Fireball" value={a.name} onChange={(e) => upA(a.id, (x) => { x.name = e.target.value })} />
+            <Select value={a.actionType} onChange={(v) => upA(a.id, (x) => { x.actionType = v })} options={ACTION_TYPES} />
+            <button className="btn sm primary" title="Use it now (spends its cost)" onClick={() => toast.show(spendAction(c, a) || `${a.name || 'Action'} used`)}>Use</button>
+            <button className="btn icon sm" title="Remove action" onClick={() => upI((x) => { x.actions = (x.actions ?? []).filter((y) => y.id !== a.id) })}>✕</button>
+          </div>
+          <div className="fx-row">
+            <span className="small">Costs</span>
+            <Num min={0} max={99} className="box-input" width={40} value={a.cost} onChange={(n) => upA(a.id, (x) => { x.cost = n })} />
+            <Select value={a.resourceId} onChange={(v) => upA(a.id, (x) => { x.resourceId = v })}
+              options={[{ id: '', name: 'Free (no cost)' }, ...c.resources.map((r) => ({ id: r.id, name: resLabel(r) }))]} />
+          </div>
+          <textarea className="box-input" rows={2} placeholder="Short description (optional)" value={a.description} onChange={(e) => upA(a.id, (x) => { x.description = e.target.value })} />
+        </div>
+      ))}
+      <div className="row" style={{ gap: 6 }}>
+        <button className="btn sm" onClick={() => {
+          if (!pools.length && fromText) patch((d) => { const r = chargesFor(item.id, item.description); if (r) d.resources.push(r) })
+          else addPool()
+        }}>＋ Charges{!pools.length && fromText ? ` (${fromText.max})` : ''}</button>
+        <button className="btn sm" onClick={addAction}>＋ Action</button>
+      </div>
+      <Toast msg={toast.msg} />
+    </Section>
   )
 }
 
@@ -510,6 +609,8 @@ function ItemEditor({ item }: { item: Item }) {
 
       {isAmmo(item) && <AmmoSection item={item} />}
 
+      <ChargesSection item={item} />
+
       <Section title="Armor / shield" open={!!item.armor}
         right={<Switch on={!!item.armor} title="Counts toward AC when worn" onChange={(b) => up((x) => { x.armor = b ? (lookupArmor(x.name, systemOf(c)) ?? { ...DEFAULT_ARMOR }) : null; if (b && x.category === 'Misc') x.category = 'Armor' })} />}>
         {!item.armor ? <div className="muted small">Switch on for armor or a shield.</div> : (
@@ -559,7 +660,7 @@ function ItemEditor({ item }: { item: Item }) {
       <button className="btn danger" onClick={async () => {
         if (!(await askConfirm(`Delete ${item.name || 'this item'}?`))) return
         set({ inventorySelected: '' })
-        patch((d) => { d.items = d.items.filter((y) => y.id !== item.id) })
+        patch((d) => { removeItemFrom(d, item.id) })
       }}>Delete item</button>
     </div>
   )

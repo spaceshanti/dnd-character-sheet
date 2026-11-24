@@ -86,6 +86,20 @@ export function ActionsPage() {
       })
     }
   }
+  // magic items' actions (Wand of Fireballs › Fireball, 1 charge)
+  for (const it of c.items) {
+    if (it.qty <= 0) continue
+    const open = () => set({ inventoryOpen: true, inventorySelected: it.id })
+    for (const a of it.actions ?? []) {
+      if (a.actionType === 'none') continue
+      const needsAttune = it.attunement && !it.attuned
+      put(a.actionType, {
+        key: a.id, kind: 'Item', name: `${it.name || 'Item'} › ${a.name || 'use'}`,
+        right: [costText(c, a), needsAttune ? 'needs attunement' : ''].filter(Boolean).join(' · '), onClick: open,
+        onUse: () => toast.show(spendAction(c, a) || `${a.name || 'Action'} used`),
+      })
+    }
+  }
   // spells / Arts, marked as such; each can be shown or hidden here
   const spellWord = isAK(c) ? 'Art' : 'Spell'
   const setOnActions = (id: string, on: boolean) => patch((d) => { const x = d.spells.find((y) => y.id === id); if (x) x.onActions = on })

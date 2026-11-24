@@ -13,6 +13,7 @@ import { dropImagesOn, Lightbox } from './ImagePicker'
 import { StatEditor } from './StatEditor'
 import { Icon } from './Icon'
 import { askConfirm } from './Dialog'
+import { regainOnRest } from '../charges'
 
 const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']
 
@@ -79,11 +80,9 @@ export function TopBar() {
     patch((d) => {
       rememberRest(d, 'short', before)
       if (ak && d.ak.ap.recharge === 'short') d.ak.ap.used = 0
-      for (const r of d.resources) {
-        if (r.recharge === 'short') r.used = 0
-        else if (r.recharge === 'shortOne') r.used = Math.max(0, r.used - 1)
-      }
-      done = restEffects(d, 'short')
+      for (const r of d.resources) if (r.recharge === 'shortOne') r.used = Math.max(0, r.used - 1)
+      const regained = regainOnRest(d, (r) => r.recharge === 'short')
+      done = [...regained, ...restEffects(d, 'short')]
     })
     report('Short', done)
   }

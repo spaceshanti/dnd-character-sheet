@@ -180,6 +180,8 @@ export interface Item {
   url: string
   /** ammunition: how many have been fired since you last gathered them up (half can be recovered after a fight) */
   ammoSpent?: number
+  /** things you can do with it that spend its charges (e.g. Wand of Fireballs › Fireball, 1 charge) */
+  actions?: FeatureAction[]
 }
 
 export interface Attack {
@@ -209,6 +211,10 @@ export interface Resource {
   die: string
   /** the feature this resource belongs to ('' = standalone) */
   featureId: string
+  /** …or the item (a magic item's charges) */
+  itemId?: string
+  /** what comes back on its recharge instead of all of it, e.g. "1d6+1" (a wand regaining charges at dawn) */
+  regain?: string
   /** the maximum follows this formula as the character changes (e.g. "prof", "max(1, con)") */
   maxFormula?: string
   /** …or this column of an Arknights class / branch table at the character's level */
