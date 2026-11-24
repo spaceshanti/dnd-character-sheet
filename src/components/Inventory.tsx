@@ -553,8 +553,6 @@ function ItemEditor({ item }: { item: Item }) {
         </div>
         </div>
       )}
-      {/* what it does: the thing you'll most want to read, so it comes first */}
-      <RichArea className="box-input item-desc" minRows={3} placeholder="Description / properties (or look it up at the bottom)" value={item.description} onChange={(v) => up((x) => { x.description = v })} />
       <div className="row" style={{ flexWrap: 'wrap' }}>
         <span className="field-lbl">Qty</span>
         <button className="btn icon sm" onClick={() => up((x) => { x.qty = Math.max(0, x.qty - 1) })}>−</button>
@@ -566,6 +564,8 @@ function ItemEditor({ item }: { item: Item }) {
         <input className="box-input" style={{ width: 90 }} placeholder="e.g. 50 gp" value={item.value} onChange={(e) => up((x) => { x.value = e.target.value })} />
       </div>
       <div className="row"><span className="field-lbl">Worn in</span><Select value={item.slot} onChange={setSlot} options={slotOptions} /></div>
+      {/* what it does: the thing you'll most want to read, right after the basics */}
+      <RichArea className="box-input item-desc" minRows={3} placeholder="Description / properties (or look it up at the bottom)" value={item.description} onChange={(v) => up((x) => { x.description = v })} />
 
       <Section title="Weapon" open={!!item.weapon}
         right={<Switch on={!!item.weapon} title="Can attack with this" onChange={(b) => up((x) => { x.weapon = b ? (lookupWeapon(x.name, systemOf(c)) ?? { ...DEFAULT_WEAPON }) : null; if (b && x.category === 'Misc') x.category = 'Weapon' })} />}>
