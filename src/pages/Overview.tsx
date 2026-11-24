@@ -25,6 +25,8 @@ export function Overview() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const set = useUI((s) => s.set)
+  const gearShown = c.items.filter((i) => i.slot || (i.attunement && i.attuned))
+  const attunedCount = c.items.filter((i) => i.attunement && i.attuned).length
   return (
     <div className="grid" style={{ gridTemplateColumns: '230px minmax(0,1.5fr) minmax(0,1fr)', alignItems: 'start' }}>
       <div className="col">
@@ -52,11 +54,18 @@ export function Overview() {
         <Frame title="Buffs & Item Effects">
           <EffectToggles />
         </Frame>
-        <Frame title="Equipment" tight tools={<button className="btn sm" onClick={() => set({ inventoryOpen: true })}><Icon name="pack" /> Open</button>}>
-          {c.items.filter((i) => i.slot).length === 0 && <div className="empty">Nothing equipped.</div>}
-          {c.items.filter((i) => i.slot).map((i) => (
+        <Frame title="Equipment" tight tools={
+          <>
+            {attunedCount > 0 && <span className="small muted" title="Attuned magic items (max 3)" style={{ color: attunedCount > 3 ? 'var(--dis)' : undefined }}>✦ {attunedCount}/3 attuned</span>}
+            <button className="btn sm" onClick={() => set({ inventoryOpen: true })}><Icon name="pack" /> Open</button>
+          </>
+        }>
+          {/* what you're wearing or wielding, and the magic items you're attuned to (worn or not) */}
+          {gearShown.length === 0 && <div className="empty">Nothing equipped or attuned.</div>}
+          {gearShown.map((i) => (
             <div key={i.id} className="list-row" onClick={() => set({ inventoryOpen: true, inventorySelected: i.id })}>
               <Icon name={itemIcon(i)} className="list-ico" /><span className="grow">{i.name}</span>
+              {!i.slot && <span className="itag" title="Attuned, not worn or held">attuned</span>}
               {i.attunement && <span title={i.attuned ? 'Attuned' : 'Not attuned'}>{i.attuned ? '✦' : '✧'}</span>}
               {!itemIsActive(i) && i.effects.length > 0 && <span className="chip">effects off</span>}
             </div>
