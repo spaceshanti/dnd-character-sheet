@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react'
 import { ABILITIES, RECHARGES, targetName } from '../constants'
-import { attackInfo, itemAttacks, itemIsActive, martialDc, signed } from '../calc'
+import { attackInfo, itemAttacks, itemIsActive, martialDc, signed, unarmedAttack } from '../calc'
 import { isAK } from '../systems'
 import { activateOp } from '../ak'
 import { SpTracker } from './OperatorSkills'
@@ -112,13 +112,13 @@ function AltClassPanel() {
     patch((d) => { switchClass(d); if (rest) done = longRestOn(d, { hitDice: false }) })
     toast.show(`Now playing ${other}${rest ? ' · long rest taken, no hit dice regained' : ''}${done.length ? ' · ' + done.join(' · ') : ''}`)
   }
-  // a new alternate class starts empty: offer to fill it in from the book, linked up like the top bar does
+  // a new alternate class starts empty: offer to lay it out (feature headings to fill in, proficiencies), like the top bar does
   const plans = alt && !hasFeaturesFor(c, 'class')
     ? [planFill(c, 'class', c.className), c.subclass ? planFill(c, 'subclass', c.subclass) : null].filter((p): p is FillPlan => !!p && p.features.length > 0)
     : []
   const fill = () => {
     patch((d) => { for (const p of plans) p.apply(d) })
-    toast.show(`Filled in ${plans.map((p) => p.name).join(' and ')} features`)
+    toast.show(`Added ${plans.map((p) => p.name).join(' and ')} feature headings to fill in`)
   }
 
   return (
@@ -184,7 +184,7 @@ function AltClassPanel() {
                 onClick={async () => { if ((await askConfirm(`Remove ${other} and everything on it?`))) patch((d) => { d.altClass = null }) }}>Remove</button>
             )}
           </div>
-          {plans.length > 0 && <button className="btn sm" onClick={fill}>Fill in {plans.map((p) => p.name).join(' / ')} features</button>}
+          {plans.length > 0 && <button className="btn sm" onClick={fill}>Set up {plans.map((p) => p.name).join(' / ')} features</button>}
         </div>
       )}
       <Toast msg={toast.msg} />
@@ -258,6 +258,8 @@ function AttacksPanel() {
   const up = (id: string, fn: (a: Attack) => void) => patch((d) => { const x = d.attacks.find((y) => y.id === id); if (x) fn(x) })
   // ammunition fired since it was last gathered up (each kind rounds down on its own)
   const spentAmmo = c.items.reduce((n, i) => n + Math.floor((i.ammoSpent ?? 0) / 2) * 2, 0)
+  const unarmed = unarmedAttack(c)
+  const unarmedInfo = unarmed ? attackInfo(c, unarmed) : null
   return (
     <Frame title="Weapons & Attacks" tools={
       <>
@@ -270,7 +272,7 @@ function AttacksPanel() {
         <button className="btn sm" onClick={() => { const a = newAttack(); patch((d) => { d.attacks.push(a) }); setOpen(a.id) }}>＋ Add</button>
       </>
     }>
-      {c.attacks.length === 0 && fromItems.length === 0 ? <div className="empty">No attacks yet. Add a weapon to your inventory (or here) and its bonus is worked out for you.</div> : (
+      {c.attacks.length === 0 && fromItems.length === 0 && !unarmed ? <div className="empty">No attacks yet. Add a weapon to your inventory (or here) and its bonus is worked out for you.</div> : (
         <table className="t">
           <thead><tr><th>Name</th><th style={{ width: 62 }}>Atk</th><th>Damage</th><th style={{ width: 28 }} /></tr></thead>
           <tbody>
@@ -293,6 +295,14 @@ function AttacksPanel() {
                 </tr>
               )
             })}
+            {unarmed && unarmedInfo && (
+              <tr className="unarmed-row" title="Everyone can make an Unarmed Strike: STR + proficiency to hit, 1 + STR bludgeoning">
+                <td><span className="row" style={{ gap: 6 }}><Icon name="gloves" className="list-ico" />Unarmed Strike</span></td>
+                <td style={{ fontWeight: 700, fontSize: 16 }}>{signed(unarmedInfo.bonus)}</td>
+                <td>{unarmedInfo.damage} <span className="muted">bludgeoning</span></td>
+                <td><button className="btn icon sm ghost" title="Hide Unarmed Strike (bring it back in Settings › Rules)" onClick={() => patch((d) => { d.hideUnarmed = true })}>✕</button></td>
+              </tr>
+            )}
             {c.attacks.map((a) => {
               const info = attackInfo(c, a)
               return (

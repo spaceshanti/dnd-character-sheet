@@ -438,6 +438,17 @@ export function masterySource(c: Character, w: WeaponStats): string {
   return f ? f.name || 'a feature' : ''
 }
 
+/**
+ * Everyone's Unarmed Strike (2024 rules: STR + proficiency to hit, 1 + STR bludgeoning), listed by default; not when you've
+ * hidden it, or made your own (an attack or item called Unarmed Strike, e.g. a monk's Martial Arts version).
+ */
+export function unarmedAttack(c: Character): Attack | null {
+  if (c.hideUnarmed) return null
+  const own = (n: string) => /^unarmed strike/i.test(n.trim())
+  if (c.attacks.some((a) => own(a.name)) || c.items.some((i) => i.weapon && own(i.name))) return null
+  return { id: 'unarmed', name: 'Unarmed Strike', ability: 'str', proficient: true, magicBonus: 0, damage: '1', damageType: 'bludgeoning', addMod: true, range: '5 ft', notes: '' }
+}
+
 /** Inventory items with weapon stats, shaped like attacks so they share the same maths. */
 export function itemAttacks(c: Character): (Attack & { itemId: string; equipped: boolean; weapon: WeaponStats; masteryFrom: string })[] {
   return c.items.filter((i) => i.weapon && i.qty > 0).map((i) => {

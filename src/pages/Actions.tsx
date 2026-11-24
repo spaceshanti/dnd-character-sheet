@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { WeaponTags } from '../components/WeaponTags'
-import { attackInfo, itemAttacks, signed, spellActionType, spellOnActions } from '../calc'
+import { attackInfo, itemAttacks, signed, spellActionType, spellOnActions, unarmedAttack } from '../calc'
 import { useChar, useStore, useUI } from '../store'
 import { cantripScale } from '../cantrip'
 import { isAK } from '../systems'
@@ -56,6 +56,11 @@ export function ActionsPage() {
       onUse: w.ammoId ? () => toast.show(useItem(c, w.ammoId, w.ammoCost, a.name)) : undefined,
       tags: <WeaponTags properties={a.weapon.properties} mastery={a.weapon.mastery} masteryFrom={a.masteryFrom} />,
     })
+  }
+  const unarmed = unarmedAttack(c)
+  if (unarmed) {
+    const i = attackInfo(c, unarmed)
+    rows.action.push({ key: 'unarmed', kind: 'Attack', name: 'Unarmed Strike', right: `${signed(i.bonus)} · ${i.damage} bludgeoning`, onClick: () => go('overview') })
   }
   for (const a of c.attacks) {
     const i = attackInfo(c, a)

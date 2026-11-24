@@ -27,6 +27,10 @@ export function SettingsPage() {
       <div className="settings-update" style={{ gridColumn: '1 / -1' }}><UpdateControl /></div>
       <Frame title="Rules for this character">
         <div className="col" style={{ gap: 12 }}>
+          <label className="row" title="Everyone can make an Unarmed Strike (STR + proficiency to hit, 1 + STR bludgeoning). Adding your own attack called Unarmed Strike replaces it.">
+            <Switch on={!c.hideUnarmed} onChange={(b) => patch((d) => { d.hideUnarmed = !b })} />
+            <span className="grow">Show Unarmed Strike under Weapons &amp; Attacks</span>
+          </label>
           <div className="row">
             <Switch on={c.profOverride != null} onChange={(b) => patch((d) => { d.profOverride = b ? auto : null })} />
             <span className="grow">Set proficiency bonus manually</span>

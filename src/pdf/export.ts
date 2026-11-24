@@ -1,7 +1,7 @@
 import { PDFCheckBox, PDFDocument, PDFTextField, PDFButton, StandardFonts, rgb, type PDFForm, type PDFFont, type PDFPage } from 'pdf-lib'
 import {
   ability, activeEffects, attackInfo, damageReduction, itemAttacks, martialDc, passivePerception, profBonus, save, signed, skill,
-  spellStats, spLimits, statInfo, totalWeight, carryCapacity, apMax, artLevelMax, resourceMax,
+  spellStats, spLimits, statInfo, totalWeight, carryCapacity, apMax, artLevelMax, resourceMax, unarmedAttack,
 } from '../calc'
 import { ABILITIES } from '../constants'
 import { plainText } from '../rich'
@@ -64,7 +64,8 @@ export function sheetData(c: Character) {
   const ab = Object.fromEntries(ABILITIES.map((a) => [a.key, ability(c, a.key, fx)])) as Record<AbilityKey, ReturnType<typeof ability>>
   const sv = Object.fromEntries(ABILITIES.map((a) => [a.key, save(c, a.key, fx)])) as Record<AbilityKey, ReturnType<typeof save>>
   const sk = (k: SkillKey) => skill(c, k, fx)
-  const weapons = [...itemAttacks(c), ...c.attacks].map((a) => {
+  const unarmed = unarmedAttack(c)
+  const weapons = [...itemAttacks(c), ...c.attacks, ...(unarmed ? [unarmed] : [])].map((a) => {
     const i = attackInfo(c, a, fx)
     return { name: a.name || 'Attack', bonus: signed(i.bonus), damage: `${i.damage} ${a.damageType}`.trim(), range: a.range, notes: a.notes, prof: a.proficient, finesse: a.ability === 'finesse' }
   })
