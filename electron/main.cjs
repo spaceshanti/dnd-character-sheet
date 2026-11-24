@@ -143,7 +143,8 @@ ipcMain.handle('booktext:save', (_e, id, text) => {
   fs.writeFileSync(path.join(bookTextDir(), plainFile(id) + '.md'), text, 'utf-8')
 })
 // downloads the app makes for you: the Arknights 5e book's source on Homebrewery, the free SRD PDF
-const FETCH_HOSTS = ['homebrewery.naturalcrit.com', 'media.dndbeyond.com']
+// media.wizards.com: the official 2014 fillable character sheet, downloaded when you pick it for printing
+const FETCH_HOSTS = ['homebrewery.naturalcrit.com', 'media.dndbeyond.com', 'media.wizards.com']
 ipcMain.handle('net:fetch', async (_e, url, binary) => {
   const u = new URL(url)
   if (u.protocol !== 'https:' || !FETCH_HOSTS.includes(u.hostname)) throw new Error('not an allowed address')

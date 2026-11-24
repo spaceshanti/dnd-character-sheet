@@ -59,7 +59,7 @@ const SKILL_DND: SkillKey[] = [
 ]
 
 /** Everything the sheets need, worked out once. */
-function sheetData(c: Character) {
+export function sheetData(c: Character) {
   const fx = activeEffects(c)
   const ab = Object.fromEntries(ABILITIES.map((a) => [a.key, ability(c, a.key, fx)])) as Record<AbilityKey, ReturnType<typeof ability>>
   const sv = Object.fromEntries(ABILITIES.map((a) => [a.key, save(c, a.key, fx)])) as Record<AbilityKey, ReturnType<typeof save>>
@@ -155,7 +155,7 @@ class Filler {
 
 const BLANK_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/6XzWbYAAAAASUVORK5CYII='
 
-async function embedImage(doc: PDFDocument, src: string) {
+export async function embedImage(doc: PDFDocument, src: string) {
   try {
     const bytes = new Uint8Array(await (await fetch(src)).arrayBuffer())
     const png = bytes[0] === 0x89 && bytes[1] === 0x50
@@ -487,7 +487,7 @@ class Page {
   }
 }
 
-function wrap(text: string, font: PDFFont, size: number, width: number): string[] {
+export function wrap(text: string, font: PDFFont, size: number, width: number): string[] {
   const out: string[] = []
   for (const para of text.split('\n')) {
     let line = ''

@@ -6,8 +6,9 @@ import type { TemplateKind } from '../pdf/export'
 import { askConfirm } from './Dialog'
 
 /*
- * Export the open character onto a printable sheet. The sheets themselves are other people's PDFs / images,
- * so the app doesn't ship them: you add your own copy once and it's kept beside your save file.
+ * Export the open character as a printable PDF: the app's own sheet (full or compact, nothing needed first), the
+ * official 2014 sheet (downloaded from Wizards of the Coast when first used), or a fillable sheet / the AK book's
+ * pages you add yourself. Other people's sheets are never part of the app: they're fetched or added onto this computer.
  * Stored names: "<kind>__<original name>.pdf" for fillable sheets, "ak-main|ak-second|ak-arts.<ext>" for the AK pages.
  */
 
@@ -105,53 +106,89 @@ export function PdfExport() {
   }
 
   const pdfs = files.filter((f) => f.includes('__') && f.endsWith('.pdf'))
+  const official = pdfs.find((f) => f === OFFICIAL_2014)
+  const own = pdfs.filter((f) => f !== OFFICIAL_2014)
+
+  // the app's own sheet: nothing to add first
+  const exportApp = async (compact: boolean) => {
+    const key = compact ? 'app-compact' : 'app-full'
+    setBusy(key)
+    try {
+      const { appSheet } = await import('../pdf/appSheet')
+      const out = await appSheet(c, { compact })
+      const where = await api.save(fileName(`${c.name}${compact ? ' - compact' : ''}`), out)
+      if (where) toast.show('Exported ✓')
+    } catch (e) { toast.show(`Export failed: ${e instanceof Error ? e.message : String(e)}`) }
+    setBusy('')
+  }
+  // the official 2014 sheet: downloaded from Wizards of the Coast the first time, then kept
+  const exportOfficial = async () => {
+    if (official) return exportPdf(official)
+    if (!window.sheetApi?.fetchUrl) { toast.show('Downloading the official sheet works in the desktop app.'); return }
+    setBusy(OFFICIAL_2014)
+    try {
+      const b = await window.sheetApi.fetchUrl(OFFICIAL_2014_URL, true)
+      const { inspectTemplate } = await lib()
+      if ((await inspectTemplate(b)) !== 'wotc2014') throw new Error("the downloaded file isn't the sheet I expected")
+      await api.add(OFFICIAL_2014, b)
+      await refresh()
+    } catch (e) { setBusy(''); toast.show(`Couldn't download the official sheet: ${e instanceof Error ? e.message : String(e)}`); return }
+    await exportPdf(OFFICIAL_2014)
+  }
+
+  const row = (key: string, title: string, sub: string, onClick: () => void, extra?: React.ReactNode) => (
+    <div className="pdf-row" key={key}>
+      <span className="grow" style={{ minWidth: 0 }}><b>{title}</b><br /><span className="muted small">{sub}</span></span>
+      {extra}
+      <button className="btn sm primary" disabled={!!busy} onClick={onClick}>{busy === key ? 'Exporting…' : 'Export PDF'}</button>
+    </div>
+  )
+
   return (
-    <div className="col" style={{ gap: 10 }}>
+    <div className="col" style={{ gap: 8 }}>
       <input ref={pdfInput} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) addPdf(f); e.target.value = '' }} />
       <input ref={imgInput} type="file" accept="image/png,image/jpeg" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) addImage(f); e.target.value = '' }} />
-      {ak ? (
-        <>
-          <div className="muted small">
-            The AK5e sheet is a set of images. Save its pages once from <a href={AK_SOURCE} onClick={(e) => { e.preventDefault(); window.sheetApi ? window.sheetApi.openExternal(AK_SOURCE) : window.open(AK_SOURCE) }}>imgchest</a> (the stats page, the operator skills / backstory page, and one Arts page) and add them here.
-          </div>
-          {AK_PAGES.map((p) => (
-            <div key={p.id} className="row">
-              <span className="grow">{p.name}</span>
-              {akFile(p.id) ? <span className="small" style={{ color: 'var(--good)' }}>added ✓</span> : <span className="muted small">not added</span>}
-              <button className="btn sm" onClick={() => { setImgFor(p.id); imgInput.current?.click() }}>{akFile(p.id) ? 'Replace…' : 'Choose image…'}</button>
+      {row('app-full', 'Character Sheet · full', `Made by the app${ak ? ' for Arknights 5e' : ''}: stats, skills, attacks, resources, then every feature, ${ak ? 'Art, Operator Skill' : 'spell'}, item and your story, with their text.`, () => exportApp(false))}
+      {row('app-compact', 'Character Sheet · compact', 'The same sheet with short descriptions: fewer pages to print.', () => exportApp(true))}
+      {!ak && row(OFFICIAL_2014, 'Official D&D 5e sheet (2014)', official ? 'The fillable sheet from Wizards of the Coast (downloaded).' : 'The fillable sheet from Wizards of the Coast: downloaded the first time you export.', exportOfficial)}
+      {!ak && own.map((f) => {
+        const [kind, name] = f.replace(/\.pdf$/, '').split('__')
+        return row(f, name, `Your sheet · ${KIND_NAMES[kind as TemplateKind] ?? kind}`, () => exportPdf(f),
+          <button className="btn icon sm ghost" title="Remove this sheet" onClick={async () => { if ((await askConfirm(`Remove ${name}? (Only the app's copy.)`))) { await api.remove(f); refresh() } }}>✕</button>)
+      })}
+      <details className="pdf-more">
+        <summary className="small muted">{ak ? "Use the book's own sheet pages instead" : 'Use another fillable sheet (2024 official, Current Standard CS v1.4)'}</summary>
+        {ak ? (
+          <div className="col" style={{ gap: 6, marginTop: 6 }}>
+            <div className="muted small">
+              Save the sheet's pages once from <a href={AK_SOURCE} onClick={(e) => { e.preventDefault(); window.sheetApi ? window.sheetApi.openExternal(AK_SOURCE) : window.open(AK_SOURCE) }}>imgchest</a> (the stats page, the operator skills / backstory page, and one Arts page) and add them here; the export writes onto them.
             </div>
-          ))}
-          <div className="row">
-            <button className="btn primary" disabled={!!busy || AK_PAGES.some((p) => !akFile(p.id))} onClick={exportAk}>{busy === 'ak' ? 'Exporting…' : 'Export Arknights PDF'}</button>
-            <span className="muted small">Arts continue onto extra Arts pages as needed.</span>
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="muted small">
-            Add a form-fillable sheet once (the official 2014 or 2024 sheet, or the Current Standard CS v1.4), then export any character onto it.
-            A filled-in sheet works too: its old contents are cleared first.
-          </div>
-          {pdfs.length === 0 && <div className="empty">No sheets added yet.</div>}
-          {pdfs.map((f) => {
-            const [kind, name] = f.replace(/\.pdf$/, '').split('__')
-            return (
-              <div key={f} className="row">
-                <span className="grow" style={{ minWidth: 0 }}>
-                  <b>{name}</b><br /><span className="muted small">{KIND_NAMES[kind as TemplateKind] ?? kind}</span>
-                </span>
-                <button className="btn sm primary" disabled={!!busy} onClick={() => exportPdf(f)}>{busy === f ? 'Exporting…' : 'Export'}</button>
-                <button className="btn icon sm ghost" title="Remove this sheet" onClick={async () => { if ((await askConfirm(`Remove ${name}? (Only the app's copy.)`))) { await api.remove(f); refresh() } }}>✕</button>
+            {AK_PAGES.map((pg) => (
+              <div key={pg.id} className="row">
+                <span className="grow">{pg.name}</span>
+                {akFile(pg.id) ? <span className="small" style={{ color: 'var(--good)' }}>added ✓</span> : <span className="muted small">not added</span>}
+                <button className="btn sm" onClick={() => { setImgFor(pg.id); imgInput.current?.click() }}>{akFile(pg.id) ? 'Replace…' : 'Choose image…'}</button>
               </div>
-            )
-          })}
-          <div><button className="btn sm" onClick={() => pdfInput.current?.click()}>＋ Add a sheet PDF…</button></div>
-        </>
-      )}
+            ))}
+            <div className="row">
+              <button className="btn sm primary" disabled={!!busy || AK_PAGES.some((pg) => !akFile(pg.id))} onClick={exportAk}>{busy === 'ak' ? 'Exporting…' : "Export onto the book's pages"}</button>
+            </div>
+          </div>
+        ) : (
+          <div className="col" style={{ gap: 6, marginTop: 6 }}>
+            <div className="muted small">Add a copy of a form-fillable sheet you have (the official 2024 sheet, or the Current Standard CS v1.4) and it appears in the list above. A filled-in sheet works too: its old contents are cleared first.</div>
+            <div><button className="btn sm" onClick={() => pdfInput.current?.click()}>＋ Add a sheet PDF…</button></div>
+          </div>
+        )}
+      </details>
       <Toast msg={toast.msg} />
     </div>
   )
 }
+
+/** the official 2014 sheet, as Wizards of the Coast publishes it (stored under this name once downloaded) */
+const OFFICIAL_2014 = 'wotc2014__Official 5e sheet (2014).pdf'
+const OFFICIAL_2014_URL = 'https://media.wizards.com/2016/dnd/downloads/5E_CharacterSheet_Fillable.pdf'
 
 const KIND_NAMES: Record<TemplateKind, string> = {
   wotc2014: 'Official 5e sheet (2014)',
