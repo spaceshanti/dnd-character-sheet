@@ -68,11 +68,16 @@ function PartySection({ onView }: { onView: (src: string) => void }) {
   const up = (id: string, fn: (m: PartyMember) => void) => patch((d) => { const m = d.party.find((x) => x.id === id); if (m) fn(m) })
   // your other characters, offered as quick additions (their name and portrait)
   const others = order.map((id) => chars[id]).filter((o) => o && o.id !== c.id && !c.party.some((m) => m.name.trim() && m.name.trim() === o.name.trim()))
-  const add = (m?: Partial<PartyMember>) => patch((d) => { d.party.push({ id: uid(), name: '', note: '', image: '', ...m }) })
+  // folded by default (remembered on this computer); adding someone opens it
+  const [open, setOpenRaw] = useState(() => { try { return localStorage.getItem('party-open') === '1' } catch { return false } })
+  const setOpen = (v: boolean) => { setOpenRaw(v); try { localStorage.setItem('party-open', v ? '1' : '0') } catch { /* private mode */ } }
+  const add = (m?: Partial<PartyMember>) => { patch((d) => { d.party.push({ id: uid(), name: '', note: '', image: '', ...m }) }); setOpen(true) }
+  const names = c.party.map((m) => m.name.trim()).filter(Boolean)
   return (
     <Frame title="Party" tight
       tools={
         <>
+          <button className="btn sm ghost" title={open ? 'Fold' : 'Unfold'} onClick={() => setOpen(!open)}>{open ? '▾' : `▸ Show${c.party.length ? ` (${c.party.length})` : ''}`}</button>
           {others.length > 0 && (
             <select className="party-from" value="" title="Add one of your other characters"
               onChange={(e) => { const o = chars[e.target.value]; if (o) add({ name: o.name, note: [o.className, o.level ? `level ${o.level}` : ''].filter(Boolean).join(', '), image: o.portrait || o.appearanceImage || '' }) }}>
@@ -83,7 +88,11 @@ function PartySection({ onView }: { onView: (src: string) => void }) {
           <button className="btn sm primary" onClick={() => add()}>＋ Add member</button>
         </>
       }>
-      {c.party.length === 0 ? (
+      {!open ? (
+        <div className="muted small party-sum" onClick={() => setOpen(true)} style={{ cursor: 'pointer' }}>
+          {names.length ? names.join(' · ') : c.party.length ? `${c.party.length} member${c.party.length > 1 ? 's' : ''}` : 'Who you travel with: add each party member with a picture.'}
+        </div>
+      ) : c.party.length === 0 ? (
         <div className="muted small">Who you travel with: add each party member with a picture.</div>
       ) : (
         <div className="party-grid">
