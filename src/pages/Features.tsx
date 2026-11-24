@@ -79,7 +79,7 @@ function FeatureCard({ f }: { f: Feature }) {
           {f.actionType !== 'none' && <span className="chip accent">{ACTION_TYPES.find((a) => a.id === f.actionType)?.name}</span>}
         </div>
         {!f.collapsed && (
-          f.description ? <RichText className="prose" value={f.description} style={{ fontSize: 13.5 }} /> : <div className="muted small">No description.</div>
+          f.description ? <RichText className="prose" value={f.description} style={{ fontSize: 13.5 }} /> : <div className="muted small">{f.auto ? 'To fill in: write what it does in your own words (✎). Look it up in the rules (📖 Sourcebooks; bookmarked there if you have the book).' : 'No description.'}</div>
         )}
       </Frame>
     </div>

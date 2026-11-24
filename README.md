@@ -119,20 +119,17 @@ an original set, or your own picture; the faction falls back to your emblem pict
 official class, branch, nation and faction icons are picked automatically from the names: they're downloaded once from the
 Arknights wiki into the app's data folder (`%APPDATA%/Character Sheet/symbols/ak`) and never bundled.
 
-## Filling in features
+## Setting up a character
 
-Type a class, branch / subclass, species, background or (Arknights) nationality in the top bar and, if the character has no
-features of that kind yet, the sheet offers to fill them in up to your level. Choices come first in the same box
-(spellcasting ability, saving throws, skills, Ancient Versatility, ability score increases…), and Undo is offered right after.
+Type a class, branch / subclass, species, background or (Arknights) nationality in the top bar and, if the character has
+nothing of that kind yet, the sheet offers to set it up as a scaffold for you to fill in yourself:
 
-**Arknights 5e** uses hand-made blocks for every class, branch, species, nationality and background feature
-(`src/ak5e/blocks.ts`): the book's text for each feature (without its tables), plus how it's wired up: its uses and when
-they come back, the actions that spend them (Shelter's bonus-action version spends Resilience…), effects, rest reminders and
-the Arts it grants. Uses that grow with level (Resilience, Life Support, Aggression, Arts Points, max Art level…) follow a
-formula or the class table, and keep up when you level up. The blocks hold no book text, only names and numbers.
+- every feature, trait and feat you get up to your level, as an empty heading (not ability score increases, size, speed
+  and the like: only what goes in your features);
+- weapon, armor and tool proficiencies, and your languages (the ones you get plus how many to choose);
+- a bookmark to the entry in its sourcebook, for that character.
 
-**D&D** reads the SRD 5.2.1 (`src/data/srd52.json`, built with `python tools/build_srd_data.py SRD_CC_v5.2.1.pdf`); hand-made
-blocks for D&D are still to come.
+Writing the features up yourself is the point: you get to know your character. Undo is offered right after.
 
 ## The Arknights 5e book data
 

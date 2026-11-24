@@ -131,11 +131,13 @@ function Reader({ layout, onClose }: { layout: BookLayout; onClose: () => void }
 /** Bookmarks for one book, plus the "bookmark this" action, for the contents sidebar. */
 export function useBookmarks(bookId: string) {
   const all = useStore((s) => s.bookmarks)
+  const me = useStore((s) => s.activeId)
   const add = useStore((s) => s.addBookmark)
   const update = useStore((s) => s.updateBookmark)
   const remove = useStore((s) => s.removeBookmark)
   return {
-    marks: all.filter((b) => b.book === bookId).sort((a, b) => a.page - b.page || a.y - b.y),
+    // your own bookmarks, plus the ones made for this character
+    marks: all.filter((b) => b.book === bookId && (!b.charId || b.charId === me)).sort((a, b) => a.page - b.page || a.y - b.y),
     add: (page: number, title: string, y = 0) => add({ book: bookId, page, title, y }),
     rename: async (id: string, old: string) => { const t = (await askText('Bookmark name', old)); if (t != null && t.trim()) update(id, { title: t.trim() }) },
     remove,

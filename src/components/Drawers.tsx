@@ -316,7 +316,7 @@ export function FeatureDrawer({ id }: { id: string }) {
             {f.actionType !== 'none' && <span className="chip accent">{ACTION_TYPES.find((a) => a.id === f.actionType)?.name}</span>}
           </div>
           <FeatureUsage f={f} onUsed={toast.show} />
-          {f.description ? <RichText className="prose" value={f.description} /> : <div className="empty">No description yet.</div>}
+          {f.description ? <RichText className="prose" value={f.description} /> : <div className="empty">{f.auto ? 'To fill in: click ✎ Edit and write what it does in your own words. Look it up in the rules (📖 Sourcebooks; bookmarked there if you have the book).' : 'No description yet.'}</div>}
           {f.effects.length > 0 && (
             <div className="col">
               <div className="row">

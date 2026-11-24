@@ -427,6 +427,8 @@ export interface Character {
   /** your party, with a picture each (Gallery page) */
   party: PartyMember[]
   ak: AkData
+  /** don't list the default Unarmed Strike under Weapons & Attacks */
+  hideUnarmed?: boolean
   /** deletion protection: a locked character can't be deleted until it's unlocked (on by default) */
   locked: boolean
   /** Arknights: the class / branch table Arts Points and max Art level follow when levelling up */
@@ -468,6 +470,8 @@ export interface Bookmark {
   title: string
   /** where on the page, 0–1 from the top */
   y: number
+  /** only shown for this character (bookmarks the auto-fill makes: their class, species, background…) */
+  charId?: string
 }
 
 /** a deleted character, kept so it can be restored (for TRASH_DAYS) */
