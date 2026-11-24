@@ -14,7 +14,7 @@ import { WeaponTags } from '../components/WeaponTags'
 import { newSide, otherName, setSwap, switchClass } from '../altClass'
 import { hasFeaturesFor, planFill, ruleNames, type FillPlan } from '../autofill'
 import { longRestOn } from '../rest'
-import type { AbilityKey, Attack, Effect } from '../types'
+import type { AbilityKey, Attack, Effect, Resource } from '../types'
 import { askConfirm } from '../components/Dialog'
 import { maxOf } from '../components/FeatureParts'
 
@@ -337,33 +337,55 @@ function ResourcesPanel() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const set = useUI((s) => s.set)
-  const feat = (id: string) => (id ? c.features.find((f) => f.id === id)?.name || 'a feature' : '')
-  const [gear, setGear] = useState('')
+  // where a resource comes from: a feature (opens it) or an item's charges (opens it in the inventory)
+  const source = (r: Resource): { name: string; open: () => void } | null => {
+    if (r.featureId) { const f = c.features.find((x) => x.id === r.featureId); if (f) return { name: f.name || 'a feature', open: () => set({ drawer: { kind: 'feature', id: f.id } }) } }
+    if (r.itemId) { const i = c.items.find((x) => x.id === r.itemId); if (i) return { name: i.name || 'an item', open: () => set({ inventoryOpen: true, inventorySelected: i.id }) } }
+    return null
+  }
+  const when: Record<string, string> = { long: 'long rest', short: 'short rest', shortOne: '1 / short rest', dawn: 'dawn', none: '' }
+  const [editing, setEditing] = useState('')
   return (
-    <Frame title="Class Resources, Ammo & Charges" tools={<button className="btn sm" onClick={() => patch((d) => { d.resources.push(newResource()) })}>＋ Add</button>}>
-      {c.resources.length === 0 && <div className="empty">Track things like Rage, Ki, Psionic Dice, Channel Divinity or ammo. Each one has its own max.</div>}
-      {c.resources.map((r) => {
-        const up = (fn: (x: typeof r) => void) => patch((d) => { const x = d.resources.find((y) => y.id === r.id); if (x) fn(x) })
-        return (
-          <div key={r.id} className="stat-line" style={{ flexWrap: 'wrap', borderBottom: '1px solid var(--line)', paddingBottom: 6, marginBottom: 6 }}>
-            <span className="col" style={{ gap: 0, width: 150 }}>
-              <input className="line-input" placeholder="Resource name" value={r.name} onChange={(e) => up((x) => { x.name = e.target.value })} />
-              {feat(r.featureId) && <button className="res-feat" onClick={() => set({ drawer: { kind: 'feature', id: r.featureId } })}>from {feat(r.featureId)}</button>}
-            </span>
-            <Pips total={maxOf(r)} used={r.used} onChange={(u) => up((x) => { x.used = u })} />
-            <DieSlot value={r.die} width={42} onChange={(v) => up((x) => { x.die = v })} />
-            <span className="grow" />
-            <span className="small muted">max</span>
-            <Num min={0} max={999} className="box-input" width={48} style={{ textAlign: 'center' }} value={r.max} onChange={(n) => up((x) => { x.max = n; x.used = Math.min(x.used, n) })} />
-            {maxOf(r) !== r.max && <span className="small" title="Changed by a feature's modifier" style={{ color: 'var(--accent)' }}>= {maxOf(r)}</span>}
-            {/* when it comes back: tucked away behind ⚙ to keep the list simple */}
-            {gear === r.id && <Select value={r.recharge} onChange={(v) => up((x) => { x.recharge = v })} options={RECHARGES} />}
-            <button className={`btn icon sm ghost ${gear === r.id ? 'on' : ''}`} title={`Comes back: ${RECHARGES.find((x) => x.id === r.recharge)?.name ?? r.recharge} (click to change)`}
-              onClick={() => setGear(gear === r.id ? '' : r.id)}>⚙</button>
-            <button className="btn icon sm ghost" onClick={() => patch((d) => { d.resources = d.resources.filter((y) => y.id !== r.id) })}>✕</button>
-          </div>
-        )
-      })}
+    <Frame title="Class Resources, Ammo & Charges" tools={<button className="btn sm" onClick={() => { const r = newResource(); patch((d) => { d.resources.push(r) }); setEditing(r.id) }}>＋ Add</button>}>
+      {c.resources.length === 0 && <div className="empty">Track things like Rage, Ki, Psionic Dice, Channel Divinity or a wand's charges. Each one has its own max.</div>}
+      <div className="res-list">
+        {c.resources.map((r) => {
+          const up = (fn: (x: typeof r) => void) => patch((d) => { const x = d.resources.find((y) => y.id === r.id); if (x) fn(x) })
+          const max = maxOf(r)
+          const src = source(r)
+          const open = editing === r.id
+          return (
+            <div key={r.id} className={`res-row ${open ? 'open' : ''}`}>
+              <div className="res-main">
+                <div className="res-name">
+                  <b>{r.name || 'Unnamed'}{r.die && <span className="muted"> · {r.die}</span>}</b>
+                  {src && <button className="res-feat" onClick={src.open}>{src.name}</button>}
+                </div>
+                <Pips total={max} used={r.used} onChange={(u) => up((x) => { x.used = u })} />
+                <span className="res-count"><b>{Math.max(0, max - r.used)}</b>/{max}</span>
+                <span className="res-when muted small">{r.regain ? `+${r.regain} ` : ''}{when[r.recharge] ?? r.recharge}</span>
+                <button className={`btn icon sm ghost ${open ? 'on' : ''}`} title="Edit" onClick={() => setEditing(open ? '' : r.id)}>⚙</button>
+              </div>
+              {open && (
+                <div className="res-edit">
+                  <input className="box-input grow" style={{ minWidth: 120 }} placeholder="Resource name" value={r.name} autoFocus={!r.name} onChange={(e) => up((x) => { x.name = e.target.value })} />
+                  <span className="small">max</span>
+                  <Num min={0} max={999} className="box-input" width={48} value={r.max} onChange={(n) => up((x) => { x.max = n; x.used = Math.min(x.used, n) })} />
+                  {max !== r.max && <span className="small" title="Changed by a feature's modifier" style={{ color: 'var(--accent)' }}>= {max}</span>}
+                  <DieSlot value={r.die} width={46} onChange={(v) => up((x) => { x.die = v })} />
+                  <Select value={r.recharge} onChange={(v) => up((x) => { x.recharge = v })} options={RECHARGES} />
+                  {r.recharge !== 'none' && (
+                    <input className="box-input" style={{ width: 80 }} placeholder="all back" value={r.regain ?? ''}
+                      title="How many come back: leave empty for all, or a roll like 1d6+1"
+                      onChange={(e) => up((x) => { x.regain = e.target.value || undefined })} />
+                  )}
+                  <button className="btn sm danger" onClick={() => { setEditing(''); patch((d) => { d.resources = d.resources.filter((y) => y.id !== r.id) }) }}>Remove</button>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </Frame>
   )
 }

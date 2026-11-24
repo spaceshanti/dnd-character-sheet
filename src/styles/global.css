@@ -882,3 +882,16 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 .formula-what { padding-left: 4px; }
 .formula-what.bad { color: var(--dis); }
 .formula-what code { font-size: 11.5px; }
+
+/* Overview: Class Resources as a compact list (⚙ opens a row's settings) */
+.res-list { display: flex; flex-direction: column; }
+.res-row { border-bottom: 1px solid var(--line); padding: 5px 0; }
+.res-row:last-child { border-bottom: none; }
+.res-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.res-name { display: flex; flex-direction: column; min-width: 0; flex: 1 1 140px; }
+.res-name b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.res-name .res-feat { align-self: flex-start; }
+.res-count { font-family: var(--font-num, var(--font-head)); min-width: 38px; text-align: right; white-space: nowrap; }
+.res-count b { font-size: 15px; }
+.res-when { min-width: 64px; white-space: nowrap; }
+.res-edit { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; padding: 6px; background: var(--panel2); }
