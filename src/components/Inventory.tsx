@@ -553,6 +553,8 @@ function ItemEditor({ item }: { item: Item }) {
         </div>
         </div>
       )}
+      {/* what it does: the thing you'll most want to read, so it comes first */}
+      <RichArea className="box-input item-desc" minRows={3} placeholder="Description / properties (or look it up at the bottom)" value={item.description} onChange={(v) => up((x) => { x.description = v })} />
       <div className="row" style={{ flexWrap: 'wrap' }}>
         <span className="field-lbl">Qty</span>
         <button className="btn icon sm" onClick={() => up((x) => { x.qty = Math.max(0, x.qty - 1) })}>−</button>
@@ -560,6 +562,8 @@ function ItemEditor({ item }: { item: Item }) {
         <button className="btn icon sm" onClick={() => up((x) => { x.qty += 1 })}>＋</button>
         <span className="field-lbl" style={{ marginLeft: 4 }}>Lb ea.</span>
         <Num min={0} className="box-input" width={50} value={item.weight} onChange={(n) => up((x) => { x.weight = n })} />
+        <span className="field-lbl" style={{ marginLeft: 4 }}>Worth</span>
+        <input className="box-input" style={{ width: 90 }} placeholder="e.g. 50 gp" value={item.value} onChange={(e) => up((x) => { x.value = e.target.value })} />
       </div>
       <div className="row"><span className="field-lbl">Worn in</span><Select value={item.slot} onChange={setSlot} options={slotOptions} /></div>
 
@@ -648,13 +652,9 @@ function ItemEditor({ item }: { item: Item }) {
         <EffectsEditor effects={item.effects} onChange={(e) => up((x) => { x.effects = e })} />
       </Section>
 
-      <Section title="Description" open={!!item.description || !!item.value}>
+      {/* last: filling the description in from the library or wikidot */}
+      <Section title="Look up the description" open={!item.description}>
         <ItemTextSource item={item} />
-        <div className="row">
-          <span className="field-lbl">Value</span>
-          <input className="box-input grow" placeholder="e.g. 50 gp" value={item.value} onChange={(e) => up((x) => { x.value = e.target.value })} />
-        </div>
-        <RichArea className="box-input" minRows={3} placeholder="Description / properties" value={item.description} onChange={(v) => up((x) => { x.description = v })} />
       </Section>
 
       <button className="btn danger" onClick={async () => {
