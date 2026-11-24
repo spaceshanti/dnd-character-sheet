@@ -895,3 +895,8 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 .res-count b { font-size: 15px; }
 .res-when { min-width: 64px; white-space: nowrap; }
 .res-edit { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; padding: 6px; background: var(--panel2); }
+
+/* Settings › Export: one row per printable sheet */
+.pdf-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.pdf-more { margin-top: 4px; }
+.pdf-more summary { cursor: pointer; }

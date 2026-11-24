@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { profBonus } from '../calc'
-import { downloadJson, useChar, useStore } from '../store'
+import { downloadJson, useChar, useStore, useUI } from '../store'
 import { Frame, Num, Switch } from '../components/ui'
 import { SkinPicker } from '../components/SkinPicker'
 import { PdfExport } from '../components/PdfExport'
@@ -95,8 +95,23 @@ export function SettingsPage() {
         </div>
       </Frame>
 
-      <Frame title="Export to a printable sheet">
-        <PdfExport />
+      {/* everything that takes the character out of the app: a printable PDF, or a .json file to keep / share */}
+      <Frame title="Export">
+        <div className="col" style={{ gap: 14 }}>
+          <div>
+            <div className="field-lbl" style={{ marginBottom: 6 }}>Printable sheet (PDF)</div>
+            <PdfExport />
+          </div>
+          <div>
+            <div className="field-lbl" style={{ marginBottom: 6 }}>Character file (JSON)</div>
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              <button className="btn" onClick={() => downloadJson(`${(c.name || 'character').replace(/[^\w-]+/g, '_')}.json`, c)}>Export this character</button>
+              <button className="btn" onClick={() => downloadJson('all-characters.json', { version: 1, chars, order })}>Export everything (backup)</button>
+              <button className="btn ghost" onClick={() => useUI.getState().set({ charListOpen: true })}>Import… (Characters window)</button>
+            </div>
+            <div className="muted small" style={{ marginTop: 4 }}>A .json file holds the whole character: share it with your party, or keep it as a backup. Import it from the 👥 Characters window.</div>
+          </div>
+        </div>
       </Frame>
 
       <Frame title="App">
@@ -122,11 +137,6 @@ export function SettingsPage() {
             Saves automatically{path ? <> to <code style={{ wordBreak: 'break-all' }}>{path}</code> (a <code>.bak</code> copy is kept beside it)</> : ' in this browser'}.
           </div>
           {saveError && <div style={{ color: 'var(--dis)' }}>Couldn't save: {saveError}</div>}
-          <div className="row" style={{ flexWrap: 'wrap' }}>
-            <button className="btn" onClick={() => downloadJson(`${(c.name || 'character').replace(/[^\w-]+/g, '_')}.json`, c)}>Export this character</button>
-            <button className="btn" onClick={() => downloadJson('all-characters.json', { version: 1, chars, order })}>Export everything (backup)</button>
-          </div>
-          <div className="muted small">Import files from the 👥 Characters window.</div>
         </div>
       </Frame>
 
