@@ -269,6 +269,8 @@ interface UIState {
   /** bumped to put the cursor in the sourcebook's search box */
   bookSearch: number
   themeOpen: boolean
+  /** the dice roller (R) */
+  diceOpen: boolean
   drawer: Drawer
   /** which image the gallery picker is choosing, if open */
   imagePick: ImageTarget | null
@@ -282,7 +284,7 @@ function readOpen() {
 }
 
 export const useUI = create<UIState>((set) => ({
-  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', charListOpen: false, book: '', bookSearch: 0, themeOpen: false, drawer: null, imagePick: null,
+  page: 'overview', dockOpen: readOpen(), inventoryOpen: false, inventorySelected: '', charListOpen: false, book: '', bookSearch: 0, themeOpen: false, diceOpen: false, drawer: null, imagePick: null,
   go: (page) => set({ page }),
   toggleDock: () => set((s) => {
     try { localStorage.setItem('dock-open', s.dockOpen ? '0' : '1') } catch { /* private mode */ }

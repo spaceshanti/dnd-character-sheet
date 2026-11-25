@@ -19,6 +19,7 @@ import { SettingsPage } from './pages/Settings'
 import { OperatorSkillsPage } from './pages/OperatorSkills'
 import { BookViewer } from './components/BookViewer'
 import { DialogHost } from './components/Dialog'
+import { DiceRoller } from './components/DiceRoller'
 import { installDerivedSync } from './derived'
 
 // resource maximums, Arts Points etc. follow level and ability score changes
@@ -116,6 +117,13 @@ export default function App() {
         u.set({ book: u.book || 'side', bookSearch: u.bookSearch + 1 })
         return
       }
+      // R: the dice roller (not while typing, and not over another window)
+      if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey && !typing && (!overlay || useUI.getState().diceOpen)) {
+        e.preventDefault()
+        const u = useUI.getState()
+        u.set({ diceOpen: !u.diceOpen })
+        return
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i' && !typing) {
         e.preventDefault()
         const u = useUI.getState()
@@ -152,6 +160,7 @@ export default function App() {
       </div>
       <Inventory />
       <ThemeMenu />
+      <DiceRoller />
       <ImagePicker />
       <DrawerHost />
       <BookViewer />

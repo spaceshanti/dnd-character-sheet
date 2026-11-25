@@ -181,6 +181,7 @@ const SHORTCUTS: [string, string][] = [
   ['Shift + Enter', 'HP box: heal'],
   ['Enter', 'Add the spell / gear / condition you just typed'],
   ['Ctrl + Tab', 'Next page (Ctrl + Shift + Tab: previous), even while typing'],
+  ['R', 'Dice roller'],
 ]
 
 function ShortcutList() {
