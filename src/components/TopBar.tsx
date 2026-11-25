@@ -404,7 +404,7 @@ function HpBox({ max, onEditMax, openMax }: { max: number; onEditMax: (el: HTMLE
   const tempLeft = pct + tempPct <= 100 ? pct : 100 - tempPct
   const commitHp = () => {
     if (draft == null) return
-    const r = parseHp(draft)
+    const r = parseHp(draft, cur)
     setDraft(null)
     if (!r) return
     // a number overwrites your HP as it is (for things that bypass temp HP); "-7" / "+5" is damage / healing, so
@@ -423,7 +423,7 @@ function HpBox({ max, onEditMax, openMax }: { max: number; onEditMax: (el: HTMLE
         <div className="l" style={{ textAlign: 'left' }}>Hit Points</div>
         <div className="big">
           <input className="hp-cur" value={draft ?? String(cur)} inputMode="numeric"
-            title={'Your hit points. Type a number to set them exactly, or +5 / -7 to heal or take damage (damage uses temp HP first)'}
+            title={'Your hit points. Type a number to set them exactly, or add -7 / +5 (e.g. 12-7) to take damage or heal: damage uses temp HP first'}
             onFocus={(e) => { setDraft(String(cur)); e.currentTarget.select() }}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commitHp}

@@ -5,13 +5,22 @@
 import { isAK } from './systems'
 import type { Character } from './types'
 
-/** "12" → set to 12; "+5", "-7", "-3 + 2" → change by that; anything else → null */
-export function parseHp(text: string): { set?: number; change?: number } | null {
+/**
+ * What was typed into the HP box, given the current HP:
+ *  "12" → set to 12 (exactly, temp HP untouched);
+ *  "+5", "-7", "-3+2" → change by that;
+ *  "12-3" (the current HP with a sum after it) → the change from current HP to the result, here -3.
+ * Anything else → null.
+ */
+export function parseHp(text: string, current = 0): { set?: number; change?: number } | null {
   const t = text.replace(/\s+/g, '')
   if (!t) return null
   if (!/^[+-]?\d+([+-]\d+)*$/.test(t)) return null
   const sum = (t.match(/[+-]?\d+/g) ?? []).reduce((s, n) => s + parseInt(n, 10), 0)
-  return /^[+-]/.test(t) ? { change: sum } : { set: sum }
+  if (/^[+-]/.test(t)) return { change: sum }
+  // a sum: "12-3" means take 3 off (damage, so temp HP first), not "overwrite with 9"
+  if (/\d[+-]/.test(t)) return { change: sum - current }
+  return { set: sum }
 }
 
 /** set current HP (within 0 and the maximum); getting up from 0 ends Dying */
