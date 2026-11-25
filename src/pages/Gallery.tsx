@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { clipboardImages, pastedImages, typingIn } from '../clipboard'
 import { uid } from '../blank'
 import { imageToDataUrl, useChar, useStore, useUI } from '../store'
 import { Frame } from '../components/ui'
@@ -20,17 +21,39 @@ export function GalleryPage() {
       patch((d) => { d.gallery.push({ id: uid(), src, caption: f.name.replace(/\.[^.]+$/, '') }) })
     }
   }
+  // Ctrl + V anywhere on the page (except while typing in a box) adds a copied picture
+  const [msg, setMsg] = useState('')
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      if (typingIn(e.target) || document.querySelector('.backdrop')) return
+      const imgs = pastedImages(e)
+      if (!imgs.length) return
+      e.preventDefault()
+      addFiles(imgs)
+    }
+    window.addEventListener('paste', onPaste)
+    return () => window.removeEventListener('paste', onPaste)
+  })
+  const pasteButton = async () => {
+    const imgs = await clipboardImages()
+    if (imgs.length) { setMsg(''); addFiles(imgs) } else setMsg('No picture on the clipboard (copy an image first)')
+  }
 
   return (
     <div className="col" style={{ gap: 14 }}>
       <PartySection onView={setBig} />
 
       <Frame title={`${c.name || 'Character'} · Art`} tight
-        tools={<button className="btn sm primary" onClick={() => file.current?.click()}>＋ Add art</button>}>
+        tools={
+          <>
+            <button className="btn sm" title="Add the picture on your clipboard (or press Ctrl + V on this page)" onClick={pasteButton}>📋 Paste</button>
+            <button className="btn sm primary" onClick={() => file.current?.click()}>＋ Add art</button>
+          </>
+        }>
         <div className="col" style={{ gap: 10 }}
           onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files) }}>
           <div className="row">
-            <span className="muted small grow">Pictures of {c.name || 'this character'}. Drop image files here to add them.</span>
+            <span className="muted small grow">Pictures of {c.name || 'this character'}. Drop image files here, or paste a copied picture (Ctrl + V).{msg && <span className="bad"> {msg}</span>}</span>
             <button className="btn sm" onClick={() => set({ charListOpen: true })}>👥 All characters</button>
             <input ref={file} type="file" accept="image/*" multiple hidden onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = '' }} />
           </div>

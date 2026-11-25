@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { pastedImages } from '../clipboard'
 import { createPortal } from 'react-dom'
 import { uid } from '../blank'
 import { imageToDataUrl, useChar, useStore, useUI, type ImageTarget } from '../store'
@@ -34,6 +35,19 @@ export function ImagePicker() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const file = useRef<HTMLInputElement>(null)
+  // Ctrl + V while choosing: a copied picture goes into the gallery and is used
+  useEffect(() => {
+    if (!target) return
+    const onPaste = async (e: ClipboardEvent) => {
+      const imgs = pastedImages(e)
+      if (!imgs.length) return
+      e.preventDefault()
+      const [first] = await addImagesToGallery(imgs)
+      if (first) { useStore.getState().patch((d) => { d[target] = first }); useUI.getState().set({ imagePick: null }) }
+    }
+    window.addEventListener('paste', onPaste)
+    return () => window.removeEventListener('paste', onPaste)
+  }, [target])
   if (!target || !c) return null
   const close = () => set({ imagePick: null })
   const current = c[target]
@@ -60,7 +74,7 @@ export function ImagePicker() {
         if (first) choose(first)
       }}>
         <div className="muted small" style={{ marginBottom: 10 }}>
-          Pick one of {c.name || 'this character'}'s gallery images, or upload / drop new ones (they're added to the gallery too).
+          Pick one of {c.name || 'this character'}'s gallery images, or upload / drop / paste (Ctrl + V) new ones (they're added to the gallery too).
         </div>
         <div className="pick-grid">
           {!inGallery && (
