@@ -930,3 +930,8 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 .dice-hist-row { display: flex; align-items: baseline; gap: 10px; padding: 2px 4px; cursor: pointer; border-bottom: 1px dashed var(--line); }
 .dice-hist-row:hover { background: var(--accent-soft); }
 .dice-hist-row b { min-width: 30px; text-align: right; font-family: var(--font-head); }
+
+/* "paste a picture or choose a file" when adding one (gallery art, party pictures) */
+.paste-pick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; padding: 14px; border: 2px dashed var(--accent); background: var(--accent-soft); outline: none; }
+.paste-pick.compact { position: absolute; inset: 0; padding: 6px; gap: 4px; border-width: 1.5px; cursor: default; }
+.paste-pick.compact .small { font-size: 10.5px; }

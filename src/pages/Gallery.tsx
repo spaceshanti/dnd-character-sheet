@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { clipboardImages, pastedImages, typingIn } from '../clipboard'
+import { pastedImages, typingIn } from '../clipboard'
 import { uid } from '../blank'
 import { imageToDataUrl, useChar, useStore, useUI } from '../store'
 import { Frame } from '../components/ui'
@@ -21,11 +21,11 @@ export function GalleryPage() {
       patch((d) => { d.gallery.push({ id: uid(), src, caption: f.name.replace(/\.[^.]+$/, '') }) })
     }
   }
-  // Ctrl + V anywhere on the page (except while typing in a box) adds a copied picture
-  const [msg, setMsg] = useState('')
+  // Ctrl + V anywhere on the page (except while typing in a box, or into a party picture) adds a copied picture
+  const [adding, setAdding] = useState(false)
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
-      if (typingIn(e.target) || document.querySelector('.backdrop')) return
+      if (e.defaultPrevented || typingIn(e.target) || document.querySelector('.backdrop')) return
       const imgs = pastedImages(e)
       if (!imgs.length) return
       e.preventDefault()
@@ -34,30 +34,24 @@ export function GalleryPage() {
     window.addEventListener('paste', onPaste)
     return () => window.removeEventListener('paste', onPaste)
   })
-  const pasteButton = async () => {
-    const imgs = await clipboardImages()
-    if (imgs.length) { setMsg(''); addFiles(imgs) } else setMsg('No picture on the clipboard (copy an image first)')
-  }
 
   return (
     <div className="col" style={{ gap: 14 }}>
       <PartySection onView={setBig} />
 
       <Frame title={`${c.name || 'Character'} · Art`} tight
-        tools={
-          <>
-            <button className="btn sm" title="Add the picture on your clipboard (or press Ctrl + V on this page)" onClick={pasteButton}>📋 Paste</button>
-            <button className="btn sm primary" onClick={() => file.current?.click()}>＋ Add art</button>
-          </>
-        }>
+        tools={<button className="btn sm primary" onClick={() => setAdding(true)}>＋ Add art</button>}>
         <div className="col" style={{ gap: 10 }}
           onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files) }}>
           <div className="row">
-            <span className="muted small grow">Pictures of {c.name || 'this character'}. Drop image files here, or paste a copied picture (Ctrl + V).{msg && <span className="bad"> {msg}</span>}</span>
+            <span className="muted small grow">Pictures of {c.name || 'this character'}. Drop image files here, or paste a copied picture (Ctrl + V).</span>
             <button className="btn sm" onClick={() => set({ charListOpen: true })}>👥 All characters</button>
             <input ref={file} type="file" accept="image/*" multiple hidden onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = '' }} />
           </div>
-          {c.gallery.length === 0 && <div className="empty">No art yet for {c.name || 'this character'}.</div>}
+          {adding && (
+            <PasteOrPick multiple onFiles={(f) => { setAdding(false); addFiles(f) }} onPick={() => { setAdding(false); file.current?.click() }} onCancel={() => setAdding(false)} />
+          )}
+          {c.gallery.length === 0 && !adding && <div className="empty">No art yet for {c.name || 'this character'}.</div>}
           <div className="art-grid">
             {c.gallery.map((g) => (
               <Frame key={g.id} tight>
@@ -136,15 +130,56 @@ function PartySection({ onView }: { onView: (src: string) => void }) {
 
 function PartyPicture({ src, onChange, onView }: { src: string; onChange: (src: string) => void; onView: (src: string) => void }) {
   const file = useRef<HTMLInputElement>(null)
+  const [asking, setAsking] = useState(false)
   const take = async (f?: File) => { if (f && f.type.startsWith('image/')) onChange(await imageToDataUrl(f, 900)) }
   return (
-    <div className="party-img" style={src ? { backgroundImage: `url("${src}")` } : undefined}
-      title={src ? 'Click to view · drop a picture to replace' : 'Click to add a picture · or drop one here'}
-      onClick={() => (src ? onView(src) : file.current?.click())}
-      onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); take(e.dataTransfer.files[0]) }}>
-      {!src && <span>＋ Picture</span>}
-      {src && <button className="party-change" onClick={(e) => { e.stopPropagation(); file.current?.click() }}>Change</button>}
+    <div className="party-img" style={src && !asking ? { backgroundImage: `url("${src}")` } : undefined}
+      title={src ? 'Click to view · drop a picture to replace' : 'Click to add a picture (paste or choose a file) · or drop one here'}
+      onClick={() => (asking ? undefined : src ? onView(src) : setAsking(true))}
+      onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); setAsking(false); take(e.dataTransfer.files[0]) }}>
+      {asking ? (
+        <PasteOrPick compact onFiles={(f) => { setAsking(false); take(f[0]) }} onPick={() => { setAsking(false); file.current?.click() }} onCancel={() => setAsking(false)} />
+      ) : (
+        <>
+          {!src && <span>＋ Picture</span>}
+          {src && <button className="party-change" onClick={(e) => { e.stopPropagation(); setAsking(true) }}>Change</button>}
+        </>
+      )}
       <input ref={file} type="file" accept="image/*" hidden onChange={(e) => { take(e.target.files?.[0]); e.target.value = '' }} />
+    </div>
+  )
+}
+
+/**
+ * Adding a picture: paste a copied one (Ctrl + V while this is showing; no need to save it first) or choose a file.
+ * It takes the keyboard focus so the paste lands here.
+ */
+function PasteOrPick({ onFiles, onPick, onCancel, compact = false, multiple = false }: {
+  onFiles: (f: File[]) => void; onPick: () => void; onCancel: () => void; compact?: boolean; multiple?: boolean
+}) {
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => { box.current?.focus() }, [])
+  useEffect(() => {
+    // the paste can arrive with the focus anywhere on the page: take it while this is open
+    const onPaste = (e: ClipboardEvent) => {
+      if (typingIn(e.target)) return
+      const imgs = pastedImages(e)
+      if (!imgs.length) return
+      e.preventDefault()
+      onFiles(multiple ? imgs : imgs.slice(0, 1))
+    }
+    window.addEventListener('paste', onPaste, true)
+    return () => window.removeEventListener('paste', onPaste, true)
+  })
+  return (
+    <div ref={box} tabIndex={-1} className={`paste-pick ${compact ? 'compact' : ''}`} onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => { if (e.key === 'Escape') onCancel() }}>
+      <b>Paste a picture</b>
+      <span className="small muted"><kbd className="kbd">Ctrl + V</kbd> with an image copied{compact ? '' : ' (from a browser, Discord, a screenshot…)'}</span>
+      <div className="row" style={{ gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <button className="btn sm" onClick={onPick}>Choose a file…</button>
+        <button className="btn sm ghost" onClick={onCancel}>Cancel</button>
+      </div>
     </div>
   )
 }
