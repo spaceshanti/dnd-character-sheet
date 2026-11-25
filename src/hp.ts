@@ -1,6 +1,6 @@
 /*
- * Changing hit points. The HP box takes a number ("12" sets it), or a change ("+5", "-7", "-3+2"), applied to your hit
- * points only. The ± box beside it is for taking damage / healing: damage comes off temporary HP first.
+ * Changing hit points. The HP box takes a number ("12" sets it exactly, temp HP untouched) or a change ("+5", "-7",
+ * "-3+2"), which is healing / damage like the ± box beside it: damage comes off temporary HP first.
  */
 import { isAK } from './systems'
 import type { Character } from './types'

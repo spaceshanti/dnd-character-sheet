@@ -386,8 +386,8 @@ function Vitals() {
 }
 
 /**
- * Hit points: "7+4/9" (current, temp HP, max). Type over the current HP to set it, or "+5" / "-7" to change it (your HP
- * only, never the temp HP shown beside it). The ± box takes damage (temp HP first) or heals. The bar shows temp HP in
+ * Hit points: "7+4/9" (current, temp HP, max). Type over the current HP to set it exactly (temp HP untouched: for things
+ * that bypass it), or "+5" / "-7" to heal / take damage (damage comes off temp HP first). The ± box takes damage (temp HP first) or heals. The bar shows temp HP in
  * its own colour: in the missing part when it fits, laid over the end of the bar when it doesn't.
  */
 function HpBox({ max, onEditMax, openMax }: { max: number; onEditMax: (el: HTMLElement | null) => void; openMax: () => void }) {
@@ -407,7 +407,9 @@ function HpBox({ max, onEditMax, openMax }: { max: number; onEditMax: (el: HTMLE
     const r = parseHp(draft)
     setDraft(null)
     if (!r) return
-    patch((d) => { setHp(d, r.set ?? d.hp.current + (r.change ?? 0), max) })
+    // a number overwrites your HP as it is (for things that bypass temp HP); "-7" / "+5" is damage / healing, so
+    // a minus comes off temp HP first
+    patch((d) => { if (r.set != null) setHp(d, r.set, max); else hurtOrHeal(d, r.change ?? 0, max) })
   }
   const commitDelta = () => {
     const r = parseHp(delta.startsWith('+') || delta.startsWith('-') ? delta : delta ? `+${delta}` : '')
@@ -421,7 +423,7 @@ function HpBox({ max, onEditMax, openMax }: { max: number; onEditMax: (el: HTMLE
         <div className="l" style={{ textAlign: 'left' }}>Hit Points</div>
         <div className="big">
           <input className="hp-cur" value={draft ?? String(cur)} inputMode="numeric"
-            title={'Your hit points. Type a number to set them, or +5 / -7 to change them (temp HP is separate)'}
+            title={'Your hit points. Type a number to set them exactly, or +5 / -7 to heal or take damage (damage uses temp HP first)'}
             onFocus={(e) => { setDraft(String(cur)); e.currentTarget.select() }}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commitHp}
