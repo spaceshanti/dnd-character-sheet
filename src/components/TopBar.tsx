@@ -14,6 +14,7 @@ import { StatEditor } from './StatEditor'
 import { Icon } from './Icon'
 import { askConfirm } from './Dialog'
 import { regainOnRest } from '../charges'
+import { hurtOrHeal, parseHp, setHp } from '../hp'
 
 const SIZES = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']
 
@@ -180,6 +181,7 @@ export function TopBar() {
         ))}
         <span className="spacer" />
         {/* labels drop to just their icons when the window is too narrow for them */}
+        <button className="btn sm ghost" onClick={() => set({ diceOpen: true })} title="Dice roller (R)">🎲<span className="nav-l"> Roll</span></button>
         <button className="btn sm ghost" onClick={() => set({ book: 'full' })} title="Read the sourcebooks full screen (Ctrl + B: side pane, Ctrl + F: search)">📖<span className="nav-l"> Sourcebooks</span></button>
         <button className="btn sm ghost" onClick={shortRest} title="Short rest">☾<span className="nav-l"> Short rest</span></button>
         <button className="btn sm ghost" onClick={longRest} title="Long rest">☀<span className="nav-l"> Long rest</span></button>
@@ -217,7 +219,6 @@ function Vitals() {
   const patch = useStore((s) => s.patch)
   const fx = activeEffects(c)
   const [edit, setEdit] = useState<StatKey | null>(null)
-  const [amt, setAmt] = useState('')
   const [condOpen, setCondOpen] = useState(false)
   const [hdOpen, setHdOpen] = useState(false)
   const refs = useRef<Record<string, HTMLElement | null>>({})
@@ -225,31 +226,11 @@ function Vitals() {
   const ini = statInfo(c, 'initiative', fx)
   const spd = statInfo(c, 'speed', fx)
   const hpm = statInfo(c, 'hpMax', fx)
-  const pct = Math.max(0, Math.min(100, (c.hp.current / Math.max(1, hpm.total)) * 100))
   const iniAdv = netAdvantage(ini)
 
   const addsText = (i: ReturnType<typeof statInfo>, unit = '') => {
     const sum = i.adds.reduce((s, a) => s + a.value, 0)
     return i.adds.length && sum ? `${i.baseValue}${unit} ${signed(sum)}` : ''
-  }
-  const apply = (sign: 1 | -1) => {
-    const n = parseInt(amt, 10)
-    if (!n || n < 0) return
-    patch((d) => {
-      if (sign === -1) {
-        let dmg = n
-        const t = Math.min(d.hp.temp, dmg)
-        d.hp.temp -= t
-        dmg -= t
-        d.hp.current = Math.max(0, d.hp.current - dmg)
-      } else {
-        d.hp.current = Math.min(hpm.total, d.hp.current + n)
-        // AK5e: you stop Dying (and lose your Mettle), but failed saves stay until a long rest
-        if (d.hp.current > 0 && ak) d.ak.mettle = 0
-        else if (d.hp.current > 0) d.deathSaves = { successes: 0, failures: 0 }
-      }
-    })
-    setAmt('')
   }
   const totalHd = c.hitDice.reduce((s, h) => s + h.total - h.spent, 0)
   const ak = isAK(c)
@@ -277,11 +258,18 @@ function Vitals() {
       {/* spell save DC (and attack bonus): features use it too, so it's here as well as on the Spells page */}
       {/* save DCs features use: the spell DC, and on Arknights sheets the martial DC in the same box (both can be typed over) */}
       {ak ? (
-        <div className="vbox dc-box" style={{ cursor: 'default' }}>
-          <div className="l">DC</div>
-          <div className="dc-line"><span>Spell</span><OverrideNum value={c.spellDcOverride} auto={spell.auto.dc} title="Spell save DC" onChange={(v) => patch((d) => { d.spellDcOverride = v })} /></div>
-          <div className="dc-line"><span>Martial</span><OverrideNum value={c.martialDcOverride} auto={martialDcAuto(c, fx)} title="Martial DC: 8 + STR or DEX (the better) + proficiency" onChange={(v) => patch((d) => { d.martialDcOverride = v })} /></div>
-        </div>
+        <>
+          <div className="vbox spell-box" style={{ cursor: 'default' }}>
+            <div className="l">Spell DC</div>
+            <div className="v"><OverrideNum value={c.spellDcOverride} auto={spell.auto.dc} title="Spell save DC" onChange={(v) => patch((d) => { d.spellDcOverride = v })} /></div>
+            <div className="sub" />
+          </div>
+          <div className="vbox spell-box" style={{ cursor: 'default' }}>
+            <div className="l">Martial DC</div>
+            <div className="v"><OverrideNum value={c.martialDcOverride} auto={martialDcAuto(c, fx)} title="Martial DC: 8 + STR or DEX (the better) + proficiency" onChange={(v) => patch((d) => { d.martialDcOverride = v })} /></div>
+            <div className="sub" />
+          </div>
+        </>
       ) : spell.dc != null && (
         <div className="vbox spell-box" style={{ cursor: 'default' }}>
           <div className="l">Spell DC</div>
@@ -318,31 +306,7 @@ function Vitals() {
         </>
       )}
 
-      <div className="vbox hp-box">
-        <div className="hp-main">
-          <div className="l" style={{ textAlign: 'left' }}>Hit Points</div>
-          <div className="big">
-            <Num min={0} className="" value={c.hp.current} onChange={(n) => patch((d) => { d.hp.current = n })} />
-            <span className="of" ref={(el) => (refs.current.hpMax = el)} title="Edit max HP" onClick={() => setEdit(edit === 'hpMax' ? null : 'hpMax')}>
-              / {hpm.total}
-            </span>
-          </div>
-          <div className={`hpbar ${pct < 25 ? 'crit' : pct < 50 ? 'low' : ''}`}><i style={{ width: pct + '%' }} /></div>
-        </div>
-        <div className="col" style={{ gap: 3, alignItems: 'stretch' }}>
-          <div className="row" style={{ gap: 3 }}>
-            <button className="btn sm" style={{ color: 'var(--dis)' }} onClick={() => apply(-1)} title="Take damage (uses temp HP first)">Dmg</button>
-            <input className="box-input" style={{ width: 44, textAlign: 'center' }} placeholder="±" value={amt}
-              onChange={(e) => setAmt(e.target.value.replace(/\D/g, ''))}
-              onKeyDown={(e) => e.key === 'Enter' && apply(e.shiftKey ? 1 : -1)} />
-            <button className="btn sm" style={{ color: 'var(--good)' }} onClick={() => apply(1)} title="Heal">Heal</button>
-          </div>
-          <div className="row" style={{ gap: 4, justifyContent: 'center' }}>
-            <span className="l" style={{ margin: 0 }}>Temp</span>
-            <Num min={0} className="box-input" width={48} style={{ textAlign: 'center' }} value={c.hp.temp} onChange={(n) => patch((d) => { d.hp.temp = n })} />
-          </div>
-        </div>
-      </div>
+      <HpBox max={hpm.total} onEditMax={(el) => { refs.current.hpMax = el }} openMax={() => setEdit(edit === 'hpMax' ? null : 'hpMax')} />
 
       <div className="vbox hd-box" ref={(el) => (refs.current.hd = el)} onClick={() => setHdOpen(!hdOpen)} title="Hit dice">
         <div className="l">Hit Dice</div>
@@ -417,6 +381,70 @@ function Vitals() {
             }} />
         </Popover>
       )}
+    </div>
+  )
+}
+
+/**
+ * Hit points: "7+4/9" (current, temp HP, max). Type over the current HP to set it, or "+5" / "-7" to change it (your HP
+ * only, never the temp HP shown beside it). The ± box takes damage (temp HP first) or heals. The bar shows temp HP in
+ * its own colour: in the missing part when it fits, laid over the end of the bar when it doesn't.
+ */
+function HpBox({ max, onEditMax, openMax }: { max: number; onEditMax: (el: HTMLElement | null) => void; openMax: () => void }) {
+  const c = useChar()
+  const patch = useStore((s) => s.patch)
+  const [draft, setDraft] = useState<string | null>(null)
+  const [delta, setDelta] = useState('')
+  const cur = c.hp.current
+  const temp = c.hp.temp
+  const m = Math.max(1, max)
+  const pct = Math.max(0, Math.min(100, (cur / m) * 100))
+  const tempPct = Math.max(0, Math.min(100, (temp / m) * 100))
+  // temp HP fills the missing part when it fits; otherwise it sits over the end of the bar
+  const tempLeft = pct + tempPct <= 100 ? pct : 100 - tempPct
+  const commitHp = () => {
+    if (draft == null) return
+    const r = parseHp(draft)
+    setDraft(null)
+    if (!r) return
+    patch((d) => { setHp(d, r.set ?? d.hp.current + (r.change ?? 0), max) })
+  }
+  const commitDelta = () => {
+    const r = parseHp(delta.startsWith('+') || delta.startsWith('-') ? delta : delta ? `+${delta}` : '')
+    setDelta('')
+    if (!r) return
+    patch((d) => { hurtOrHeal(d, r.change ?? r.set ?? 0, max) })
+  }
+  return (
+    <div className="vbox hp-box">
+      <div className="hp-main">
+        <div className="l" style={{ textAlign: 'left' }}>Hit Points</div>
+        <div className="big">
+          <input className="hp-cur" value={draft ?? String(cur)} inputMode="numeric"
+            title={'Your hit points. Type a number to set them, or +5 / -7 to change them (temp HP is separate)'}
+            onFocus={(e) => { setDraft(String(cur)); e.currentTarget.select() }}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commitHp}
+            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { setDraft(null); e.currentTarget.blur() } }} />
+          {temp > 0 && <span className="hp-temp" title={`${temp} temporary hit points`}>+{temp}</span>}
+          <span className="of" ref={onEditMax} title="Edit max HP" onClick={openMax}>/ {max}</span>
+        </div>
+        <div className={`hpbar ${pct < 25 ? 'crit' : pct < 50 ? 'low' : ''}`}>
+          <i style={{ width: pct + '%' }} />
+          {temp > 0 && <b className="hp-tempbar" style={{ left: tempLeft + '%', width: tempPct + '%' }} />}
+        </div>
+      </div>
+      <div className="hp-side">
+        <label className="hp-mini" title="Damage or healing: -7 takes 7 (temp HP first), +5 or 5 heals 5. Press Enter.">
+          <span>±</span>
+          <input value={delta} placeholder="-7" onChange={(e) => setDelta(e.target.value.replace(/[^\d+\-\s]/g, ''))}
+            onKeyDown={(e) => { if (e.key === 'Enter') commitDelta() }} onBlur={() => { if (delta && /\d/.test(delta)) commitDelta() }} />
+        </label>
+        <label className="hp-mini" title="Temporary hit points">
+          <span>Temp</span>
+          <Num min={0} value={c.hp.temp} onChange={(n) => patch((d) => { d.hp.temp = n })} />
+        </label>
+      </div>
     </div>
   )
 }

@@ -900,3 +900,33 @@ img.ico-img { width: 1em; height: 1em; display: inline-block; vertical-align: -0
 .pdf-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
 .pdf-more { margin-top: 4px; }
 .pdf-more summary { cursor: pointer; }
+
+/* hit points: 7+4/9, the bar with temp HP in its own colour, and the compact ± / Temp boxes */
+.hp-box .big .hp-cur { width: 44px; font-size: 22px; font-weight: 700; text-align: right; font-family: var(--font-head); background: transparent; border: none; color: inherit; padding: 0; }
+.hp-box .big .hp-cur:focus { outline: none; background: var(--accent-soft); }
+.hp-box .big .hp-temp { font-size: 15px; font-weight: 700; color: var(--hp-temp, #3a8fd6); font-family: var(--font-head); }
+.hpbar { position: relative; }
+.hpbar > .hp-tempbar { position: absolute; top: 0; bottom: 0; background: var(--hp-temp, #3a8fd6); opacity: 0.85; transition: left .2s, width .2s; }
+.hp-side { display: flex; flex-direction: column; gap: 3px; justify-content: center; }
+.hp-mini { display: flex; align-items: center; gap: 4px; }
+.hp-mini span { font-size: 8px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); font-family: var(--font-head); width: 26px; text-align: right; }
+.hp-mini input { width: 40px; text-align: center; padding: 1px 3px; font-size: 12px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--ink); }
+.hp-mini input:focus { outline: none; border-color: var(--accent); }
+
+/* the dice roller */
+.dice { width: min(560px, 82vw); }
+.dice-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.die-btn { min-width: 52px; font-weight: 700; font-family: var(--font-head); }
+.dice-expr { font-family: ui-monospace, Consolas, monospace; }
+.dice-mod { gap: 4px; }
+.dice-mod b { min-width: 28px; text-align: center; font-family: var(--font-head); }
+.dice-result { display: flex; align-items: center; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); background: var(--panel2); }
+.dice-result.crit { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.dice-result.fumble { border-color: var(--dis); box-shadow: inset 0 0 0 1px var(--dis); }
+.dice-total { font-size: 38px; font-weight: 700; font-family: var(--font-head); min-width: 56px; text-align: center; line-height: 1; }
+.dice-parts { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; overflow-wrap: anywhere; }
+.dice-parts .dropped { text-decoration: line-through; opacity: 0.5; }
+.dice-history { display: flex; flex-direction: column; gap: 2px; max-height: 200px; overflow: auto; }
+.dice-hist-row { display: flex; align-items: baseline; gap: 10px; padding: 2px 4px; cursor: pointer; border-bottom: 1px dashed var(--line); }
+.dice-hist-row:hover { background: var(--accent-soft); }
+.dice-hist-row b { min-width: 30px; text-align: right; font-family: var(--font-head); }
