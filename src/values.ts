@@ -28,6 +28,8 @@ export const slug = (s: string) => s.toLowerCase().replace(/[’']/g, '').replac
 
 const STATS: [string, string, string?][] = [
   ['ac', 'Armor Class'],
+  ['acBase', 'Base AC (armor or unarmored, before shields & bonuses)'],
+  ['unarmoredAc', 'Unarmored AC (10 + DEX, with no body armor)'],
   ['speed', 'Speed'],
   ['initiative', 'Initiative'],
   ['hpMax', 'Max HP'],

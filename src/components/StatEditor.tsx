@@ -19,6 +19,8 @@ export function StatEditor({ statKey, anchor, onClose }: { statKey: StatKey; anc
   const off = inactiveEffects(c).filter((a) => a.effect.target === statKey && a.effect.type === 'bonus')
   const stat = c[statKey]
   const unit = statKey === 'speed' ? ' ft' : ''
+  // what changed the base AC itself (Unarmored Defense, Mage Armor…)
+  const baseBy = info.baseParts?.length ? ` · ${info.baseParts.map((p) => p.label).join(', ')}` : ''
 
   return (
     <Popover anchor={anchor} onClose={onClose} width={340}>
@@ -30,7 +32,7 @@ export function StatEditor({ statKey, anchor, onClose }: { statKey: StatKey; anc
       </div>
 
       {statKey === 'ac' && info.baseLabel !== '10 + DEX' && info.baseLabel !== 'Base' && (
-        <div className="stat-line"><span className="field-lbl" style={{ width: 70 }}>Base AC</span><b>{info.baseValue}</b><span className="muted small">from {info.baseLabel}</span></div>
+        <div className="stat-line"><span className="field-lbl" style={{ width: 70 }}>Base AC</span><b>{info.baseValue}</b><span className="muted small">from {info.baseLabel}{baseBy}</span></div>
       )}
       {statKey === 'ac' && (info.baseLabel === '10 + DEX' || info.baseLabel === 'Base') && (
         <div className="stat-line">
@@ -44,7 +46,7 @@ export function StatEditor({ statKey, anchor, onClose }: { statKey: StatKey; anc
       {!(statKey === 'ac' && info.baseLabel !== '10 + DEX' && info.baseLabel !== 'Base') && <div className="stat-line">
         <span className="field-lbl" style={{ width: 70 }}>{statKey === 'ac' ? 'Base AC' : statKey === 'initiative' ? 'Misc bonus' : 'Base'}</span>
         {statKey === 'ac' && c.ac.mode === 'unarmored' ? (
-          <b>{info.baseValue} <span className="muted small">(10 + DEX)</span></b>
+          <b>{info.baseValue} <span className="muted small">{info.baseParts?.length ? `(${baseBy.slice(2)})` : '(10 + DEX)'}</span></b>
         ) : (
           <Num className="box-input" width={70} value={stat.base} onChange={(n) => patch((d) => { d[statKey].base = n })} />
         )}

@@ -53,6 +53,8 @@ export function formulaVars(c: Character, effects: ActiveEffect[] = activeEffect
   v.spellMod = c.spellAbility ? v[c.spellAbility] : 0
   // the sheet's values (the same names a formula modifier's target uses)
   for (const k of ['ac', 'speed', 'initiative', 'hpMax'] as StatKey[]) v[k] = statInfo(c, k, fixed).total
+  v.acBase = statInfo(c, 'ac', fixed).baseValue
+  v.unarmoredAc = valueOf(fixed, 'unarmoredAc', 10 + v.dex).total
   v.hp = c.hp.current
   v.tempHp = c.hp.temp
   v.dr = damageReduction(c, fixed).total
@@ -228,6 +230,8 @@ export function maxPreparedOf(c: Character, effects = activeEffects(c)): number 
 /** a value's final number right now, with every modifier (for showing next to a formula modifier); undefined for rolls with no single number */
 export function currentValue(c: Character, id: string, effects = activeEffects(c)): number | undefined {
   if (id === 'ac' || id === 'speed' || id === 'initiative' || id === 'hpMax') return statInfo(c, id, effects).total
+  if (id === 'acBase') return statInfo(c, 'ac', effects).baseValue
+  if (id === 'unarmoredAc') return valueOf(effects, 'unarmoredAc', 10 + ability(c, 'dex', effects).mod).total
   if (id === 'dr') return damageReduction(c, effects).total
   if (id === 'carry') return carryCapacity(c, effects)
   if (id === 'passivePerception') return passivePerception(c, effects)
@@ -307,6 +311,8 @@ export interface StatInfo {
   /** The "base" portion, then everything that adds to it */
   baseLabel: string
   baseValue: number
+  /** AC: what changed the base itself (unarmoredAc / acBase modifiers, e.g. Unarmored Defense) */
+  baseParts?: Part[]
   adds: (Part & { fromEffect?: boolean })[]
   adv: string[]
   dis: string[]
@@ -317,6 +323,7 @@ export function statInfo(c: Character, key: StatKey, effects = activeEffects(c))
   const stat: Stat = c[key]
   let baseLabel = 'Base'
   let baseValue = stat.base
+  const baseParts: Part[] = []
   const adds: StatInfo['adds'] = []
   // armor counts only when worn on the body, shields only in a hand
   const worn = key === 'ac' ? c.items.filter((i) => i.armor && (i.armor.kind === 'shield' ? i.slot === 'off' || i.slot === 'main' : i.slot === 'body')) : []
@@ -329,7 +336,16 @@ export function statInfo(c: Character, key: StatKey, effects = activeEffects(c))
     baseValue = a.ac + fromDex + (a.bonus || 0)
   } else if (key === 'ac' && c.ac.mode === 'unarmored') {
     baseLabel = '10 + DEX'
-    baseValue = 10 + ability(c, 'dex', effects).mod
+    // Unarmored Defense, Mage Armor…: modifiers on unarmoredAc only count with no body armor on
+    const u = valueOf(effects, 'unarmoredAc', 10 + ability(c, 'dex', effects).mod)
+    baseValue = u.total
+    baseParts.push(...u.parts)
+  }
+  if (key === 'ac') {
+    // the base whatever it comes from (armor, unarmored or typed), before shields and bonuses
+    const b = valueOf(effects, 'acBase', baseValue)
+    baseValue = b.total
+    baseParts.push(...b.parts)
   } else if (key === 'initiative') {
     baseLabel = 'DEX modifier'
     baseValue = ability(c, 'dex', effects).mod
@@ -348,7 +364,7 @@ export function statInfo(c: Character, key: StatKey, effects = activeEffects(c))
   for (const p of s.parts) adds.push({ ...p, fromEffect: true })
   return {
     total: s.total,
-    baseLabel, baseValue, adds, adv: col.adv, dis: col.dis, notes: col.notes,
+    baseLabel, baseValue, baseParts, adds, adv: col.adv, dis: col.dis, notes: col.notes,
   }
 }
 
