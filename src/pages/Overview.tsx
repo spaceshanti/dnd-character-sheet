@@ -1,6 +1,7 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useLayoutEffect, useRef, useState } from 'react'
 import { ABILITIES, RECHARGES, targetName } from '../constants'
-import { attackInfo, itemAttacks, itemIsActive, martialDc, signed, unarmedAttack } from '../calc'
+import { attackInfo, itemAttacks, itemIsActive, martialDc, signed, spellStats, unarmedAttack } from '../calc'
+import { plainText } from '../rich'
 import { isAK } from '../systems'
 import { activateOp } from '../ak'
 import { SpTracker } from './OperatorSkills'
@@ -14,12 +15,14 @@ import { WeaponTags } from '../components/WeaponTags'
 import { newSide, otherName, setSwap, switchClass } from '../altClass'
 import { hasFeaturesFor, planFill, ruleNames, type FillPlan } from '../autofill'
 import { longRestOn } from '../rest'
-import type { AbilityKey, Attack, Effect, Resource } from '../types'
+import type { AbilityKey, Attack, Character, Effect, Resource, Spell } from '../types'
 import { askConfirm } from '../components/Dialog'
 import { maxOf } from '../components/FeatureParts'
 
 const effectText = (e: Effect) =>
   `${targetName(e.target)} ${e.formula !== undefined ? `= ${e.formula}` : e.type === 'bonus' ? signed(e.value ?? 0) : e.type === 'minScore' ? `≥ ${e.value}` : e.type === 'maxScore' ? `≤ ${e.value}` : e.type === 'set' ? `→ ${e.value}` : e.type === 'halfProf' ? '½ proficiency' : e.type}`
+
+const MIN_COL = 360
 
 export function Overview() {
   const c = useChar()
@@ -27,33 +30,26 @@ export function Overview() {
   const set = useUI((s) => s.set)
   const gearShown = c.items.filter((i) => i.slot || (i.attunement && i.attuned))
   const attunedCount = c.items.filter((i) => i.attunement && i.attuned).length
-  return (
-    <div className="grid" style={{ gridTemplateColumns: '230px minmax(0,1.5fr) minmax(0,1fr)', alignItems: 'start' }}>
-      <div className="col">
-        <Frame title="Proficiencies & Languages" tight>
-          {(['weapons', 'armor', 'tools', 'languages'] as const).map((k) => (
-            <div key={k} style={{ marginBottom: 6 }}>
-              <div className="field-lbl">{k}</div>
-              <RichArea className="box-input" minRows={1} value={c.proficiencies[k]} onChange={(v) => patch((d) => { d.proficiencies[k] = v })} />
-            </div>
-          ))}
-        </Frame>
-        {isAK(c) && <AltClassPanel />}
-      </div>
-
-      <div className="col" style={{ gap: 14 }}>
-        {isAK(c) && <OperatorPanel />}
+  // three equal columns when each gets at least MIN_COL px; otherwise the third stacks under the second (then everything in one)
+  const wrap = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(1400)
+  useLayoutEffect(() => {
+    const el = wrap.current
+    if (!el) return
+    const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const n = width >= 3 * MIN_COL + 28 ? 3 : width >= 2 * MIN_COL + 14 ? 2 : 1
+  const colA = (<>
         <AttacksPanel />
         <ResourcesPanel />
+  </>)
+  const colB = (<>
         <Frame title="Battle State / Scratchpad" tight>
           <RichArea className="sheet-ta" minRows={4} placeholder="Anything you track mid-fight: mirror image count, concentration target, initiative order…" value={c.battleState} onChange={(v) => patch((d) => { d.battleState = v })} />
         </Frame>
-      </div>
-
-      <div className="col" style={{ gap: 14 }}>
-        <Frame title="Buffs & Item Effects">
-          <EffectToggles />
-        </Frame>
+        {isAK(c) && <OperatorPanel />}
         <Frame title="Equipment" tight tools={
           <>
             {attunedCount > 0 && <span className="small muted" title="Attuned magic items (max 3)" style={{ color: attunedCount > 3 ? 'var(--dis)' : undefined }}>✦ {attunedCount}/3 attuned</span>}
@@ -78,16 +74,34 @@ export function Overview() {
             ))}
           </div>
         </Frame>
+  </>)
+  const colC = (<>
+        <EffectToggles />
+        <Frame title="Proficiencies & Languages" tight>
+          {(['weapons', 'armor', 'tools', 'languages'] as const).map((k) => (
+            <div key={k} style={{ marginBottom: 6 }}>
+              <div className="field-lbl">{k}</div>
+              <RichArea className="box-input" minRows={1} value={c.proficiencies[k]} onChange={(v) => patch((d) => { d.proficiencies[k] = v })} />
+            </div>
+          ))}
+        </Frame>
+        {isAK(c) && <AltClassPanel />}
         <Frame title="Features & Traits" tight>
           {c.features.length === 0 && <div className="empty">Add features on the Features page.</div>}
           {c.features.map((f) => (
             <div key={f.id} className="list-row" onClick={() => set({ drawer: { kind: 'feature', id: f.id } })}>
               <span className="grow">{f.name || 'Unnamed'}</span>
+              {/* where it comes from (Vulpo, Caster 1, a feat…), muted in every theme */}
+              <span className="small muted" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '45%' }}>{f.source || f.category}</span>
               {f.actionType !== 'none' && <span className="badge">{f.actionType === 'bonus' ? 'BA' : f.actionType[0].toUpperCase()}</span>}
             </div>
           ))}
         </Frame>
-      </div>
+  </>)
+  const columns = n === 3 ? [colA, colB, colC] : n === 2 ? [colA, <>{colB}{colC}</>] : [<>{colA}{colB}{colC}</>]
+  return (
+    <div ref={wrap} className="grid" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))`, alignItems: 'start' }}>
+      {columns.map((col, i) => <div key={i} className="col" style={{ gap: 14 }}>{col}</div>)}
     </div>
   )
 }
@@ -257,6 +271,21 @@ function AmmoLine({ weaponId }: { weaponId: string }) {
   )
 }
 
+/** spells (Arts) you can cast now that attack, call for a save or deal damage, read from their descriptions */
+function attackSpells(c: Character) {
+  const castable = (s: Spell) => isAK(c) || s.level === 0 || s.prepared || s.alwaysPrepared
+  const out: { s: Spell; atk: boolean; save: string; dmg: { dice: string; type: string } | null }[] = []
+  for (const s of [...c.spells].filter(castable).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))) {
+    const text = plainText(s.description)
+    const atk = /spell attack|\bart attack/i.test(text)
+    const sv = text.match(/\b(strength|dexterity|constitution|intelligence|wisdom|charisma) saving throw/i)
+    const d = text.match(/(\d+d\d+(?:\s*\+\s*\d+)?)\s+(\w+)\s+damage/i)
+    if (!atk && !sv && !d) continue
+    out.push({ s, atk, save: sv ? sv[1].slice(0, 3).toUpperCase() + ' save' : '', dmg: d ? { dice: d[1].replace(/\s+/g, ''), type: d[2].toLowerCase() } : null })
+  }
+  return out
+}
+
 function AttacksPanel() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
@@ -269,8 +298,10 @@ function AttacksPanel() {
   const spentAmmo = c.items.reduce((n, i) => n + Math.floor((i.ammoSpent ?? 0) / 2) * 2, 0)
   const unarmed = unarmedAttack(c)
   const unarmedInfo = unarmed ? attackInfo(c, unarmed) : null
+  const spells = c.spellsInAttacks ? attackSpells(c) : []
+  const ss = spellStats(c)
   return (
-    <Frame title="Weapons & Attacks" tools={
+    <Frame title={spells.length ? (isAK(c) ? 'Attacks & Arts' : 'Attacks & Spellcasting') : 'Weapons & Attacks'} tools={
       <>
         {spentAmmo > 0 && (
           <button className="btn sm" title="After a fight, gather up half of the ammunition you fired (rounded down)"
@@ -281,7 +312,7 @@ function AttacksPanel() {
         <button className="btn sm" onClick={() => { const a = newAttack(); patch((d) => { d.attacks.push(a) }); setOpen(a.id) }}>＋ Add</button>
       </>
     }>
-      {c.attacks.length === 0 && fromItems.length === 0 && !unarmed ? <div className="empty">No attacks yet. Add a weapon to your inventory (or here) and its bonus is worked out for you.</div> : (
+      {c.attacks.length === 0 && fromItems.length === 0 && !unarmed && !spells.length ? <div className="empty">No attacks yet. Add a weapon to your inventory (or here) and its bonus is worked out for you.</div> : (
         <table className="t">
           <thead><tr><th>Name</th><th style={{ width: 62 }}>Atk</th><th>Damage</th><th style={{ width: 28 }} /></tr></thead>
           <tbody>
@@ -295,7 +326,7 @@ function AttacksPanel() {
                     <AmmoLine weaponId={a.itemId} />
                   </td>
                   <td style={{ fontWeight: 700, fontSize: 16 }}>{signed(info.bonus)}{info.adv.length > 0 && info.dis.length === 0 && <span className="adv a" style={{ marginLeft: 3, fontSize: 10, color: 'var(--adv)' }}>ADV</span>}</td>
-                  <td>{info.damage} <span className="muted">{a.damageType}</span>{a.range && <span className="muted small"> · {a.range}</span>}</td>
+                  <td><span style={{ whiteSpace: 'nowrap' }}>{info.damage} <span className="muted">{a.damageType}</span></span>{a.range && <div className="muted small">{a.range}</div>}</td>
                   <td onClick={(e) => e.stopPropagation()}>
                     {a.weapon.ammoId
                       ? <button className="btn sm primary" title={ammoText(c, a.weapon.ammoId, a.weapon.ammoCost)} onClick={() => toast.show(useItem(c, a.weapon.ammoId, a.weapon.ammoCost, a.name))}>Use</button>
@@ -343,6 +374,20 @@ function AttacksPanel() {
                 </Fragment>
               )
             })}
+            {spells.map(({ s: sp, atk, save, dmg }) => (
+              <tr key={sp.id} className="hov" title="Click to read it (turn these off in Settings › Rules)" onClick={() => set({ drawer: { kind: 'spell', id: sp.id } })}>
+                <td>
+                  <span className="row" style={{ gap: 6 }}><Icon name="sparkle" className="list-ico" />{sp.name || 'Unnamed'}</span>
+                  <span className="small muted">{sp.level === 0 ? (isAK(c) ? 'Art · 0' : 'Cantrip') : isAK(c) ? `Art · ${sp.level} AP` : `Level ${sp.level}`}{sp.castingTime && ` · ${sp.castingTime.split(',')[0]}`}{sp.concentration && ' · C'}</span>
+                </td>
+                <td style={{ fontWeight: 700, fontSize: atk ? 16 : 13 }}>
+                  {atk ? (ss.attack != null ? signed(ss.attack) : '—') : save ? `DC ${ss.dc ?? '—'}` : '—'}
+                  {!atk && save && <div className="small muted" style={{ fontWeight: 400 }}>{save}</div>}
+                </td>
+                <td style={{ whiteSpace: 'nowrap' }}>{dmg ? <>{dmg.dice} <span className="muted">{dmg.type}</span></> : <span className="muted">—</span>}</td>
+                <td />
+              </tr>
+            ))}
           </tbody>
         </table>
       )}
@@ -422,9 +467,10 @@ function EffectToggles() {
       note: !i.slot ? 'not equipped' : i.attunement && !i.attuned ? 'needs attunement' : '',
     })),
   ]
-  if (!rows.length) return <div className="empty">Spells, items and features you switch on (Rage, Bladesong…) that change a skill, AC, speed… appear here. Always-on features don't.</div>
+  // nothing temporary to switch: no panel at all
+  if (!rows.length) return null
   return (
-    <div>
+    <Frame title="Buffs & Item Effects">
       {rows.map((r) => (
         <div key={r.kind + r.id} style={{ borderBottom: '1px solid var(--line)', padding: '6px 0' }}>
           <div className="row">
@@ -451,6 +497,6 @@ function EffectToggles() {
           </div>
         </div>
       ))}
-    </div>
+    </Frame>
   )
 }

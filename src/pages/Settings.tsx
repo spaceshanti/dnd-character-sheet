@@ -31,6 +31,10 @@ export function SettingsPage() {
             <Switch on={!c.hideUnarmed} onChange={(b) => patch((d) => { d.hideUnarmed = !b })} />
             <span className="grow">Show Unarmed Strike under Weapons &amp; Attacks</span>
           </label>
+          <label className="row" title="Arts / spells that make an attack, call for a save or deal damage are listed with the weapons on the Overview. They still show on the Actions page too.">
+            <Switch on={!!c.spellsInAttacks} onChange={(b) => patch((d) => { d.spellsInAttacks = b })} />
+            <span className="grow">Show {isAK(c) ? 'Arts' : 'spells'} under Attacks &amp; Spellcasting on the Overview</span>
+          </label>
           <div className="row">
             <Switch on={c.profOverride != null} onChange={(b) => patch((d) => { d.profOverride = b ? auto : null })} />
             <span className="grow">Set proficiency bonus manually</span>

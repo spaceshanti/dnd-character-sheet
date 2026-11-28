@@ -429,6 +429,8 @@ export interface Character {
   ak: AkData
   /** don't list the default Unarmed Strike under Weapons & Attacks */
   hideUnarmed?: boolean
+  /** also list attack / save / damage spells (Arts) on the Overview's attacks panel */
+  spellsInAttacks?: boolean
   /** deletion protection: a locked character can't be deleted until it's unlocked (on by default) */
   locked: boolean
   /** Arknights: the class / branch table Arts Points and max Art level follow when levelling up */
