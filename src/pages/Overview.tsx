@@ -52,9 +52,7 @@ export function Overview() {
       </div>
 
       <div className="col" style={{ gap: 14 }}>
-        <Frame title="Buffs & Item Effects">
-          <EffectToggles />
-        </Frame>
+        <EffectToggles />
         <Frame title="Equipment" tight tools={
           <>
             {attunedCount > 0 && <span className="small muted" title="Attuned magic items (max 3)" style={{ color: attunedCount > 3 ? 'var(--dis)' : undefined }}>✦ {attunedCount}/3 attuned</span>}
@@ -456,9 +454,10 @@ function EffectToggles() {
       note: !i.slot ? 'not equipped' : i.attunement && !i.attuned ? 'needs attunement' : '',
     })),
   ]
-  if (!rows.length) return <div className="empty">Spells, items and features you switch on (Rage, Bladesong…) that change a skill, AC, speed… appear here. Always-on features don't.</div>
+  // nothing temporary to switch: no panel at all
+  if (!rows.length) return null
   return (
-    <div>
+    <Frame title="Buffs & Item Effects">
       {rows.map((r) => (
         <div key={r.kind + r.id} style={{ borderBottom: '1px solid var(--line)', padding: '6px 0' }}>
           <div className="row">
@@ -485,6 +484,6 @@ function EffectToggles() {
           </div>
         </div>
       ))}
-    </div>
+    </Frame>
   )
 }
