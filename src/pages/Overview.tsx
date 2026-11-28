@@ -414,14 +414,15 @@ function EffectToggles() {
   const patch = useStore((s) => s.patch)
   const set = useUI((s) => s.set)
   const rows = [
-    ...c.features.filter((f) => f.effects.length).map((f) => ({ id: f.id, kind: 'feature' as const, name: f.name, on: f.active, effects: f.effects, note: '' })),
+    // passive features that are on are permanent, not buffs: only ones you switch on (Rage…) or have switched off show
+    ...c.features.filter((f) => f.effects.length && (f.actionType !== 'none' || !f.active)).map((f) => ({ id: f.id, kind: 'feature' as const, name: f.name, on: f.active, effects: f.effects, note: '' })),
     ...c.spells.filter((s) => s.effects.length).map((s) => ({ id: s.id, kind: 'spell' as const, name: s.name, on: s.active, effects: s.effects, note: '' })),
     ...c.items.filter((i) => i.effects.length).map((i) => ({
       id: i.id, kind: 'item' as const, name: i.name, on: itemIsActive(i), effects: i.effects,
       note: !i.slot ? 'not equipped' : i.attunement && !i.attuned ? 'needs attunement' : '',
     })),
   ]
-  if (!rows.length) return <div className="empty">Link a feature, item or spell to a skill, AC, speed… and it appears here with an on/off switch.</div>
+  if (!rows.length) return <div className="empty">Spells, items and features you switch on (Rage, Bladesong…) that change a skill, AC, speed… appear here. Always-on features don't.</div>
   return (
     <div>
       {rows.map((r) => (
