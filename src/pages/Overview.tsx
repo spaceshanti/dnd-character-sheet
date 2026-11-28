@@ -1,4 +1,4 @@
-import { Fragment, useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useState } from 'react'
 import { ABILITIES, RECHARGES, targetName } from '../constants'
 import { attackInfo, itemAttacks, itemIsActive, martialDc, signed, spellStats, unarmedAttack } from '../calc'
 import { plainText } from '../rich'
@@ -22,7 +22,7 @@ import { maxOf } from '../components/FeatureParts'
 const effectText = (e: Effect) =>
   `${targetName(e.target)} ${e.formula !== undefined ? `= ${e.formula}` : e.type === 'bonus' ? signed(e.value ?? 0) : e.type === 'minScore' ? `≥ ${e.value}` : e.type === 'maxScore' ? `≤ ${e.value}` : e.type === 'set' ? `→ ${e.value}` : e.type === 'halfProf' ? '½ proficiency' : e.type}`
 
-const MIN_COL = 360
+const MIN_MIDDLE = 360
 
 export function Overview() {
   const c = useChar()
@@ -30,26 +30,32 @@ export function Overview() {
   const set = useUI((s) => s.set)
   const gearShown = c.items.filter((i) => i.slot || (i.attunement && i.attuned))
   const attunedCount = c.items.filter((i) => i.attunement && i.attuned).length
-  // three equal columns when each gets at least MIN_COL px; otherwise the third stacks under the second (then everything in one)
-  const wrap = useRef<HTMLDivElement>(null)
-  const [width, setWidth] = useState(1400)
-  useLayoutEffect(() => {
-    const el = wrap.current
-    if (!el) return
-    const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width))
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-  const n = width >= 3 * MIN_COL + 28 ? 3 : width >= 2 * MIN_COL + 14 ? 2 : 1
-  const colA = (<>
+  // always three columns, the same width (the middle one keeps room for the attacks table)
+  return (
+    <div className="grid" style={{ gridTemplateColumns: `minmax(0, 1fr) minmax(${MIN_MIDDLE}px, 1fr) minmax(0, 1fr)`, alignItems: 'start' }}>
+      <div className="col" style={{ gap: 14 }}>
+        <Frame title="Proficiencies & Languages" tight>
+          {(['weapons', 'armor', 'tools', 'languages'] as const).map((k) => (
+            <div key={k} style={{ marginBottom: 6 }}>
+              <div className="field-lbl">{k}</div>
+              <RichArea className="box-input" minRows={1} value={c.proficiencies[k]} onChange={(v) => patch((d) => { d.proficiencies[k] = v })} />
+            </div>
+          ))}
+        </Frame>
+        {isAK(c) && <AltClassPanel />}
+      </div>
+
+      <div className="col" style={{ gap: 14 }}>
+        {isAK(c) && <OperatorPanel />}
         <AttacksPanel />
         <ResourcesPanel />
-  </>)
-  const colB = (<>
         <Frame title="Battle State / Scratchpad" tight>
           <RichArea className="sheet-ta" minRows={4} placeholder="Anything you track mid-fight: mirror image count, concentration target, initiative order…" value={c.battleState} onChange={(v) => patch((d) => { d.battleState = v })} />
         </Frame>
-        {isAK(c) && <OperatorPanel />}
+      </div>
+
+      <div className="col" style={{ gap: 14 }}>
+        <EffectToggles />
         <Frame title="Equipment" tight tools={
           <>
             {attunedCount > 0 && <span className="small muted" title="Attuned magic items (max 3)" style={{ color: attunedCount > 3 ? 'var(--dis)' : undefined }}>✦ {attunedCount}/3 attuned</span>}
@@ -74,18 +80,6 @@ export function Overview() {
             ))}
           </div>
         </Frame>
-  </>)
-  const colC = (<>
-        <EffectToggles />
-        <Frame title="Proficiencies & Languages" tight>
-          {(['weapons', 'armor', 'tools', 'languages'] as const).map((k) => (
-            <div key={k} style={{ marginBottom: 6 }}>
-              <div className="field-lbl">{k}</div>
-              <RichArea className="box-input" minRows={1} value={c.proficiencies[k]} onChange={(v) => patch((d) => { d.proficiencies[k] = v })} />
-            </div>
-          ))}
-        </Frame>
-        {isAK(c) && <AltClassPanel />}
         <Frame title="Features & Traits" tight>
           {c.features.length === 0 && <div className="empty">Add features on the Features page.</div>}
           {c.features.map((f) => (
@@ -97,11 +91,7 @@ export function Overview() {
             </div>
           ))}
         </Frame>
-  </>)
-  const columns = n === 3 ? [colA, colB, colC] : n === 2 ? [colA, <>{colB}{colC}</>] : [<>{colA}{colB}{colC}</>]
-  return (
-    <div ref={wrap} className="grid" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))`, alignItems: 'start' }}>
-      {columns.map((col, i) => <div key={i} className="col" style={{ gap: 14 }}>{col}</div>)}
+      </div>
     </div>
   )
 }
