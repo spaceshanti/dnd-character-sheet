@@ -22,18 +22,15 @@ import { maxOf } from '../components/FeatureParts'
 const effectText = (e: Effect) =>
   `${targetName(e.target)} ${e.formula !== undefined ? `= ${e.formula}` : e.type === 'bonus' ? signed(e.value ?? 0) : e.type === 'minScore' ? `≥ ${e.value}` : e.type === 'maxScore' ? `≤ ${e.value}` : e.type === 'set' ? `→ ${e.value}` : e.type === 'halfProf' ? '½ proficiency' : e.type}`
 
-const MIN_MIDDLE = 360
-
 export function Overview() {
   const c = useChar()
   const patch = useStore((s) => s.patch)
   const set = useUI((s) => s.set)
   const gearShown = c.items.filter((i) => i.slot || (i.attunement && i.attuned))
   const attunedCount = c.items.filter((i) => i.attunement && i.attuned).length
-  // always three columns, the same width (the middle one keeps room for the attacks table)
   return (
-    <div className="grid" style={{ gridTemplateColumns: `minmax(0, 1fr) minmax(${MIN_MIDDLE}px, 1fr) minmax(0, 1fr)`, alignItems: 'start' }}>
-      <div className="col" style={{ gap: 14 }}>
+    <div className="grid" style={{ gridTemplateColumns: '230px minmax(0,1.5fr) minmax(0,1fr)', alignItems: 'start' }}>
+      <div className="col">
         <Frame title="Proficiencies & Languages" tight>
           {(['weapons', 'armor', 'tools', 'languages'] as const).map((k) => (
             <div key={k} style={{ marginBottom: 6 }}>
@@ -55,7 +52,9 @@ export function Overview() {
       </div>
 
       <div className="col" style={{ gap: 14 }}>
-        <EffectToggles />
+        <Frame title="Buffs & Item Effects">
+          <EffectToggles />
+        </Frame>
         <Frame title="Equipment" tight tools={
           <>
             {attunedCount > 0 && <span className="small muted" title="Attuned magic items (max 3)" style={{ color: attunedCount > 3 ? 'var(--dis)' : undefined }}>✦ {attunedCount}/3 attuned</span>}
@@ -457,10 +456,9 @@ function EffectToggles() {
       note: !i.slot ? 'not equipped' : i.attunement && !i.attuned ? 'needs attunement' : '',
     })),
   ]
-  // nothing temporary to switch: no panel at all
-  if (!rows.length) return null
+  if (!rows.length) return <div className="empty">Spells, items and features you switch on (Rage, Bladesong…) that change a skill, AC, speed… appear here. Always-on features don't.</div>
   return (
-    <Frame title="Buffs & Item Effects">
+    <div>
       {rows.map((r) => (
         <div key={r.kind + r.id} style={{ borderBottom: '1px solid var(--line)', padding: '6px 0' }}>
           <div className="row">
@@ -487,6 +485,6 @@ function EffectToggles() {
           </div>
         </div>
       ))}
-    </Frame>
+    </div>
   )
 }
