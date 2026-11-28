@@ -280,7 +280,8 @@ interface UIState {
 }
 
 function readOpen() {
-  try { return localStorage.getItem('dock-open') === '1' } catch { return false }
+  // open until you close it once, so new players see where abilities and skills live
+  try { return localStorage.getItem('dock-open') !== '0' } catch { return true }
 }
 
 export const useUI = create<UIState>((set) => ({
